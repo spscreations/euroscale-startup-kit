@@ -1,0 +1,64 @@
+# Vitess Grafana Dashboard
+
+The Vitess project provides official Grafana dashboards for monitoring Vitess clusters.
+There are two ways to import them into the EuroScale Grafana instance:
+
+## Option 1: Import from grafana.com (Dashboard ID 11111)
+
+1. Open Grafana at the LoadBalancer IP printed by `deploy.sh`
+2. Log in with the admin credentials
+3. Hover over **+** (Create) in the sidebar → **Import**
+4. Enter dashboard ID: **11111**
+5. Select the Prometheus data source (named `Prometheus` or `kube-prometheus-stack-prometheus`)
+6. Click **Import**
+
+> **Note:** Grafana.com dashboard ID 11111 is the community-maintained Vitess dashboard.
+> If ID 11111 is unavailable, use Option 2 below.
+
+## Option 2: Use Vitess Example Dashboards (recommended)
+
+Grab the official Vitess example dashboards from the [Vitess repository](https://github.com/vitessio/vitess/tree/main/examples/operator):
+
+```bash
+# Fetch the dashboard JSONs from the Vitess repo
+curl -L https://raw.githubusercontent.com/vitessio/vitess/main/examples/operator/dashboards/vitess-cluster-overview.json \
+  -o /tmp/vitess-cluster-overview.json
+
+curl -L https://raw.githubusercontent.com/vitessio/vitess/main/examples/operator/dashboards/vitess-vttablet.json \
+  -o /tmp/vitess-vttablet.json
+```
+
+Then import:
+1. Grafana → **Dashboards** → **Import**
+2. Click **Upload JSON file**
+3. Select each downloaded JSON file
+4. Link to the Prometheus data source
+
+## Pre-configured Dashboards (kube-prometheus-stack)
+
+The kube-prometheus-stack Helm chart ships with these dashboards out of the box:
+
+| Dashboard | Purpose |
+|-----------|---------|
+| Nodes | Cluster node metrics (CPU, mem, disk, network) |
+| Pods | Pod-level resource usage |
+| Kubernetes / Compute Resources | Namespace/workload resource breakdown |
+| Kubernetes / Networking | Network I/O per pod/namespace |
+| Prometheus | Prometheus self-monitoring |
+| etcd | etcd cluster health (if using etcd backend) |
+
+## Metric Sources (via ServiceMonitors)
+
+After `deploy.sh` applies the Vitess metrics config, the following Vitess components
+will be scraped by Prometheus automatically:
+
+- **vtgate** — Query routing metrics (queries/sec, errors, latency)
+- **vttablet** — Tablet-level metrics (replication lag, QPS, row counts)
+- **vtctld** — Topology / cluster management metrics
+- **vtbackup** — Backup job metrics
+
+Verify targets are up:
+```bash
+kubectl port-forward -n monitoring svc/kube-prometheus-stack-prometheus 9090:9090
+# Open http://localhost:9090/targets
+```
