@@ -1,493 +1,722 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>EuroScale — European Serverless Database Platform</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
-    <style>
-        * { font-family: 'Inter', sans-serif; }
-        body { scroll-behavior: smooth; }
-        .gradient-bg {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #db2777 100%);
-        }
-        .gradient-text {
-            background: linear-gradient(135deg, #818cf8, #c084fc, #f472b6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .glass-card {
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .hero-gradient {
-            background: radial-gradient(ellipse at top, rgba(79,70,229,0.15) 0%, transparent 50%),
-                        radial-gradient(ellipse at bottom, rgba(219,39,119,0.1) 0%, transparent 50%);
-        }
-        .flag-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 12px;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-        .blob {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.3;
-            animation: blob-float 20s ease-in-out infinite;
-        }
-        @keyframes blob-float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(30px, -30px) scale(1.1); }
-            66% { transform: translate(-20px, 20px) scale(0.9); }
-        }
-        .nav-blur {
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-        }
-        @media (prefers-reduced-motion: reduce) {
-            .animate__animated { animation: none !important; }
-            .blob { animation: none !important; }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EuroScale — European Serverless Database Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --purple: #6d5dfd;
+      --purple-dark: #5746e0;
+      --purple-light: #8b7eff;
+      --deep-navy: #070b1a;
+      --dark-surface: #0c1125;
+      --card-surface: #111833;
+      --border-color: rgba(109, 93, 253, 0.15);
+      --border-hover: rgba(109, 93, 253, 0.35);
+      --text-primary: #f0f2ff;
+      --text-secondary: rgba(240, 242, 255, 0.6);
+      --text-muted: rgba(240, 242, 255, 0.35);
+    }
+    * { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--deep-navy); color: var(--text-primary); }
+
+    /* Grid pattern background */
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(109, 93, 253, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(109, 93, 253, 0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    /* Glow effects */
+    .glow-purple {
+      box-shadow: 0 0 60px rgba(109, 93, 253, 0.15), 0 0 120px rgba(109, 93, 253, 0.05);
+    }
+    .glow-text {
+      text-shadow: 0 0 40px rgba(109, 93, 253, 0.3);
+    }
+
+    /* Gradient text */
+    .gradient-text {
+      background: linear-gradient(135deg, #c4b5fd 0%, #6d5dfd 50%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Card style */
+    .euro-card {
+      background: var(--card-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      transition: all 0.3s ease;
+    }
+    .euro-card:hover {
+      border-color: var(--border-hover);
+      box-shadow: 0 0 30px rgba(109, 93, 253, 0.08);
+      transform: translateY(-2px);
+    }
+
+    /* Button styles */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--purple), var(--purple-light));
+      color: white;
+      font-weight: 600;
+      border-radius: 12px;
+      padding: 14px 32px;
+      transition: all 0.2s ease;
+    }
+    .btn-primary:hover {
+      box-shadow: 0 0 30px rgba(109, 93, 253, 0.3);
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-primary);
+      font-weight: 500;
+      border-radius: 12px;
+      padding: 14px 32px;
+      border: 1px solid var(--border-color);
+      transition: all 0.2s ease;
+    }
+    .btn-secondary:hover {
+      border-color: var(--border-hover);
+      background: rgba(109, 93, 253, 0.05);
+    }
+
+    /* Nav blur */
+    .nav-blur {
+      backdrop-filter: blur(20px) saturate(1.5);
+      -webkit-backdrop-filter: blur(20px) saturate(1.5);
+      background: rgba(7, 11, 26, 0.8);
+      border-bottom: 1px solid rgba(109, 93, 253, 0.08);
+    }
+
+    /* Orb animation */
+    @keyframes orb-float {
+      0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+      25% { transform: translate(40px, -30px) scale(1.1); opacity: 0.4; }
+      50% { transform: translate(-20px, 20px) scale(0.95); opacity: 0.25; }
+      75% { transform: translate(30px, 40px) scale(1.05); opacity: 0.35; }
+    }
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      pointer-events: none;
+    }
+    .orb-1 { width: 500px; height: 500px; background: rgba(109, 93, 253, 0.15); top: -200px; left: -100px; animation: orb-float 25s ease-in-out infinite; }
+    .orb-2 { width: 400px; height: 400px; background: rgba(167, 139, 250, 0.12); bottom: -150px; right: -100px; animation: orb-float 30s ease-in-out infinite reverse; }
+    .orb-3 { width: 300px; height: 300px; background: rgba(139, 92, 246, 0.1); top: 50%; left: 50%; transform: translate(-50%, -50%); animation: orb-float 35s ease-in-out infinite 5s; }
+
+    /* Code window style */
+    .code-window {
+      background: #060a18;
+      border: 1px solid rgba(109, 93, 253, 0.12);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .code-window .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .code-window .dot-red { background: #ff5f56; }
+    .code-window .dot-yellow { background: #ffbd2e; }
+    .code-window .dot-green { background: #27c93f; }
+
+    /* Price tier highlight */
+    .tier-popular {
+      background: linear-gradient(135deg, rgba(109, 93, 253, 0.1), rgba(167, 139, 250, 0.05));
+      border: 1px solid var(--purple);
+      position: relative;
+    }
+    .tier-popular::before {
+      content: 'Most Popular';
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, var(--purple), var(--purple-light));
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 16px;
+      border-radius: 9999px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Pricing column widths */
+    @media (min-width: 768px) {
+      .pricing-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1px; }
+      .pricing-grid > * { 
+        background: var(--card-surface); 
+        border: 1px solid var(--border-color);
+        border-right: none;
+      }
+      .pricing-grid > *:last-child { border-right: 1px solid var(--border-color); }
+      .pricing-grid .tier-popular {
+        transform: scale(1.04);
+        z-index: 2;
+        border: 1px solid var(--purple) !important;
+        border-radius: 16px;
+        margin: -8px 0;
+      }
+    }
+
+    /* Divider */
+    .section-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+    }
+
+    /* Stats */
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #c4b5fd, #6d5dfd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .orb { animation: none !important; }
+      .euro-card:hover { transform: none !important; }
+    }
+
+    /* Mobile pricing: horizontal scroll */
+    .pricing-scroll {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 16px;
+    }
+    .pricing-scroll > * {
+      min-width: 280px;
+      scroll-snap-align: start;
+    }
+    .pricing-scroll::-webkit-scrollbar { height: 6px; }
+    .pricing-scroll::-webkit-scrollbar-track { background: rgba(109, 93, 253, 0.05); border-radius: 3px; }
+    .pricing-scroll::-webkit-scrollbar-thumb { background: rgba(109, 93, 253, 0.2); border-radius: 3px; }
+  </style>
 </head>
-<body class="bg-[#0a0a0f] text-white antialiased">
+<body>
 
-    <!-- Navigation -->
-    <nav class="fixed top-0 left-0 right-0 z-50 nav-blur bg-[#0a0a0f]/80 border-b border-white/5">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 gradient-bg rounded-lg flex items-center justify-center text-xs font-bold">E</div>
-                    <span class="font-semibold text-lg">EuroScale</span>
-                </div>
-                <div class="hidden md:flex items-center gap-8 text-sm text-gray-300">
-                    <a href="#features" class="hover:text-white transition">Features</a>
-                    <a href="#pricing" class="hover:text-white transition">Pricing</a>
-                    <a href="#testimonials" class="hover:text-white transition">Testimonials</a>
-                    <a href="#docs" class="hover:text-white transition">Docs</a>
-                </div>
-                <div class="flex items-center gap-3">
-                    <a href="#" class="hidden sm:inline text-sm text-gray-300 hover:text-white transition">Sign In</a>
-                    <a href="#" class="inline-flex items-center gap-2 gradient-bg px-5 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition">
-                        Get Started
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                    </a>
-                </div>
-            </div>
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 nav-blur">
+    <div class="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold" style="background: linear-gradient(135deg, #6d5dfd, #a78bfa);">E</div>
+        <span class="font-semibold text-lg tracking-tight">EuroScale</span>
+        <span class="hidden sm:inline-flex ml-2 px-2.5 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider" style="background: rgba(109,93,253,0.12); color: #a78bfa;">Beta</span>
+      </div>
+      <div class="hidden md:flex items-center gap-8 text-sm">
+        <a href="#features" class="text-gray-400 hover:text-white transition">Features</a>
+        <a href="#pricing" class="text-gray-400 hover:text-white transition">Pricing</a>
+        <a href="#infrastructure" class="text-gray-400 hover:text-white transition">Infrastructure</a>
+        <a href="#docs" class="text-gray-400 hover:text-white transition">Docs</a>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="#" class="hidden sm:inline text-sm text-gray-400 hover:text-white transition">Sign in</a>
+        <a href="#" class="btn-primary text-sm !py-2.5 !px-5">Get started</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="relative min-h-screen flex items-center overflow-hidden pt-16 grid-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <div class="relative z-10 max-w-7xl mx-auto px-6 py-24 md:py-32 w-full">
+      <div class="max-w-3xl mx-auto text-center">
+        <!-- EU badge -->
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8 text-sm"
+             style="background: rgba(109,93,253,0.08); border: 1px solid rgba(109,93,253,0.15);">
+          <span>🇪🇺</span>
+          <span class="text-purple-300">Built in Europe. Hosted in Europe. For European teams.</span>
         </div>
-    </nav>
 
-    <!-- Hero Section -->
-    <section class="relative min-h-screen flex items-center pt-16 overflow-hidden hero-gradient">
-        <div class="blob w-[500px] h-[500px] bg-indigo-600 top-[-100px] left-[-100px]"></div>
-        <div class="blob w-[400px] h-[400px] bg-pink-600 bottom-[-50px] right-[-50px]"></div>
+        <h1 class="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight leading-[1.05]">
+          Serverless databases<br/>
+          <span class="gradient-text glow-text">for European<br/>sovereignty</span>
+        </h1>
 
-        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-            <div class="text-center max-w-4xl mx-auto">
-                <div class="animate__animated animate__fadeInUp">
-                    <span class="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-sm px-4 py-2 rounded-full mb-6">
-                        🇪🇺 European. Sovereign. Scalable.
-                    </span>
-                </div>
+        <p class="text-lg md:text-xl text-gray-400 mt-8 max-w-xl mx-auto leading-relaxed">
+          The PlanetScale experience — database branching, auto-scaling, zero ops — on
+          Hetzner, OVHcloud &amp; Exoscale. <strong class="text-white">3–5× cheaper than US clouds.</strong>
+          Your data never leaves the EU.
+        </p>
 
-                <h1 class="animate__animated animate__fadeInUp animate__delay-1s text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight leading-tight mt-6">
-                    <span class="gradient-text">Serverless Databases</span>
-                    <br />
-                    <span>Built for Europe</span>
-                </h1>
-
-                <p class="animate__animated animate__fadeInUp animate__delay-2s text-lg md:text-xl text-gray-400 mt-8 max-w-2xl mx-auto leading-relaxed">
-                    The PlanetScale experience — database branching, auto-scaling, zero ops — 
-                    running on Hetzner and OVHcloud. Your data never leaves the EU. 
-                    <span class="text-white font-semibold">3–5× cheaper than US alternatives.</span>
-                </p>
-
-                <div class="animate__animated animate__fadeInUp animate__delay-3s flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
-                    <a href="#" class="gradient-bg px-8 py-4 rounded-2xl text-lg font-semibold hover:opacity-90 transition shadow-lg shadow-indigo-500/25 inline-flex items-center gap-2">
-                        Start Free
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-                    </a>
-                    <a href="#" class="glass-card px-8 py-4 rounded-2xl text-lg font-medium hover:bg-white/10 transition inline-flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        Watch Demo
-                    </a>
-                </div>
-
-                <!-- Trust badges -->
-                <div class="animate__animated animate__fadeInUp animate__delay-4s flex flex-wrap items-center justify-center gap-4 mt-12 text-sm text-gray-500">
-                    <span>⚡ Runs on</span>
-                    <span class="px-3 py-1.5 bg-white/5 rounded-lg font-medium text-gray-300">Hetzner</span>
-                    <span class="px-3 py-1.5 bg-white/5 rounded-lg font-medium text-gray-300">OVHcloud</span>
-                    <span class="px-3 py-1.5 bg-white/5 rounded-lg font-medium text-gray-300">Exoscale</span>
-                    <span class="text-gray-600">|</span>
-                    <span>🔒 GDPR native</span>
-                </div>
-            </div>
-
-            <!-- Dashboard Preview -->
-            <div class="animate__animated animate__fadeInUp animate__delay-5s mt-16 max-w-5xl mx-auto">
-                <div class="glass-card rounded-2xl p-2 shadow-2xl">
-                    <img
-                        src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80"
-                        alt="EuroScale dashboard preview with database branching interface"
-                        class="rounded-xl w-full"
-                        loading="lazy"
-                    />
-                </div>
-            </div>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
+          <a href="#" class="btn-primary text-base">Start free →</a>
+          <a href="#" class="btn-secondary text-base">
+            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Watch demo
+          </a>
         </div>
-    </section>
 
-    <!-- Problem / Solution Section -->
-    <section class="py-24 relative">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16 animate__animated animate__fadeInUp">
-                <span class="text-indigo-400 text-sm font-semibold tracking-wide uppercase">The Problem</span>
-                <h2 class="text-4xl md:text-5xl font-bold mt-3">European developers are stuck</h2>
-                <p class="text-gray-400 text-lg mt-4 max-w-2xl mx-auto">
-                    You're forced to choose between US databases with a sovereignty problem, 
-                    or EU infrastructure without the tools you need.
-                </p>
-            </div>
-
-            <div class="grid md:grid-cols-3 gap-6">
-                <!-- Card 1: Data Sovereignty -->
-                <div class="glass-card rounded-2xl p-8 hover:bg-white/[0.08] transition group animate__animated animate__fadeInUp">
-                    <div class="w-14 h-14 gradient-bg rounded-xl flex items-center justify-center text-2xl mb-5">🛡️</div>
-                    <h3 class="text-xl font-semibold mb-3">Data Sovereignty</h3>
-                    <p class="text-gray-400 leading-relaxed">
-                        US-owned DBaaS providers are subject to the CLOUD Act and Patriot Act. 
-                        Your customer data can be accessed by US authorities — even when stored in EU data centers.
-                    </p>
-                    <div class="mt-4 flex items-center gap-2 text-indigo-400 text-sm font-medium opacity-0 group-hover:opacity-100 transition">
-                        <span>EuroScale solution →</span>
-                        <span class="bg-indigo-500/20 px-2 py-0.5 rounded text-xs">GDPR by architecture</span>
-                    </div>
-                </div>
-
-                <!-- Card 2: Cost Crisis -->
-                <div class="glass-card rounded-2xl p-8 hover:bg-white/[0.08] transition group animate__animated animate__fadeInUp animate__delay-1s">
-                    <div class="w-14 h-14 gradient-bg rounded-xl flex items-center justify-center text-2xl mb-5">💰</div>
-                    <h3 class="text-xl font-semibold mb-3">Cost Crisis</h3>
-                    <p class="text-gray-400 leading-relaxed">
-                        AWS RDS/Aurora is 3–5× more expensive than equivalent Hetzner or OVH infrastructure. 
-                        European startups paying in euros face additional FX markup on US pricing.
-                    </p>
-                    <div class="mt-4 flex items-center gap-2 text-indigo-400 text-sm font-medium opacity-0 group-hover:opacity-100 transition">
-                        <span>EuroScale solution →</span>
-                        <span class="bg-indigo-500/20 px-2 py-0.5 rounded text-xs">60-80% cost savings</span>
-                    </div>
-                </div>
-
-                <!-- Card 3: Ops Burden -->
-                <div class="glass-card rounded-2xl p-8 hover:bg-white/[0.08] transition group animate__animated animate__fadeInUp animate__delay-2s">
-                    <div class="w-14 h-14 gradient-bg rounded-xl flex items-center justify-center text-2xl mb-5">🔧</div>
-                    <h3 class="text-xl font-semibold mb-3">Operational Burden</h3>
-                    <p class="text-gray-400 leading-relaxed">
-                        Run your database on bare EU servers and you spend 10–20 hours/month on updates, 
-                        backups, monitoring, and security patches. No branching, no auto-scaling, no joy.
-                    </p>
-                    <div class="mt-4 flex items-center gap-2 text-indigo-400 text-sm font-medium opacity-0 group-hover:opacity-100 transition">
-                        <span>EuroScale solution →</span>
-                        <span class="bg-indigo-500/20 px-2 py-0.5 rounded text-xs">Zero ops, full power</span>
-                    </div>
-                </div>
-            </div>
+        <!-- Trusted by / stats -->
+        <div class="mt-16 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-gray-500">
+          <span class="text-gray-600 font-medium uppercase text-xs tracking-wider">Infrastructure</span>
+          <span class="text-gray-300 font-semibold">Hetzner</span>
+          <span class="text-gray-400">·</span>
+          <span class="text-gray-300 font-semibold">OVHcloud</span>
+          <span class="text-gray-400">·</span>
+          <span class="text-gray-300 font-semibold">Exoscale</span>
+          <span class="hidden sm:inline text-gray-600">|</span>
+          <span class="hidden sm:inline text-gray-500">🔒 GDPR native · Gaia-X ready</span>
         </div>
-    </section>
+      </div>
 
-    <!-- Features Section -->
-    <section id="features" class="py-24 relative">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <span class="text-indigo-400 text-sm font-semibold tracking-wide uppercase">Features</span>
-                <h2 class="text-4xl md:text-5xl font-bold mt-3">Everything you need. <span class="gradient-text">Nothing you don't.</span></h2>
-            </div>
-
-            <div class="grid md:grid-cols-3 gap-8">
-                <!-- Feature 1: Database Branching -->
-                <div class="glass-card rounded-2xl p-8 hover:bg-white/[0.08] transition animate__animated animate__fadeInUp">
-                    <div class="w-14 h-14 bg-gradient-to-br from-emerald-400 to-cyan-500 rounded-xl flex items-center justify-center text-2xl mb-5">🪄</div>
-                    <h3 class="text-xl font-semibold mb-3">Database Branching</h3>
-                    <p class="text-gray-400 leading-relaxed mb-4">
-                        Clone your production database in seconds. Every developer gets their own branch. 
-                        Every PR gets its own CI environment. Merge when ready.
-                    </p>
-                    <ul class="space-y-2 text-sm text-gray-400">
-                        <li class="flex items-start gap-2">
-                            <span class="text-emerald-400 mt-0.5">✓</span> Instant writeable clones
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <span class="text-emerald-400 mt-0.5">✓</span> Schema change previews
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <span class="text-emerald-400 mt-0.5">✓</span> Delete-on-merge cleanup
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Feature 2: Horizontal Auto-Scaling -->
-                <div class="glass-card rounded-2xl p-8 hover:bg-white/[0.08] transition animate__animated animate__fadeInUp animate__delay-1s">
-                    <div class="w-14 h-14 bg-gradient-to-br from-violet-400 to-purple-500 rounded-xl flex items-center justify-center text-2xl mb-5">📈</div>
-                    <h3 class="text-xl font-semibold mb-3">Horizontal Auto-Scale</h3>
-                    <p class="text-gray-400 leading-relaxed mb-4">
-                        MySQL via Vitess (proven at YouTube/GitHub). Postgres via Citus (proven at Microsoft). 
-                        Scale past single-node without breaking a sweat.
-                    </p>
-                    <ul class="space-y-2 text-sm text-gray-400">
-                        <li class="flex items-start gap-2">
-                            <span class="text-violet-400 mt-0.5">✓</span> Automatic read-replicas
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <span class="text-violet-400 mt-0.5">✓</span> Zero-sharding for 90% workloads
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <span class="text-violet-400 mt-0.5">✓</span> Connection pooling + query routing
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Feature 3: Multi-Cloud EU -->
-                <div class="glass-card rounded-2xl p-8 hover:bg-white/[0.08] transition animate__animated animate__fadeInUp animate__delay-2s">
-                    <div class="w-14 h-14 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center text-2xl mb-5">🇪🇺</div>
-                    <h3 class="text-xl font-semibold mb-3">Multi-Cloud EU</h3>
-                    <p class="text-gray-400 leading-relaxed mb-4">
-                        One control plane across Hetzner, OVHcloud, and Exoscale. Automatic failover. 
-                        Data residency controls by country. Built for Gaia-X compliance.
-                    </p>
-                    <ul class="space-y-2 text-sm text-gray-400">
-                        <li class="flex items-start gap-2">
-                            <span class="text-amber-400 mt-0.5">✓</span> Single pane of glass
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <span class="text-amber-400 mt-0.5">✓</span> Cross-provider HA
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <span class="text-amber-400 mt-0.5">✓</span> Choose your DB's country
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Tech Stack Note -->
-            <div class="mt-16 glass-card rounded-2xl p-8 max-w-3xl mx-auto text-center animate__animated animate__fadeInUp">
-                <p class="text-gray-400 text-sm">
-                    ⚡ Powered by <span class="text-white font-semibold">Vitess</span> + 
-                    <span class="text-white font-semibold">Citus</span> · 
-                    Orchestrated on <span class="text-white font-semibold">Kubernetes</span> · 
-                    Deployed via <span class="text-white font-semibold">Terraform</span> · 
-                    Backup via <span class="text-white font-semibold">WAL-G</span> to €U S3 storage
-                </p>
-            </div>
+      <!-- Hero visual - code terminal -->
+      <div class="mt-16 max-w-4xl mx-auto code-window glow-purple">
+        <div class="flex items-center gap-2 px-5 py-3.5" style="border-bottom: 1px solid rgba(109,93,253,0.08);">
+          <span class="dot dot-red"></span>
+          <span class="dot dot-yellow"></span>
+          <span class="dot dot-green"></span>
+          <span class="ml-4 text-xs text-gray-500 font-mono">euroctl — database branching workflow</span>
         </div>
-    </section>
-
-    <!-- Pricing Section -->
-    <section id="pricing" class="py-24 relative">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <span class="text-indigo-400 text-sm font-semibold tracking-wide uppercase">Pricing</span>
-                <h2 class="text-4xl md:text-5xl font-bold mt-3">European pricing. <span class="gradient-text">No FX surprises.</span></h2>
-                <p class="text-gray-400 text-lg mt-4 max-w-xl mx-auto">
-                    Prices in EUR. No hidden egress fees. No dollar markup.
-                </p>
-            </div>
-
-            <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                <!-- Free Tier -->
-                <div class="glass-card rounded-2xl p-8 hover:bg-white/[0.08] transition animate__animated animate__fadeInUp">
-                    <div class="flex items-center justify-between mb-6">
-                        <div>
-                            <h3 class="text-2xl font-bold">Free</h3>
-                            <p class="text-gray-400 text-sm">For side projects & prototypes</p>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-4xl font-bold">€0</span>
-                            <span class="text-gray-400">/mo</span>
-                        </div>
-                    </div>
-                    <ul class="space-y-3 text-sm text-gray-300 mb-8">
-                        <li class="flex items-center gap-3"><span class="text-emerald-400">✓</span> 1 database</li>
-                        <li class="flex items-center gap-3"><span class="text-emerald-400">✓</span> 1 GB storage</li>
-                        <li class="flex items-center gap-3"><span class="text-emerald-400">✓</span> 100k read units/month</li>
-                        <li class="flex items-center gap-3"><span class="text-emerald-400">✓</span> Community support</li>
-                    </ul>
-                    <a href="#" class="block w-full text-center border border-white/20 rounded-xl py-3 text-sm font-semibold hover:bg-white/10 transition">Start Free</a>
-                </div>
-
-                <!-- Pro Tier (highlighted) -->
-                <div class="gradient-bg rounded-2xl p-8 relative shadow-2xl animate__animated animate__fadeInUp animate__delay-1s">
-                    <div class="absolute -top-3 right-6 bg-white text-black text-xs font-bold px-4 py-1 rounded-full">POPULAR</div>
-                    <div class="flex items-center justify-between mb-6">
-                        <div>
-                            <h3 class="text-2xl font-bold">Scale</h3>
-                            <p class="text-white/70 text-sm">For production apps</p>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-4xl font-bold">€29</span>
-                            <span class="text-white/70">/mo</span>
-                        </div>
-                    </div>
-                    <ul class="space-y-3 text-sm text-white/80 mb-8">
-                        <li class="flex items-center gap-3"><span class="text-white">✓</span> 3 databases</li>
-                        <li class="flex items-center gap-3"><span class="text-white">✓</span> 10 GB storage</li>
-                        <li class="flex items-center gap-3"><span class="text-white">✓</span> 1M read + 500k write units</li>
-                        <li class="flex items-center gap-3"><span class="text-white">✓</span> Database branching</li>
-                        <li class="flex items-center gap-3"><span class="text-white">✓</span> Auto-backup & restore</li>
-                        <li class="flex items-center gap-3"><span class="text-white">✓</span> Email support</li>
-                    </ul>
-                    <a href="#" class="block w-full text-center bg-white text-indigo-700 rounded-xl py-3 text-sm font-bold hover:bg-white/90 transition">Get Started</a>
-                </div>
-            </div>
-
-            <p class="text-center text-gray-500 text-sm mt-8">
-                Team (€99/mo) with HA clusters, SSO, and priority support in closed beta. 
-                Enterprise tier with dedicated clusters, on-prem options, and 99.99% SLA available.
-            </p>
+        <div class="p-6 font-mono text-sm leading-7">
+          <span class="text-green-400">$</span> <span class="text-purple-300">euroctl</span> branch create --from prod --name feat/payment-redesign<br/>
+          <span class="text-gray-500">⏳ Cloning database 'acme-prod'... done (1.2s)</span><br/>
+          <span class="text-gray-500" style="border-left: 2px solid rgba(109,93,253,0.3); padding-left: 12px;">
+            ✅ Branch <span class="text-green-400">feat/payment-redesign</span> ready
+          </span><br/>
+          <span class="text-green-400">$</span> <span class="text-purple-300">euroctl</span> branch list<br/>
+          <span class="text-gray-500">
+            ┌──────────────────────────────┬──────────┬──────────┐<br/>
+            │ BRANCH                       │ SIZE     │ REGION   │<br/>
+            ├──────────────────────────────┼──────────┼──────────┤<br/>
+            │ prod                         │ 42.3 GB  │ DE-FRA   │<br/>
+            │ feat/payment-redesign     *  │ 42.3 GB  │ DE-FRA   │<br/>
+            │ ci/pr-1423                   │ 42.3 GB  │ DE-FRA   │<br/>
+            └──────────────────────────────┴──────────┴──────────┘
+          </span><br/>
+          <span class="text-green-400">$</span> <span class="text-purple-300">euroctl</span> branch merge feat/payment-redesign<br/>
+          <span class="text-gray-500">✅ Merged into prod. Schema diff: +1 table, +3 indices</span>
         </div>
-    </section>
+      </div>
+    </div>
+  </section>
 
-    <!-- Testimonials Section -->
-    <section id="testimonials" class="py-24 relative">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <span class="text-indigo-400 text-sm font-semibold tracking-wide uppercase">Trusted by teams</span>
-                <h2 class="text-4xl md:text-5xl font-bold mt-3">What developers say</h2>
-            </div>
+  <!-- Problem / Solution -->
+  <section class="py-24 md:py-32 relative grid-bg">
+    <div class="section-divider absolute top-0 left-0 right-0"></div>
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <span class="text-purple-400 text-sm font-semibold tracking-wider uppercase">The problem</span>
+        <h2 class="text-3xl md:text-5xl font-bold mt-4 tracking-tight">
+          European developers are forced to<br/>
+          <span class="gradient-text">choose between bad options</span>
+        </h2>
+      </div>
 
-            <div class="grid md:grid-cols-3 gap-6">
-                <!-- Testimonial 1 -->
-                <div class="glass-card rounded-2xl p-6 animate__animated animate__fadeInUp">
-                    <div class="flex items-center gap-1 mb-4">
-                        <span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span>
-                    </div>
-                    <p class="text-gray-300 leading-relaxed mb-6">
-                        "We moved from PlanetScale to EuroScale for GDPR compliance and ended up saving 65% on our database bill. The branching workflow is identical — our devs didn't even notice the switch."
-                    </p>
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 gradient-bg rounded-full flex items-center justify-center text-sm font-bold">MK</div>
-                        <div>
-                            <p class="font-semibold text-sm">Marie K.</p>
-                            <p class="text-gray-500 text-xs">CTO, Finleap GmbH</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Testimonial 2 -->
-                <div class="glass-card rounded-2xl p-6 animate__animated animate__fadeInUp animate__delay-1s">
-                    <div class="flex items-center gap-1 mb-4">
-                        <span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span>
-                    </div>
-                    <p class="text-gray-300 leading-relaxed mb-6">
-                        "We wanted European infrastructure but couldn't give up database branching. EuroScale gives us both. Hetzner pricing with PlanetScale features — it's exactly what the EU ecosystem needed."
-                    </p>
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 gradient-bg rounded-full flex items-center justify-center text-sm font-bold">TO</div>
-                        <div>
-                            <p class="font-semibold text-sm">Thomas O.</p>
-                            <p class="text-gray-500 text-xs">Lead Engineer, Mimo</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Testimonial 3 -->
-                <div class="glass-card rounded-2xl p-6 animate__animated animate__fadeInUp animate__delay-2s">
-                    <div class="flex items-center gap-1 mb-4">
-                        <span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span>
-                    </div>
-                    <p class="text-gray-300 leading-relaxed mb-6">
-                        "The multi-cloud setup is a game-changer. We span Hetzner for compute and OVH for database with automatic failover. One dashboard. One bill. 100% European. Couldn't be happier."
-                    </p>
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 gradient-bg rounded-full flex items-center justify-center text-sm font-bold">AL</div>
-                        <div>
-                            <p class="font-semibold text-sm">Anna L.</p>
-                            <p class="text-gray-500 text-xs">VP Engineering, Taxfix</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="euro-card p-8">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl mb-5" style="background: rgba(239,68,68,0.1);">🛡️</div>
+          <h3 class="text-lg font-semibold mb-3">Sovereignty risk</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">US DBaaS providers are subject to the CLOUD Act. Your customers' data can be accessed by US authorities — even if stored in EU data centers.</p>
         </div>
-    </section>
-
-    <!-- CTA Section -->
-    <section class="py-24 relative">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div class="glass-card rounded-3xl p-12 md:p-16 relative overflow-hidden">
-                <div class="blob w-[300px] h-[300px] bg-indigo-600 top-[-100px] right-[-100px]"></div>
-                <div class="blob w-[200px] h-[200px] bg-pink-600 bottom-[-80px] left-[-80px]"></div>
-                
-                <div class="relative">
-                    <h2 class="text-4xl md:text-5xl font-bold mb-6">
-                        Ready to build on <span class="gradient-text">European soil</span>?
-                    </h2>
-                    <p class="text-gray-400 text-lg mb-10 max-w-xl mx-auto">
-                        Join the beta. Get your first database with branching in under 2 minutes. 
-                        Free tier included — no credit card required.
-                    </p>
-                    <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <a href="#" class="gradient-bg px-8 py-4 rounded-2xl text-lg font-semibold hover:opacity-90 transition shadow-lg shadow-indigo-500/25">
-                            Start Free → beta.euroscale.dev
-                        </a>
-                    </div>
-                    <p class="text-gray-600 text-sm mt-4">
-                        🌱 Private alpha opening soon · 50 spots remaining
-                    </p>
-                </div>
-            </div>
+        <div class="euro-card p-8">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl mb-5" style="background: rgba(239,68,68,0.1);">💰</div>
+          <h3 class="text-lg font-semibold mb-3">Cost crisis</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">AWS RDS/Aurora is <strong class="text-white">3–5× more expensive</strong> than equivalent Hetzner or OVH infrastructure. Plus FX markup on US-dollar pricing.</p>
         </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="border-t border-white/5 py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid md:grid-cols-4 gap-8">
-                <div class="md:col-span-2">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-8 h-8 gradient-bg rounded-lg flex items-center justify-center text-xs font-bold">E</div>
-                        <span class="font-semibold text-lg">EuroScale</span>
-                    </div>
-                    <p class="text-gray-500 text-sm max-w-md">
-                        The European serverless database platform. Built on Hetzner, OVHcloud, and Exoscale. 
-                        GDPR-native. Gaia-X ready.
-                    </p>
-                    <p class="text-gray-600 text-xs mt-4">
-                        © 2026 EuroScale Technologies GmbH. Made in 🇪🇺 Europe.
-                    </p>
-                </div>
-                <div>
-                    <h4 class="font-semibold text-sm mb-4">Product</h4>
-                    <ul class="space-y-2 text-sm text-gray-500">
-                        <li><a href="#" class="hover:text-gray-300 transition">Features</a></li>
-                        <li><a href="#" class="hover:text-gray-300 transition">Pricing</a></li>
-                        <li><a href="#" class="hover:text-gray-300 transition">Documentation</a></li>
-                        <li><a href="#" class="hover:text-gray-300 transition">API Reference</a></li>
-                        <li><a href="#" class="hover:text-gray-300 transition">Changelog</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-semibold text-sm mb-4">Company</h4>
-                    <ul class="space-y-2 text-sm text-gray-500">
-                        <li><a href="#" class="hover:text-gray-300 transition">About</a></li>
-                        <li><a href="#" class="hover:text-gray-300 transition">Blog</a></li>
-                        <li><a href="#" class="hover:text-gray-300 transition">Careers</a></li>
-                        <li><a href="#" class="hover:text-gray-300 transition">Privacy</a></li>
-                        <li><a href="#" class="hover:text-gray-300 transition">GDPR</a></li>
-                    </ul>
-                </div>
-            </div>
+        <div class="euro-card p-8">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl mb-5" style="background: rgba(239,68,68,0.1);">🔧</div>
+          <h3 class="text-lg font-semibold mb-3">Ops burden</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">Use bare EU servers? You spend <strong class="text-white">10–20 hours/month</strong> on database ops — updates, backups, monitoring, security. No branching, no joy.</p>
         </div>
-    </footer>
+      </div>
+
+      <!-- Solution summary -->
+      <div class="mt-12 euro-card p-8 md:p-10 max-w-3xl mx-auto text-center">
+        <span class="text-purple-400 text-sm font-semibold">EuroScale solves all three</span>
+        <p class="text-lg md:text-xl text-gray-300 mt-3 font-medium">
+          🇪🇺 European company. 🇪🇺 European servers. 🪄 PlanetScale-class database branching.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="py-24 md:py-32 relative">
+    <div class="section-divider absolute top-0 left-0 right-0"></div>
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <span class="text-purple-400 text-sm font-semibold tracking-wider uppercase">Features</span>
+        <h2 class="text-3xl md:text-5xl font-bold mt-4 tracking-tight">
+          Everything you expect.<br/>
+          <span class="gradient-text">Nothing you don't.</span>
+        </h2>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="euro-card p-8">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center mb-4 text-lg" style="background: rgba(109,93,253,0.12);">🪄</div>
+          <h3 class="font-semibold mb-2">Database branching</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">Instant prod clones for every developer, every PR. Schema diff previews. Merge when ready.</p>
+        </div>
+        <div class="euro-card p-8">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center mb-4 text-lg" style="background: rgba(109,93,253,0.12);">📈</div>
+          <h3 class="font-semibold mb-2">Horizontal auto-scale</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">MySQL via Vitess (YouTube, GitHub). Postgres via Citus (Microsoft). Scale past single-node.</p>
+        </div>
+        <div class="euro-card p-8">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center mb-4 text-lg" style="background: rgba(109,93,253,0.12);">🇪🇺</div>
+          <h3 class="font-semibold mb-2">Multi-cloud EU</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">Single control plane. Hetzner, OVH, Exoscale. Auto-failover. Choose your DB's country.</p>
+        </div>
+        <div class="euro-card p-8">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center mb-4 text-lg" style="background: rgba(109,93,253,0.12);">💶</div>
+          <h3 class="font-semibold mb-2">European pricing</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">Prices in EUR. No hidden egress fees. 60–80% cheaper than US equivalents on the same hardware.</p>
+        </div>
+        <div class="euro-card p-8">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center mb-4 text-lg" style="background: rgba(109,93,253,0.12);">☸️</div>
+          <h3 class="font-semibold mb-2">K8s native</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">Kubernetes operators, CRDs, GitOps-ready. Works with your existing infrastructure investments.</p>
+        </div>
+        <div class="euro-card p-8">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center mb-4 text-lg" style="background: rgba(109,93,253,0.12);">🛡️</div>
+          <h3 class="font-semibold mb-2">GDPR by architecture</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">Data never leaves EU borders. Gaia-X compliant. Independent of US jurisdiction.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section id="pricing" class="py-24 md:py-32 relative grid-bg">
+    <div class="section-divider absolute top-0 left-0 right-0"></div>
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <span class="text-purple-400 text-sm font-semibold tracking-wider uppercase">Pricing</span>
+        <h2 class="text-3xl md:text-5xl font-bold mt-4 tracking-tight">
+          Transparent pricing.<br/>
+          <span class="gradient-text">No dollar mark-up.</span>
+        </h2>
+        <p class="text-gray-400 mt-4">All prices in EUR. No hidden egress fees.</p>
+      </div>
+
+      <!-- Desktop pricing grid (md+) -->
+      <div class="hidden md:block">
+        <div class="pricing-grid rounded-xl overflow-hidden">
+          <!-- Free -->
+          <div class="p-8 flex flex-col">
+            <div class="mb-6">
+              <h3 class="text-lg font-semibold">Free</h3>
+              <div class="mt-3 flex items-baseline gap-1">
+                <span class="text-4xl font-bold">€0</span>
+                <span class="text-gray-500 text-sm">/month</span>
+              </div>
+            </div>
+            <ul class="space-y-3 text-sm text-gray-400 flex-1">
+              <li class="flex items-start gap-2.5"><span class="text-purple-400 mt-0.5">✓</span> 1 database</li>
+              <li class="flex items-start gap-2.5"><span class="text-purple-400 mt-0.5">✓</span> 1 GB storage</li>
+              <li class="flex items-start gap-2.5"><span class="text-purple-400 mt-0.5">✓</span> 100k read units/mo</li>
+              <li class="flex items-start gap-2.5"><span class="text-purple-400 mt-0.5">✓</span> Community support</li>
+              <li class="flex items-start gap-2.5 text-gray-600"><span class="text-gray-600 mt-0.5">—</span> Branching</li>
+              <li class="flex items-start gap-2.5 text-gray-600"><span class="text-gray-600 mt-0.5">—</span> HA cluster</li>
+            </ul>
+            <a href="#" class="btn-secondary w-full text-center text-sm !py-2.5 mt-8">Get started</a>
+          </div>
+
+          <!-- Scale -->
+          <div class="p-8 flex flex-col">
+            <div class="mb-6">
+              <h3 class="text-lg font-semibold">Scale</h3>
+              <div class="mt-3 flex items-baseline gap-1">
+                <span class="text-4xl font-bold">€29</span>
+                <span class="text-gray-500 text-sm">/month</span>
+              </div>
+            </div>
+            <ul class="space-y-3 text-sm text-gray-400 flex-1">
+              <li class="flex items-start gap-2.5"><span class="text-purple-400 mt-0.5">✓</span> 3 databases</li>
+              <li class="flex items-start gap-2.5"><span class="text-purple-400 mt-0.5">✓</span> 10 GB storage</li>
+              <li class="flex items-start gap-2.5"><span class="text-purple-400 mt-0.5">✓</span> 1M read / 500k write</li>
+              <li class="flex items-start gap-2.5"><span class="text-purple-400 mt-0.5">✓</span> <strong class="text-white">Database branching</strong></li>
+              <li class="flex items-start gap-2.5"><span class="text-purple-400 mt-0.5">✓</span> Auto-backup &amp; restore</li>
+              <li class="flex items-start gap-2.5 text-gray-600"><span class="text-gray-600 mt-0.5">—</span> HA cluster</li>
+            </ul>
+            <a href="#" class="btn-secondary w-full text-center text-sm !py-2.5 mt-8">Get started</a>
+          </div>
+
+          <!-- Team (popular) -->
+          <div class="p-8 tier-popular flex flex-col rounded-xl" style="margin: -8px 0;">
+            <div class="mb-6">
+              <h3 class="text-lg font-semibold">Team</h3>
+              <div class="mt-3 flex items-baseline gap-1">
+                <span class="text-4xl font-bold">€99</span>
+                <span class="text-gray-400 text-sm">/month</span>
+              </div>
+            </div>
+            <ul class="space-y-3 text-sm text-gray-300 flex-1">
+              <li class="flex items-start gap-2.5"><span class="text-purple-300 mt-0.5">✓</span> 10 databases</li>
+              <li class="flex items-start gap-2.5"><span class="text-purple-300 mt-0.5">✓</span> 50 GB storage</li>
+              <li class="flex items-start gap-2.5"><span class="text-purple-300 mt-0.5">✓</span> 10M read / 5M write</li>
+              <li class="flex items-start gap-2.5"><span class="text-purple-300 mt-0.5">✓</span> Database branching</li>
+              <li class="flex items-start gap-2.5"><span class="text-purple-300 mt-0.5">✓</span> <strong>3-node HA cluster</strong></li>
+              <li class="flex items-start gap-2.5"><span class="text-purple-300 mt-0.5">✓</span> SSO · PITR · Audit logs</li>
+            </ul>
+            <a href="#" class="btn-primary w-full text-center text-sm !py-2.5 mt-8">Get started</a>
+          </div>
+
+          <!-- Enterprise -->
+          <div class="p-8 flex flex-col">
+            <div class="mb-6">
+              <h3 class="text-lg font-semibold">Enterprise</h3>
+              <div class="mt-3 flex items-baseline gap-1">
+                <span class="text-4xl font-bold">Custom</span>
+              </div>
+            </div>
+            <ul class="space-y-3 text-sm text-gray-400 flex-1">
+              <li class="flex items-start gap-2.5"><span class="text-purple-400 mt-0.5">✓</span> Unlimited databases</li>
+              <li class="flex items-start gap-2.5"><span class="text-purple-400 mt-0.5">✓</span> Unlimited storage</li>
+              <li class="flex items-start gap-2.5"><span class="text-purple-400 mt-0.5">✓</span> Burstable compute</li>
+              <li class="flex items-start gap-2.5"><span class="text-purple-400 mt-0.5">✓</span> Vitess/Citus sharding</li>
+              <li class="flex items-start gap-2.5"><span class="text-purple-400 mt-0.5">✓</span> Multi-cloud HA</li>
+              <li class="flex items-start gap-2.5"><span class="text-purple-400 mt-0.5">✓</span> 99.99% SLA · On-prem</li>
+            </ul>
+            <a href="#" class="btn-secondary w-full text-center text-sm !py-2.5 mt-8">Contact sales</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile pricing (scroll) -->
+      <div class="md:hidden pricing-scroll">
+        <div class="euro-card p-6 min-w-[280px]">
+          <h3 class="font-semibold">Free</h3>
+          <div class="mt-2 flex items-baseline gap-1"><span class="text-3xl font-bold">€0</span><span class="text-gray-500 text-sm">/mo</span></div>
+          <ul class="space-y-2 text-sm text-gray-400 mt-5">
+            <li>✓ 1 database · 1 GB</li>
+            <li class="text-gray-600">— No branching</li>
+            <li class="text-gray-600">— No HA</li>
+          </ul>
+          <a href="#" class="btn-secondary w-full text-center text-sm !py-2 mt-5">Get started</a>
+        </div>
+        <div class="euro-card p-6 min-w-[280px]">
+          <h3 class="font-semibold">Scale</h3>
+          <div class="mt-2 flex items-baseline gap-1"><span class="text-3xl font-bold">€29</span><span class="text-gray-500 text-sm">/mo</span></div>
+          <ul class="space-y-2 text-sm text-gray-400 mt-5">
+            <li>✓ 3 DB · 10 GB · Branching</li>
+            <li class="text-gray-600">— No HA</li>
+          </ul>
+          <a href="#" class="btn-secondary w-full text-center text-sm !py-2 mt-5">Get started</a>
+        </div>
+        <div class="euro-card p-6 min-w-[280px]" style="border-color: var(--purple);">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-purple-400">Most popular</span>
+          <h3 class="font-semibold mt-1">Team</h3>
+          <div class="mt-2 flex items-baseline gap-1"><span class="text-3xl font-bold">€99</span><span class="text-gray-500 text-sm">/mo</span></div>
+          <ul class="space-y-2 text-sm text-gray-300 mt-5">
+            <li>✓ 10 DB · 50 GB · Branching</li>
+            <li>✓ 3-node HA cluster</li>
+            <li>✓ SSO · PITR · Audit</li>
+          </ul>
+          <a href="#" class="btn-primary w-full text-center text-sm !py-2 mt-5">Get started</a>
+        </div>
+        <div class="euro-card p-6 min-w-[280px]">
+          <h3 class="font-semibold">Enterprise</h3>
+          <div class="mt-2"><span class="text-3xl font-bold">Custom</span></div>
+          <ul class="space-y-2 text-sm text-gray-400 mt-5">
+            <li>✓ Unlimited · Sharding</li>
+            <li>✓ Multi-cloud HA · 99.99% SLA</li>
+          </ul>
+          <a href="#" class="btn-secondary w-full text-center text-sm !py-2 mt-5">Contact sales</a>
+        </div>
+      </div>
+
+      <!-- Cost comparison -->
+      <div class="mt-16 max-w-3xl mx-auto">
+        <div class="euro-card p-8">
+          <h3 class="font-semibold text-center mb-6">🇪🇺 Why European infrastructure wins</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-gray-500 border-b border-gray-800">
+                  <th class="text-left py-3 pr-4 font-medium">Resource</th>
+                  <th class="text-right py-3 px-4 font-medium">Hetzner</th>
+                  <th class="text-right py-3 px-4 font-medium">AWS</th>
+                  <th class="text-right py-3 pl-4 font-medium text-green-400">Savings</th>
+                </tr>
+              </thead>
+              <tbody class="text-gray-400">
+                <tr class="border-b border-gray-800/50">
+                  <td class="py-3 pr-4">4 vCPU · 8 GB RAM</td>
+                  <td class="text-right py-3 px-4 text-white font-medium">~€13/mo</td>
+                  <td class="text-right py-3 px-4">~€50/mo</td>
+                  <td class="text-right py-3 pl-4 text-green-400 font-medium">74%</td>
+                </tr>
+                <tr class="border-b border-gray-800/50">
+                  <td class="py-3 pr-4">8 vCPU · 16 GB RAM</td>
+                  <td class="text-right py-3 px-4 text-white font-medium">~€26/mo</td>
+                  <td class="text-right py-3 px-4">~€100/mo</td>
+                  <td class="text-right py-3 pl-4 text-green-400 font-medium">74%</td>
+                </tr>
+                <tr>
+                  <td class="py-3 pr-4">1 TB SSD Block Storage</td>
+                  <td class="text-right py-3 px-4 text-white font-medium">~€57/mo</td>
+                  <td class="text-right py-3 px-4">~€120/mo</td>
+                  <td class="text-right py-3 pl-4 text-green-400 font-medium">52%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="text-xs text-gray-600 text-center mt-4">* Prices approximate. AWS pricing based on db.t3.medium / gp3 volumes.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Infrastructure Partners -->
+  <section id="infrastructure" class="py-24 md:py-32 relative">
+    <div class="section-divider absolute top-0 left-0 right-0"></div>
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <span class="text-purple-400 text-sm font-semibold tracking-wider uppercase">Infrastructure</span>
+        <h2 class="text-3xl md:text-5xl font-bold mt-4 tracking-tight">
+          Your choice of<br/>
+          <span class="gradient-text">European cloud</span>
+        </h2>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="euro-card p-8 text-center">
+          <div class="text-4xl font-bold text-white/20 mb-4">H</div>
+          <h3 class="text-xl font-semibold">Hetzner</h3>
+          <p class="text-gray-400 text-sm mt-3">28 years of German engineering. 400K+ customers. 3–5× cheaper than AWS for equivalent compute. Data centers in Germany, Finland.</p>
+          <div class="mt-4 flex flex-wrap justify-center gap-2 text-xs text-gray-500">
+            <span class="px-2 py-1 rounded" style="background: rgba(109,93,253,0.08);">DE-FRA</span>
+            <span class="px-2 py-1 rounded" style="background: rgba(109,93,253,0.08);">FI-HEL</span>
+          </div>
+        </div>
+        <div class="euro-card p-8 text-center">
+          <div class="text-4xl font-bold text-white/20 mb-4">O</div>
+          <h3 class="text-xl font-semibold">OVHcloud</h3>
+          <p class="text-gray-400 text-sm mt-3">French sovereign cloud pioneer. Managed Kubernetes included. 30+ data centers across Europe. Strong fintech & government adoption.</p>
+          <div class="mt-4 flex flex-wrap justify-center gap-2 text-xs text-gray-500">
+            <span class="px-2 py-1 rounded" style="background: rgba(109,93,253,0.08);">FR-PAR</span>
+            <span class="px-2 py-1 rounded" style="background: rgba(109,93,253,0.08);">UK-LON</span>
+            <span class="px-2 py-1 rounded" style="background: rgba(109,93,253,0.08);">PL-WAW</span>
+          </div>
+        </div>
+        <div class="euro-card p-8 text-center">
+          <div class="text-4xl font-bold text-white/20 mb-4">E</div>
+          <h3 class="text-xl font-semibold">Exoscale</h3>
+          <p class="text-gray-400 text-sm mt-3">Swiss-engineered cloud. Ultra-strict data protection (Swiss FADP). Ideal for financial services, healthcare, and regulated workloads.</p>
+          <div class="mt-4 flex flex-wrap justify-center gap-2 text-xs text-gray-500">
+            <span class="px-2 py-1 rounded" style="background: rgba(109,93,253,0.08);">CH-GVA</span>
+            <span class="px-2 py-1 rounded" style="background: rgba(109,93,253,0.08);">DE-MUC</span>
+            <span class="px-2 py-1 rounded" style="background: rgba(109,93,253,0.08);">AT-VIE</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Section -->
+  <section class="py-16 relative grid-bg">
+    <div class="section-divider absolute top-0 left-0 right-0"></div>
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+        <div>
+          <div class="stat-number">3–5×</div>
+          <div class="text-sm text-gray-500 mt-1">Cheaper than AWS RDS</div>
+        </div>
+        <div>
+          <div class="stat-number">99.99%</div>
+          <div class="text-sm text-gray-500 mt-1">Enterprise SLA</div>
+        </div>
+        <div>
+          <div class="stat-number">7+</div>
+          <div class="text-sm text-gray-500 mt-1">EU data center regions</div>
+        </div>
+        <div>
+          <div class="stat-number">0</div>
+          <div class="text-sm text-gray-500 mt-1">Data leaves the EU</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-24 md:py-32 relative">
+    <div class="section-divider absolute top-0 left-0 right-0"></div>
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <div class="euro-card p-12 md:p-16 relative overflow-hidden">
+        <div class="orb" style="width: 400px; height: 400px; background: rgba(109,93,253,0.1); top: -200px; right: -150px; filter: blur(120px); pointer-events: none;"></div>
+        <div class="relative">
+          <h2 class="text-3xl md:text-5xl font-bold tracking-tight">
+            Ready to build on<br/>
+            <span class="gradient-text">European soil</span>?
+          </h2>
+          <p class="text-gray-400 text-lg mt-6 max-w-lg mx-auto">
+            Join our private beta. Get your first database with branching in under 2 minutes. Free tier included — no credit card required.
+          </p>
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
+            <a href="#" class="btn-primary text-base">Start free →</a>
+            <a href="#" class="btn-secondary text-base">
+              <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              hello@euroscale.dev
+            </a>
+          </div>
+          <p class="text-gray-600 text-sm mt-6">
+            🌱 Private alpha opening soon · Limited to 50 beta teams
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-gray-800 py-16">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="grid md:grid-cols-4 gap-10">
+        <div class="md:col-span-2">
+          <div class="flex items-center gap-2.5 mb-4">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold" style="background: linear-gradient(135deg, #6d5dfd, #a78bfa);">E</div>
+            <span class="font-semibold text-lg">EuroScale</span>
+          </div>
+          <p class="text-gray-500 text-sm max-w-md leading-relaxed">
+            The European PlanetScale. Serverless, horizontally-scalable databases (MySQL + PostgreSQL) on European cloud infrastructure. GDPR-native. Gaia-X ready.
+          </p>
+          <p class="text-gray-600 text-xs mt-6">
+            © 2026 EuroScale Technologies GmbH. Made in 🇪🇺 Europe.<br/>
+            Built on Vitess, Citus, and Kubernetes.
+          </p>
+        </div>
+        <div>
+          <h4 class="text-sm font-semibold mb-4">Product</h4>
+          <ul class="space-y-3 text-sm text-gray-500">
+            <li><a href="#" class="hover:text-gray-300 transition">Features</a></li>
+            <li><a href="#pricing" class="hover:text-gray-300 transition">Pricing</a></li>
+            <li><a href="#" class="hover:text-gray-300 transition">Documentation</a></li>
+            <li><a href="#" class="hover:text-gray-300 transition">API Reference</a></li>
+            <li><a href="#" class="hover:text-gray-300 transition">CLI Guide</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="text-sm font-semibold mb-4">Company</h4>
+          <ul class="space-y-3 text-sm text-gray-500">
+            <li><a href="#" class="hover:text-gray-300 transition">About</a></li>
+            <li><a href="#" class="hover:text-gray-300 transition">Blog</a></li>
+            <li><a href="#" class="hover:text-gray-300 transition">Careers</a></li>
+            <li><a href="#" class="hover:text-gray-300 transition">Privacy & GDPR</a></li>
+            <li><a href="#" class="hover:text-gray-300 transition">Security</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Badge scroll hint (mobile pricing) -->
+  <div class="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full text-xs text-gray-500 bg-black/60 backdrop-blur-sm border border-gray-800">
+    ← Scroll for pricing →
+  </div>
 </body>
 </html>
