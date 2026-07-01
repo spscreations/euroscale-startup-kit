@@ -1,0 +1,65 @@
+# EuroScale — ExternalDNS HelmChart (K3s managed)
+# Automatically manages DNS records in Hetzner DNS for euroscale.app.
+# When a Service is annotated with external-dns.alpha.kubernetes.io/hostname,
+# ExternalDNS creates/updates the corresponding A/AAAA/CNAME records.
+#
+# Prerequisites:
+#   - Hetzner DNS zone for euroscale.app must exist
+#   - Secret 'hetzner-token' with HETZNER_API_KEY must be created in the
+#     'external-dns' namespace (see apply.sh or README)
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: external-dns
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: external-dns
+    app.kubernetes.io/part-of: euroscale
+spec:
+  # Official ExternalDNS Helm chart
+  chart: external-dns
+  repo: https://kubernetes-sigs.github.io/external-dns/
+  version: "~1.15"
+  targetNamespace: external-dns
+  createNamespace: true
+
+  # ── Chart values injected via --set ─────────────────────────
+  set:
+    # --- Provider ---
+    provider: hetzner
+    # --- Sources ---
+    sources: "{service}"
+    # --- Domain filter ---
+    domainFilters: "{euroscale.app}"
+    # --- TXT ownership identifier ---
+    txtOwnerId: euroscale-vtgate
+    # --- Annotation filter ---
+    annotationFilter: external-dns.alpha.kubernetes.io/hostname
+    # --- Sync policy (upsert-only for safety) ---
+    policy: upsert-only
+    # --- Log level ---
+    logLevel: info
+
+  # ── Additional values via valuesContent (for env vars) ──────
+  valuesContent: |-
+    # Hetzner API token for DNS management
+    env:
+      - name: HETZNER_API_KEY
+        valueFrom:
+          secretKeyRef:
+            name: hetzner-token
+            key: token
+
+    # Metrics for Prometheus
+    serviceMonitor:
+      enabled: false  # set true when monitoring stack is in place
+
+    # Resource limits (light for MVP)
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi

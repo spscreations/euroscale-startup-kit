@@ -1,0 +1,52 @@
+# EuroScale — vtgate LoadBalancer Service
+# Exposes vtgate externally via Hetzner Cloud Load Balancer.
+# Customers connect to their databases via: *.euroscale.app
+# ---
+# Prerequisites:
+#   - Hetzner Cloud Controller Manager (CCM) must be installed in the cluster
+#   - Namespace 'euroscale' must exist with vtgate pods running
+#   - Hetzner API token configured via hcloud secret or node label
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: euroscale-vtgate-lb
+  namespace: euroscale
+  labels:
+    app.kubernetes.io/name: euroscale-vtgate
+    app.kubernetes.io/component: load-balancer
+    app.kubernetes.io/part-of: euroscale
+  annotations:
+    # ── Hetzner Cloud Controller Manager annotations ──────────
+    # Name of the Load Balancer in the Hetzner Cloud Console
+    load-balancer.hetzner.cloud/name: euroscale-vtgate
+    # Datacenter location (must match where worker nodes live)
+    load-balancer.hetzner.cloud/location: nbg1
+    # LB type: lb11 = smallest (20 connections / 100 Mbps each),
+    # upgrade to lb21/lb31 as traffic grows
+    load-balancer.hetzner.cloud/type: lb11
+    # Use private network for backend communication (requires Hetzner Network)
+    # load-balancer.hetzner.cloud/use-private-ip: "true"
+    # ── ExternalDNS annotation for automated DNS record management ──
+    external-dns.alpha.kubernetes.io/hostname: "vtgate.euroscale.app,*.euroscale.app"
+    external-dns.alpha.kubernetes.io/ttl: "300"
+spec:
+  type: LoadBalancer
+  # ── Ports: MySQL (3306), MySQL SSL (3307), gRPC API (50051) ───
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: 3306
+      protocol: TCP
+    - name: mysql-ssl
+      port: 3307
+      targetPort: 3306   # vtgate handles TLS termination
+      protocol: TCP
+    - name: grpc-api
+      port: 50051
+      targetPort: 50051
+      protocol: TCP
+  # ── Select vtgate pods created by the Vitess Operator ─────────
+  selector:
+    planetscale.com/component: vtgate
+    planetscale.com/cluster: euroscale
