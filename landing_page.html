@@ -525,6 +525,50 @@
       .mobile-overlay { display: none !important; }
     }
 
+    /* Brand logo styling */
+    .brand-logo {
+      opacity: 0.6;
+      transition: opacity 0.3s ease;
+      filter: brightness(0) invert(1);
+    }
+    .brand-logo:hover {
+      opacity: 1;
+    }
+    .brand-logo-tech {
+      opacity: 0.7;
+      transition: all 0.3s ease;
+      filter: brightness(0) invert(1);
+      flex-shrink: 0;
+    }
+    .brand-logo-tech:hover {
+      opacity: 1;
+    }
+    .brand-logo-partner {
+      height: 28px;
+      opacity: 0.65;
+      transition: opacity 0.3s ease;
+      filter: brightness(0) invert(1);
+    }
+    .brand-logo-partner:hover {
+      opacity: 1;
+    }
+    .brand-logo-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+    .brand-logo-row svg {
+      height: 24px;
+      opacity: 0.5;
+      transition: opacity 0.3s ease;
+      filter: brightness(0) invert(1);
+    }
+    .brand-logo-row svg:hover {
+      opacity: 0.9;
+    }
+
     /* Smooth scroll */
     html {
       scroll-behavior: smooth;
@@ -644,14 +688,32 @@
             <div class="mt-10 pt-8 border-t border-slate-700/50">
               <p class="text-xs font-medium uppercase tracking-widest text-slate-500 mb-4">Built on European Infrastructure</p>
               <div class="flex items-center gap-6">
-                <div class="flex items-center gap-2 text-slate-400 text-sm font-medium">
-                  <span style="font-size:20px;">🇩🇪</span> Hetzner
+                <div class="flex items-center gap-2 text-slate-400 text-sm font-medium brand-logo" style="opacity:0.6;">
+                  <!-- Hetzner logo -->
+                  <svg width="80" height="12" viewBox="0 0 181.42 22.24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M174.05,14.12a10.22,10.22,0,0,0,4.53-2l0,0a6.15,6.15,0,0,0,1.68-4.78,7.71,7.71,0,0,0-1.14-4.06A6.47,6.47,0,0,0,173.84.09l-1.09,0L170.2,0,158.66,0c-.7,0-1,.29-1,1V21.22c0,.7.29,1,1,1h3c.7,0,1-.29,1-1v-6.7h3.67a3.48,3.48,0,0,1,2.17.91l5.82,5.85a3.08,3.08,0,0,0,2,.92h4.47c.7,0,.87-.41.38-.91Zm-.76-4.3H162.64V4.72h10.65a2.13,2.13,0,0,1,1.87,2.15v.79A2.14,2.14,0,0,1,173.29,9.82Z"/>
+                    <path d="M153,17.52H136.47V13.35h13.19c.7,0,1-.29,1-1V9.92c0-.7-.29-1-1-1h-13.2V4.76H153c.7,0,1-.29,1-1V1c0-.7-.29-1-1-1H132.38c-.7,0-1,.29-1,1V21.24c0,.7.29,1,1,1H153c.7,0,1-.29,1-1V18.51C154,17.81,153.67,17.52,153,17.52Z"/>
+                    <path d="M127.73,7.3a7.25,7.25,0,0,0-1.13-4A6.61,6.61,0,0,0,121.24,0L106.08,0c-.71,0-1,.29-1,1V21.22c0,.7.29,1,1,1h3.26c.7,0,1-.28,1-1V4.73l8.78,0c1.87,0,3.69,1.24,3.69,3.11V21.24c0,.7.29,1,1,1h2.95c.71,0,1-.29,1-1Z"/>
+                    <path d="M100.47,17.39l-14.25,0L100.5,4.84a2.57,2.57,0,0,0,1-1.84V1c0-.7-.3-1-1-1H79.83c-.7,0-1,.29-1,1V3.77c0,.7.29,1,1,1H93.08L79.79,17.24a2.62,2.62,0,0,0-1,1.84v2.17c0,.7.29,1,1,1l20.65,0c.7,0,1-.29,1-1V18.38C101.46,17.68,101.17,17.39,100.47,17.39Z"/>
+                    <path d="M74.19,0H53.55c-.71,0-1,.28-1,1V3.76c0,.7.28,1,1,1h7.78V21.24c0,.7.29,1,1,1h3.3c.7,0,1-.29,1-1V4.75h7.57c.7,0,1-.29,1-1V1C75.18.32,74.89,0,74.19,0Z"/>
+                    <path d="M47.91,17.52H31.41V13.35H44.6c.7,0,1-.29,1-1V9.92c0-.7-.28-1-1-1H31.41V4.76h16.5c.7,0,1-.29,1-1V1c0-.7-.29-1-1-1H27.33c-.7,0-1,.29-1,1V21.24c0,.7.29,1,1,1H47.91c.7,0,1-.29,1-1V18.51C48.9,17.81,48.61,17.52,47.91,17.52Z"/>
+                    <path d="M21.63,0H18.52c-.7,0-1,.29-1,1V8.87H5.13V1c0-.7-.29-1-1-1H1C.29,0,0,.29,0,1V21.25c0,.71.29,1,1,1H4.13c.7,0,1-.28,1-1v-8h12.4v8c0,.7.29,1,1,1h3.11c.7,0,1-.29,1-1V1C22.62.32,22.33,0,21.63,0Z"/>
+                  </svg>
                 </div>
-                <div class="flex items-center gap-2 text-slate-400 text-sm font-medium">
-                  <span style="font-size:20px;">🇫🇷</span> OVHcloud
+                <div class="flex items-center gap-2 text-slate-400 text-sm font-medium brand-logo" style="opacity:0.6;">
+                  <!-- OVHcloud logo -->
+                  <svg width="90" height="14" viewBox="0 0 298.03 47.18" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" d="M110.11,40.31a40.1,40.1,0,0,1-3.74,44.49H84.93l6.6-11.67H82.8L93.09,55h8.78l8.24-14.67ZM67.77,84.8H45.91a39.59,39.59,0,0,1-3.79-44.59L56.3,64.84,71.93,37.62h23L67.78,84.78h0v0Z" transform="translate(-36.97 -37.62)"/>
+                    <path d="M128.18,62.9c0-12.59,6.27-18.64,16.57-18.64s16.56,6.05,16.56,18.64S155,81.47,144.75,81.47,128.18,75.37,128.18,62.9Zm3.72,0c0,10.35,4.72,15.28,12.85,15.28s12.84-4.93,12.84-15.28-4.72-15.35-12.84-15.35S131.9,52.49,131.9,62.9Z" transform="translate(-36.97 -37.62)"/>
+                    <path d="M188.38,45.75a1.82,1.82,0,0,1,1.7-1.17,1.79,1.79,0,0,1,1.8,1.81,2.42,2.42,0,0,1-.16.79L179.3,79.93a1.78,1.78,0,0,1-3.39,0L163.49,47.18a2.42,2.42,0,0,1-.16-.79,1.79,1.79,0,0,1,1.8-1.81,1.82,1.82,0,0,1,1.7,1.17L177.6,74.31Z" transform="translate(-36.97 -37.62)"/>
+                    <path d="M199.42,64.06V79.35a1.81,1.81,0,1,1-3.61,0v-33a1.81,1.81,0,1,1,3.61,0V60.77H217.9V46.39a1.81,1.81,0,1,1,3.61,0v33a1.81,1.81,0,1,1-3.61,0V64.06Z" transform="translate(-36.97 -37.62)"/>
+                  </svg>
                 </div>
-                <div class="flex items-center gap-2 text-slate-400 text-sm font-medium">
-                  <span style="font-size:20px;">🇨🇭</span> Exoscale
+                <div class="flex items-center gap-2 text-slate-400 text-sm font-medium brand-logo" style="opacity:0.6;">
+                  <!-- Exoscale logo -->
+                  <svg width="60" height="14" viewBox="0 0 64 64" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M32 4.287L0 59.713h4.44L32 12.25v7.8L9.033 59.713h4.593L32 28.02v7.962l-13.78 23.73h4.593L32 43.943v7.8l-4.593 7.962H64z"/>
+                  </svg>
                 </div>
               </div>
             </div>
@@ -711,6 +773,69 @@
           <div class="py-8 px-6 text-center">
             <div class="stat-number">99.99%</div>
             <p class="text-slate-400 text-sm mt-1">Enterprise SLA</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== BRAND TRUST BAR ===== -->
+    <section class="py-16 md:py-20 relative z-10">
+      <div class="max-w-6xl mx-auto px-4 text-center">
+        <p class="text-xs font-medium uppercase tracking-widest text-slate-500 mb-6">Powering the European cloud ecosystem</p>
+        <div class="brand-logo-row">
+          <!-- Hetzner -->
+          <svg width="100" height="14" viewBox="0 0 181.42 22.24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path d="M174.05,14.12a10.22,10.22,0,0,0,4.53-2l0,0a6.15,6.15,0,0,0,1.68-4.78,7.71,7.71,0,0,0-1.14-4.06A6.47,6.47,0,0,0,173.84.09l-1.09,0L170.2,0,158.66,0c-.7,0-1,.29-1,1V21.22c0,.7.29,1,1,1h3c.7,0,1-.29,1-1v-6.7h3.67a3.48,3.48,0,0,1,2.17.91l5.82,5.85a3.08,3.08,0,0,0,2,.92h4.47c.7,0,.87-.41.38-.91Zm-.76-4.3H162.64V4.72h10.65a2.13,2.13,0,0,1,1.87,2.15v.79A2.14,2.14,0,0,1,173.29,9.82Z"/>
+            <path d="M153,17.52H136.47V13.35h13.19c.7,0,1-.29,1-1V9.92c0-.7-.29-1-1-1h-13.2V4.76H153c.7,0,1-.29,1-1V1c0-.7-.29-1-1-1H132.38c-.7,0-1,.29-1,1V21.24c0,.7.29,1,1,1H153c.7,0,1-.29,1-1V18.51C154,17.81,153.67,17.52,153,17.52Z"/>
+            <path d="M127.73,7.3a7.25,7.25,0,0,0-1.13-4A6.61,6.61,0,0,0,121.24,0L106.08,0c-.71,0-1,.29-1,1V21.22c0,.7.29,1,1,1h3.26c.7,0,1-.28,1-1V4.73l8.78,0c1.87,0,3.69,1.24,3.69,3.11V21.24c0,.7.29,1,1,1h2.95c.71,0,1-.29,1-1Z"/>
+            <path d="M100.47,17.39l-14.25,0L100.5,4.84a2.57,2.57,0,0,0,1-1.84V1c0-.7-.3-1-1-1H79.83c-.7,0-1,.29-1,1V3.77c0,.7.29,1,1,1H93.08L79.79,17.24a2.62,2.62,0,0,0-1,1.84v2.17c0,.7.29,1,1,1l20.65,0c.7,0,1-.29,1-1V18.38C101.46,17.68,101.17,17.39,100.47,17.39Z"/>
+            <path d="M74.19,0H53.55c-.71,0-1,.28-1,1V3.76c0,.7.28,1,1,1h7.78V21.24c0,.7.29,1,1,1h3.3c.7,0,1-.29,1-1V4.75h7.57c.7,0,1-.29,1-1V1C75.18.32,74.89,0,74.19,0Z"/>
+            <path d="M47.91,17.52H31.41V13.35H44.6c.7,0,1-.29,1-1V9.92c0-.7-.28-1-1-1H31.41V4.76h16.5c.7,0,1-.29,1-1V1c0-.7-.29-1-1-1H27.33c-.7,0-1,.29-1,1V21.24c0,.7.29,1,1,1H47.91c.7,0,1-.29,1-1V18.51C48.9,17.81,48.61,17.52,47.91,17.52Z"/>
+            <path d="M21.63,0H18.52c-.7,0-1,.29-1,1V8.87H5.13V1c0-.7-.29-1-1-1H1C.29,0,0,.29,0,1V21.25c0,.71.29,1,1,1H4.13c.7,0,1-.28,1-1v-8h12.4v8c0,.7.29,1,1,1h3.11c.7,0,1-.29,1-1V1C22.62.32,22.33,0,21.63,0Z"/>
+          </svg>
+          <!-- OVHcloud -->
+          <svg width="110" height="16" viewBox="0 0 298.03 47.18" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" d="M110.11,40.31a40.1,40.1,0,0,1-3.74,44.49H84.93l6.6-11.67H82.8L93.09,55h8.78l8.24-14.67ZM67.77,84.8H45.91a39.59,39.59,0,0,1-3.79-44.59L56.3,64.84,71.93,37.62h23L67.78,84.78h0v0Z" transform="translate(-36.97 -37.62)"/>
+            <path d="M128.18,62.9c0-12.59,6.27-18.64,16.57-18.64s16.56,6.05,16.56,18.64S155,81.47,144.75,81.47,128.18,75.37,128.18,62.9Zm3.72,0c0,10.35,4.72,15.28,12.85,15.28s12.84-4.93,12.84-15.28-4.72-15.35-12.84-15.35S131.9,52.49,131.9,62.9Z" transform="translate(-36.97 -37.62)"/>
+            <path d="M188.38,45.75a1.82,1.82,0,0,1,1.7-1.17,1.79,1.79,0,0,1,1.8,1.81,2.42,2.42,0,0,1-.16.79L179.3,79.93a1.78,1.78,0,0,1-3.39,0L163.49,47.18a2.42,2.42,0,0,1-.16-.79,1.79,1.79,0,0,1,1.8-1.81,1.82,1.82,0,0,1,1.7,1.17L177.6,74.31Z" transform="translate(-36.97 -37.62)"/>
+            <path d="M199.42,64.06V79.35a1.81,1.81,0,1,1-3.61,0v-33a1.81,1.81,0,1,1,3.61,0V60.77H217.9V46.39a1.81,1.81,0,1,1,3.61,0v33a1.81,1.81,0,1,1-3.61,0V64.06Z" transform="translate(-36.97 -37.62)"/>
+          </svg>
+          <!-- Exoscale -->
+          <svg width="70" height="16" viewBox="0 0 64 64" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path d="M32 4.287L0 59.713h4.44L32 12.25v7.8L9.033 59.713h4.593L32 28.02v7.962l-13.78 23.73h4.593L32 43.943v7.8l-4.593 7.962H64z"/>
+          </svg>
+          <!-- Vitess -->
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path d="m19.206 1.045-7.217 13.186L4.817 1.045H0l11.904 21.91L24 1.045h-4.794Z"/>
+          </svg>
+          <!-- Citus -->
+          <svg width="22" height="22" viewBox="0 0 64 64" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" d="M43.3,26.1c0.9-4.5-12-6.4-19.4,2.7c-8.3,10.2,8.4,20.9,27.4,6.6c12.1-9.2,16-21.8,8.9-28.2C46.4-5.4,13,6.3,1.8,31.3C13,12.4,41.1,3.5,52.3,15c4.7,4.8,2.1,14.5-6.5,18.6C31.9,40.1,33.2,25.9,43.3,26.1"/>
+            <path fill-rule="evenodd" d="M42.6,16.2c-23-6.9-54.2,21.3-38.2,39.9C15,68.5,52.1,62.5,64,25.1C49.9,50.9,23.3,54.7,13.2,47.3C1.3,38.6,16.1,14.2,42.6,16.2"/>
+          </svg>
+          <!-- Kubernetes -->
+          <svg width="22" height="22" viewBox="0 0 777 754" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path d="M386.93,178.6a48.93,48.53,0,0,0-18.75,4.75L112.31,305.6A48.93,48.53,0,0,0,85.83,338.52L22.71,613.15a48.93,48.53,0,0,0,6.64,37.21,48.93,48.53,0,0,0,2.78,3.86L209.24,874.42a48.93,48.53,0,0,0,38.26,18.26l284.02-.07a48.93,48.53,0,0,0,38.25-18.23L746.81,654.15a48.93,48.53,0,0,0,9.46-41.07L693.04,338.46a48.93,48.53,0,0,0-26.48-28.92L410.66,183.34a48.93,48.53,0,0,0-23.73-4.75z"/>
+          </svg>
+          <!-- Terraform -->
+          <svg width="22" height="22" viewBox="0 0 64 64" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <g fill-rule="evenodd" transform="matrix(.826767 0 0 .826767 8.416322 51.138164)">
+              <path d="M39.1 15.557v-24.43l-21.16-12.22v24.43zm0-27.1l-21.16-12.22v-24.44l21.16 12.22z" fill="#5c4ee5"/>
+              <path d="M62.6-23.773v-24.44l-21.17 12.22v24.44z" fill="#4040b2"/>
+              <path d="M15.62-25.193v-24.44l-21.16-12.22v24.44z"/>
+            </g>
+          </svg>
+          <!-- WAL-G -->
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 3h4l4 6-4 6h-4l4-6-4-6zm10 0h4l4 6-4 6h-4l4-6-4-6z"/>
+            <path d="M8 3h4l4 6-4 6h-4l4-6-4-6z" transform="translate(2,-1)"/>
+          </svg>
+          <!-- Gaia-X certification badge -->
+          <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold" style="background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.2);color:#22d3ee;letter-spacing:0.02em;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+            Gaia-X Certified
           </div>
         </div>
       </div>
@@ -866,23 +991,44 @@
 
         <div class="flex flex-wrap justify-center gap-4">
           <span class="tech-badge text-base px-6 py-3">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6d5dfd" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/></svg>
+            <!-- Vitess logo -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#c4b5fd" xmlns="http://www.w3.org/2000/svg" class="brand-logo-tech">
+              <path d="m19.206 1.045-7.217 13.186L4.817 1.045H0l11.904 21.91L24 1.045h-4.794Z"/>
+            </svg>
             Vitess (MySQL)
           </span>
           <span class="tech-badge text-base px-6 py-3">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            <!-- Citus logo -->
+            <svg width="18" height="18" viewBox="0 0 64 64" fill="#c4b5fd" xmlns="http://www.w3.org/2000/svg" class="brand-logo-tech">
+              <path fill-rule="evenodd" d="M43.3,26.1c0.9-4.5-12-6.4-19.4,2.7c-8.3,10.2,8.4,20.9,27.4,6.6c12.1-9.2,16-21.8,8.9-28.2C46.4-5.4,13,6.3,1.8,31.3C13,12.4,41.1,3.5,52.3,15c4.7,4.8,2.1,14.5-6.5,18.6C31.9,40.1,33.2,25.9,43.3,26.1"/>
+              <path fill-rule="evenodd" d="M42.6,16.2c-23-6.9-54.2,21.3-38.2,39.9C15,68.5,52.1,62.5,64,25.1C49.9,50.9,23.3,54.7,13.2,47.3C1.3,38.6,16.1,14.2,42.6,16.2"/>
+            </svg>
             Citus (PostgreSQL)
           </span>
           <span class="tech-badge text-base px-6 py-3">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            <!-- Kubernetes logo -->
+            <svg width="18" height="18" viewBox="0 0 777 754" fill="#c4b5fd" xmlns="http://www.w3.org/2000/svg" class="brand-logo-tech">
+              <path d="M386.93,178.6a48.93,48.53,0,0,0-18.75,4.75L112.31,305.6A48.93,48.53,0,0,0,85.83,338.52L22.71,613.15a48.93,48.53,0,0,0,6.64,37.21,48.93,48.53,0,0,0,2.78,3.86L209.24,874.42a48.93,48.53,0,0,0,38.26,18.26l284.02-.07a48.93,48.53,0,0,0,38.25-18.23L746.81,654.15a48.93,48.53,0,0,0,9.46-41.07L693.04,338.46a48.93,48.53,0,0,0-26.48-28.92L410.66,183.34a48.93,48.53,0,0,0-23.73-4.75z"/>
+            </svg>
             Kubernetes
           </span>
           <span class="tech-badge text-base px-6 py-3">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            <!-- Terraform logo -->
+            <svg width="18" height="18" viewBox="0 0 64 64" fill="#c4b5fd" xmlns="http://www.w3.org/2000/svg" class="brand-logo-tech">
+              <g fill-rule="evenodd" transform="matrix(.826767 0 0 .826767 8.416322 51.138164)">
+                <path d="M39.1 15.557v-24.43l-21.16-12.22v24.43zm0-27.1l-21.16-12.22v-24.44l21.16 12.22z" fill="#5c4ee5"/>
+                <path d="M62.6-23.773v-24.44l-21.17 12.22v24.44z" fill="#4040b2"/>
+                <path d="M15.62-25.193v-24.44l-21.16-12.22v24.44z"/>
+              </g>
+            </svg>
             Terraform
           </span>
           <span class="tech-badge text-base px-6 py-3">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <!-- WAL-G logo (monogram) -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#c4b5fd" xmlns="http://www.w3.org/2000/svg" class="brand-logo-tech">
+              <path d="M3 3h4l4 6-4 6h-4l4-6-4-6zm10 0h4l4 6-4 6h-4l4-6-4-6z" opacity="0.7"/>
+              <path d="M8 3h4l4 6-4 6h-4l4-6-4-6z" opacity="0.5" transform="translate(2,-1)"/>
+            </svg>
             WAL-G
           </span>
         </div>
@@ -1173,9 +1319,19 @@
         <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           <!-- Hetzner -->
           <div class="partner-card">
-            <span class="partner-flag">🇩🇪</span>
+            <div class="brand-logo-partner" style="height:28px;margin-bottom:4px;">
+              <!-- Hetzner logo -->
+              <svg width="120" height="16" viewBox="0 0 181.42 22.24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="opacity:0.8;">
+                <path d="M174.05,14.12a10.22,10.22,0,0,0,4.53-2l0,0a6.15,6.15,0,0,0,1.68-4.78,7.71,7.71,0,0,0-1.14-4.06A6.47,6.47,0,0,0,173.84.09l-1.09,0L170.2,0,158.66,0c-.7,0-1,.29-1,1V21.22c0,.7.29,1,1,1h3c.7,0,1-.29,1-1v-6.7h3.67a3.48,3.48,0,0,1,2.17.91l5.82,5.85a3.08,3.08,0,0,0,2,.92h4.47c.7,0,.87-.41.38-.91Zm-.76-4.3H162.64V4.72h10.65a2.13,2.13,0,0,1,1.87,2.15v.79A2.14,2.14,0,0,1,173.29,9.82Z"/>
+                <path d="M153,17.52H136.47V13.35h13.19c.7,0,1-.29,1-1V9.92c0-.7-.29-1-1-1h-13.2V4.76H153c.7,0,1-.29,1-1V1c0-.7-.29-1-1-1H132.38c-.7,0-1,.29-1,1V21.24c0,.7.29,1,1,1H153c.7,0,1-.29,1-1V18.51C154,17.81,153.67,17.52,153,17.52Z"/>
+                <path d="M127.73,7.3a7.25,7.25,0,0,0-1.13-4A6.61,6.61,0,0,0,121.24,0L106.08,0c-.71,0-1,.29-1,1V21.22c0,.7.29,1,1,1h3.26c.7,0,1-.28,1-1V4.73l8.78,0c1.87,0,3.69,1.24,3.69,3.11V21.24c0,.7.29,1,1,1h2.95c.71,0,1-.29,1-1Z"/>
+                <path d="M100.47,17.39l-14.25,0L100.5,4.84a2.57,2.57,0,0,0,1-1.84V1c0-.7-.3-1-1-1H79.83c-.7,0-1,.29-1,1V3.77c0,.7.29,1,1,1H93.08L79.79,17.24a2.62,2.62,0,0,0-1,1.84v2.17c0,.7.29,1,1,1l20.65,0c.7,0,1-.29,1-1V18.38C101.46,17.68,101.17,17.39,100.47,17.39Z"/>
+                <path d="M74.19,0H53.55c-.71,0-1,.28-1,1V3.76c0,.7.28,1,1,1h7.78V21.24c0,.7.29,1,1,1h3.3c.7,0,1-.29,1-1V4.75h7.57c.7,0,1-.29,1-1V1C75.18.32,74.89,0,74.19,0Z"/>
+                <path d="M47.91,17.52H31.41V13.35H44.6c.7,0,1-.29,1-1V9.92c0-.7-.28-1-1-1H31.41V4.76h16.5c.7,0,1-.29,1-1V1c0-.7-.29-1-1-1H27.33c-.7,0-1,.29-1,1V21.24c0,.7.29,1,1,1H47.91c.7,0,1-.29,1-1V18.51C48.9,17.81,48.61,17.52,47.91,17.52Z"/>
+                <path d="M21.63,0H18.52c-.7,0-1,.29-1,1V8.87H5.13V1c0-.7-.29-1-1-1H1C.29,0,0,.29,0,1V21.25c0,.71.29,1,1,1H4.13c.7,0,1-.28,1-1v-8h12.4v8c0,.7.29,1,1,1h3.11c.7,0,1-.29,1-1V1C22.62.32,22.33,0,21.63,0Z"/>
+              </svg>
+            </div>
             <div class="text-center">
-              <h3 class="text-xl font-bold text-white">Hetzner</h3>
               <p class="text-sm text-slate-400 mt-1">Nuremberg, Germany</p>
             </div>
             <div class="flex flex-wrap justify-center gap-2 mt-2">
@@ -1188,9 +1344,16 @@
 
           <!-- OVHcloud -->
           <div class="partner-card">
-            <span class="partner-flag">🇫🇷</span>
+            <div class="brand-logo-partner" style="height:28px;margin-bottom:4px;">
+              <!-- OVHcloud logo -->
+              <svg width="130" height="20" viewBox="0 0 298.03 47.18" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="opacity:0.8;">
+                <path fill-rule="evenodd" d="M110.11,40.31a40.1,40.1,0,0,1-3.74,44.49H84.93l6.6-11.67H82.8L93.09,55h8.78l8.24-14.67ZM67.77,84.8H45.91a39.59,39.59,0,0,1-3.79-44.59L56.3,64.84,71.93,37.62h23L67.78,84.78h0v0Z" transform="translate(-36.97 -37.62)"/>
+                <path d="M128.18,62.9c0-12.59,6.27-18.64,16.57-18.64s16.56,6.05,16.56,18.64S155,81.47,144.75,81.47,128.18,75.37,128.18,62.9Zm3.72,0c0,10.35,4.72,15.28,12.85,15.28s12.84-4.93,12.84-15.28-4.72-15.35-12.84-15.35S131.9,52.49,131.9,62.9Z" transform="translate(-36.97 -37.62)"/>
+                <path d="M188.38,45.75a1.82,1.82,0,0,1,1.7-1.17,1.79,1.79,0,0,1,1.8,1.81,2.42,2.42,0,0,1-.16.79L179.3,79.93a1.78,1.78,0,0,1-3.39,0L163.49,47.18a2.42,2.42,0,0,1-.16-.79,1.79,1.79,0,0,1,1.8-1.81,1.82,1.82,0,0,1,1.7,1.17L177.6,74.31Z" transform="translate(-36.97 -37.62)"/>
+                <path d="M199.42,64.06V79.35a1.81,1.81,0,1,1-3.61,0v-33a1.81,1.81,0,1,1,3.61,0V60.77H217.9V46.39a1.81,1.81,0,1,1,3.61,0v33a1.81,1.81,0,1,1-3.61,0V64.06Z" transform="translate(-36.97 -37.62)"/>
+              </svg>
+            </div>
             <div class="text-center">
-              <h3 class="text-xl font-bold text-white">OVHcloud</h3>
               <p class="text-sm text-slate-400 mt-1">Roubaix, France</p>
             </div>
             <div class="flex flex-wrap justify-center gap-2 mt-2">
@@ -1203,9 +1366,13 @@
 
           <!-- Exoscale -->
           <div class="partner-card">
-            <span class="partner-flag">🇨🇭</span>
+            <div class="brand-logo-partner" style="height:28px;margin-bottom:4px;">
+              <!-- Exoscale logo -->
+              <svg width="100" height="20" viewBox="0 0 64 64" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="opacity:0.8;">
+                <path d="M32 4.287L0 59.713h4.44L32 12.25v7.8L9.033 59.713h4.593L32 28.02v7.962l-13.78 23.73h4.593L32 43.943v7.8l-4.593 7.962H64z"/>
+              </svg>
+            </div>
             <div class="text-center">
-              <h3 class="text-xl font-bold text-white">Exoscale</h3>
               <p class="text-sm text-slate-400 mt-1">Lausanne, Switzerland</p>
             </div>
             <div class="flex flex-wrap justify-center gap-2 mt-2">
