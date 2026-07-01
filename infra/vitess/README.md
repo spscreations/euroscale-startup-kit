@@ -54,7 +54,9 @@ bash deploy.sh
 
 | File | Description |
 |------|-------------|
-| `vitess-cluster.yaml` | VitessCluster CRD manifest — defines cells, keyspaces, tablets, vtgate, vtctld, vtadmin |
+| `vitess-cluster.yaml` | VitessCluster CRD manifest — defines cells, keyspaces, tablets, vtgate, vtctld, vtadmin, backups |
+| `vitess-backup-creds.yaml` | K8s Secret — MinIO access key + secret key in AWS credentials format for Vitess S3 backup driver |
+| `backup-test.sh` | Backup verification script — lists backups, triggers manual backup, confirms |
 | `deploy.sh` | One-shot deployment script — installs operator, creates namespace, applies cluster, verifies |
 | `README.md` | This file |
 
@@ -114,5 +116,101 @@ Per tablet storage: 10 Gi PVC (30 Gi total for 3 tablets).
 | Task | Description |
 |------|-------------|
 | **Task 4** | gRPC API — build the EuroScale control plane API to provision/manage databases |
-| **Task 5** | Backups — configure S3-compatible backup location (MinIO) in VitessCluster |
+| **Task 5** | Backups — configure S3-compatible backup location (MinIO) in VitessCluster ✅ |
 | Post-MVP | Add TLS, authentication, monitoring (Prometheus/Grafana), connection pooling |
+
+---
+
+## Backups (PITR)
+
+EuroScale uses Vitess native backups stored in MinIO (S3-compatible object storage) with Point-In-Time Recovery support.
+
+### Architecture
+
+```
+┌──────────────────┐     ┌─────────────────────┐     ┌──────────────────┐
+│   Vitess Cluster │────▶│   MinIO (S3 API)    │     │  euroscale-backups│
+│   (vtctldclient) │     │   minio:9000        │────▶│  bucket            │
+│                  │     │                     │     │                    │
+│  full-backup     │     │  Path-style access  │     │  main/0/           │
+│  (daily 2am)     │     │  forcePathStyle=true│     │    full/           │
+│                  │     │                     │     │    incremental/    │
+│  incremental     │     │                     │     │                    │
+│  (every 15min)   │     │                     │     │                    │
+└──────────────────┘     └─────────────────────┘     └──────────────────┘
+```
+
+### Backup Schedule
+
+| Schedule | Name | Cron | Retention | Method |
+|----------|------|------|-----------|--------|
+| Full backup | `full-backup` | `0 2 * * *` (daily 2am UTC) | 7 backups | vtctldclient |
+| Incremental backup | `incremental-backup` | `*/15 * * * *` (every 15 min) | 96 backups (24h) | vtctldclient |
+
+### Credentials
+
+MinIO credentials are stored in K8s Secret `vitess-backup-creds` (namespace: `euroscale`) in AWS credentials file format:
+
+```yaml
+# vitess-backup-creds.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vitess-backup-creds
+  namespace: euroscale
+stringData:
+  credentials: |
+    [default]
+    aws_access_key_id = minioadmin
+    aws_secret_access_key = minioadmin
+```
+
+Apply credentials before deploying the cluster:
+
+```bash
+kubectl apply -f infra/vitess/vitess-backup-creds.yaml
+```
+
+### Backup Operations
+
+```bash
+# Test backups
+bash infra/vitess/backup-test.sh
+
+# List backups for keyspace
+vtctlclient -server euroscale-vtctld:15999 ListBackups main
+
+# Trigger manual backup
+vtctlclient -server euroscale-vtctld:15999 BackupShard main/0
+
+# Check backup schedule objects
+kubectl get vitessbackupschedules -n euroscale
+
+# Check backup storage objects
+kubectl get vitessbackupstorages -n euroscale
+
+# Check individual backup records
+kubectl get vitessbackups -n euroscale
+
+# Check MinIO bucket contents
+kubectl port-forward -n minio svc/minio-console 9001:9001
+# → Open http://localhost:9001 → bucket: euroscale-backups
+```
+
+### Restore from Backup
+
+```bash
+# Restore a shard from backup (specify backup name or use latest)
+vtctlclient -server euroscale-vtctld:15999 RestoreFromBackup main/0 <backup-name>
+
+# Or let Vitess auto-pick the latest backup
+vtctlclient -server euroscale-vtctld:15999 RestoreFromBackup main/0
+```
+
+### Key Decisions
+
+- **S3 location with MinIO endpoint** — uses the Vitess operator's `s3` backup location type with a custom `endpoint` pointing to MinIO, `forcePathStyle: true` for path-based bucket access
+- **`engine: builtin`** — uses Vitess built-in backup (mysqldump-based); switch to `xtrabackup` for larger datasets
+- **`backupMethod: vtctldclient`** — sends `BackupShard` command to vtctld, which tells a running serving replica to take the backup directly; no extra PVC needed
+- **`successfulJobsHistoryLimit`** — controls backup retention at the K8s Job level (7 full, 96 incremental = 24h of 15-min backups)
+- **PITR via incremental backups** — 15-minute granularity allows point-in-time recovery within the retention window

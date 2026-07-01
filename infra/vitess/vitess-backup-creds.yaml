@@ -1,0 +1,15 @@
+# EuroScale — Vitess Backup Credentials
+# K8s Secret with MinIO access key + secret key in AWS credentials format
+# Vitess S3 backup location reads this via authSecret reference
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vitess-backup-creds
+  namespace: euroscale
+type: Opaque
+stringData:
+  # AWS credentials file format expected by Vitess S3 backup driver
+  credentials: |
+    [default]
+    aws_access_key_id = minioadmin
+    aws_secret_access_key = minioadmin

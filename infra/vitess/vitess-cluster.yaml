@@ -17,6 +17,41 @@ spec:
     mysqld:
       mysql80Compatible: vitess/lite:v20.0.0
 
+  # ── Backups (S3-compatible MinIO with PITR) ──────────────────
+  backup:
+    locations:
+      - name: minio
+        s3:
+          region: euroscale
+          bucket: euroscale-backups
+          endpoint: euroscale-backups.minio:9000
+          forcePathStyle: true
+          authSecret:
+            name: vitess-backup-creds
+            key: credentials
+    engine: builtin
+    schedules:
+      # Daily full backup at 2:00 AM UTC
+      - name: full-backup
+        schedule: "0 2 * * *"
+        backupMethod: vtctldclient
+        strategies:
+          - name: full-keyspace-main
+            scope: Keyspace
+            keyspace: main
+        successfulJobsHistoryLimit: 7
+        failedJobsHistoryLimit: 3
+      # Incremental backup every 15 minutes (PITR)
+      - name: incremental-backup
+        schedule: "*/15 * * * *"
+        backupMethod: vtctldclient
+        strategies:
+          - name: incr-keyspace-main
+            scope: Keyspace
+            keyspace: main
+        successfulJobsHistoryLimit: 96
+        failedJobsHistoryLimit: 10
+
   # ── Global Lockserver (etcd, auto-deployed) ──────────────────
   globalLockserver:
     etcd:
