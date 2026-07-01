@@ -1,0 +1,151 @@
+# EuroScale Vitess Operator — VitessCluster CRD
+# Multi-region cluster: primary in Nuremberg, replicas in Nuremberg + Helsinki
+# apiVersion: planetscale.com/v2
+# See: https://github.com/planetscale/vitess-operator/blob/main/docs/api.md
+apiVersion: planetscale.com/v2
+kind: VitessCluster
+metadata:
+  name: euroscale
+  namespace: euroscale
+spec:
+  # ── Container Images ──────────────────────────────────────────
+  images:
+    vtctld: vitess/lite:v20.0.0
+    vtadmin: vitess/lite:v20.0.0
+    vtgate: vitess/lite:v20.0.0
+    vttablet: vitess/lite:v20.0.0
+    mysqld:
+      mysql80Compatible: vitess/lite:v20.0.0
+
+  # ── Global Lockserver (etcd, auto-deployed) ──────────────────
+  globalLockserver:
+    etcd:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 200m
+          memory: 384Mi
+
+  # ── Update Strategy (Immediate for MVP simplicity) ───────────
+  updateStrategy:
+    type: Immediate
+
+  # ── vtctld (Dashboard) ───────────────────────────────────────
+  vitessDashboard:
+    cells:
+      - nuremberg
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+  # ── vtadmin (API only, no web UI) ────────────────────────────
+  vtadmin:
+    cells:
+      - nuremberg
+    replicas: 1
+    apiResources:
+      requests:
+        cpu: 100m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+
+  # ── Cells (failure domains) ──────────────────────────────────
+  cells:
+    - name: nuremberg
+      gateway:
+        replicas: 1
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 256m
+            memory: 256Mi
+        extraFlags:
+          tablet_types_to_wait: REPLICA,PRIMARY
+
+    - name: helsinki
+      gateway:
+        replicas: 1
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 256m
+            memory: 256Mi
+        extraFlags:
+          tablet_types_to_wait: REPLICA,PRIMARY
+
+  # ── Keyspaces ────────────────────────────────────────────────
+  keyspaces:
+    - name: main
+      durabilityPolicy: cross_cell
+      turndownPolicy: Immediate
+      partitionings:
+        - equal:
+            parts: 1
+            shardTemplate:
+              tabletPools:
+                # ── Nuremberg: Primary-eligible tablets (2) ────
+                - cell: nuremberg
+                  type: replica
+                  replicas: 2
+                  dataVolumeClaimTemplate:
+                    accessModes:
+                      - ReadWriteOnce
+                    resources:
+                      requests:
+                        storage: 10Gi
+                  vttablet:
+                    resources:
+                      requests:
+                        cpu: 100m
+                        memory: 128Mi
+                      limits:
+                        cpu: 256m
+                        memory: 256Mi
+                  mysqld:
+                    resources:
+                      requests:
+                        cpu: 250m
+                        memory: 512Mi
+                      limits:
+                        cpu: 500m
+                        memory: 1Gi
+
+                # ── Helsinki: Read replica (1) ─────────────────
+                - cell: helsinki
+                  type: replica
+                  replicas: 1
+                  dataVolumeClaimTemplate:
+                    accessModes:
+                      - ReadWriteOnce
+                    resources:
+                      requests:
+                        storage: 10Gi
+                  vttablet:
+                    resources:
+                      requests:
+                        cpu: 100m
+                        memory: 128Mi
+                      limits:
+                        cpu: 256m
+                        memory: 256Mi
+                  mysqld:
+                    resources:
+                      requests:
+                        cpu: 250m
+                        memory: 512Mi
+                      limits:
+                        cpu: 500m
+                        memory: 1Gi
