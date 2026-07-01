@@ -43,12 +43,12 @@
 
     /* Typography */
     .gradient-text {
-      background: linear-gradient(135deg, #6d5dfd 0%, #a99fff 25%, #22d3ee 50%, #6d5dfd 75%, #a99fff 100%);
-      background-size: 200% 200%;
+      background: linear-gradient(135deg, #6d5dfd 0%, #a99fff 20%, #22d3ee 40%, #6d5dfd 60%, #a99fff 80%, #6d5dfd 100%);
+      background-size: 300% 300%;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      animation: shimmer 8s ease-in-out infinite;
+      animation: shimmer 6s ease-in-out infinite;
     }
 
     .gradient-text-simple {
@@ -60,7 +60,58 @@
 
     @keyframes shimmer {
       0%, 100% { background-position: 0% 50%; }
+      25% { background-position: 50% 0%; }
       50% { background-position: 100% 50%; }
+      75% { background-position: 50% 100%; }
+    }
+
+    /* Hero-specific: more dramatic */
+    .hero-gradient-text {
+      background: linear-gradient(135deg, #6d5dfd 0%, #8b7eff 15%, #a99fff 30%, #22d3ee 50%, #a99fff 70%, #8b7eff 85%, #6d5dfd 100%);
+      background-size: 400% 400%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: heroShimmer 5s ease-in-out infinite;
+      position: relative;
+      display: inline-block;
+    }
+
+    .hero-gradient-text::after {
+      content: '';
+      position: absolute;
+      inset: -4px -12px;
+      background: radial-gradient(ellipse at center, rgba(109,93,253,0.15), transparent 70%);
+      filter: blur(20px);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    @keyframes heroShimmer {
+      0%, 100% { background-position: 0% 50%; }
+      25% { background-position: 100% 0%; }
+      50% { background-position: 100% 100%; }
+      75% { background-position: 0% 100%; }
+    }
+
+    /* Shine effect on buttons */
+    .btn-shine {
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-shine::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -60%;
+      width: 60%;
+      height: 200%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      transform: rotate(25deg);
+      transition: left 0.6s ease;
+    }
+    .btn-shine:hover::after {
+      left: 120%;
     }
 
     /* Glass cards */
@@ -167,12 +218,37 @@
       filter: blur(60px);
     }
 
-    /* Pricing highlight */
+    /* Hero ambient glow */
+    .hero-ambient-glow {
+      position: absolute;
+      width: 700px;
+      height: 700px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(109, 93, 253, 0.08) 0%, rgba(34, 211, 238, 0.04) 30%, transparent 70%);
+      pointer-events: none;
+      filter: blur(80px);
+      top: -200px;
+      left: -200px;
+    }
+
+    /* Pricing highlight - dramatically improved */
     .pricing-popular {
       border: 2px solid #6d5dfd;
       position: relative;
       transform: scale(1.02);
       box-shadow: 0 0 30px rgba(109, 93, 253, 0.2), 0 20px 60px -20px rgba(109, 93, 253, 0.3);
+      animation: pricingGlow 3s ease-in-out infinite;
+    }
+
+    @keyframes pricingGlow {
+      0%, 100% {
+        box-shadow: 0 0 30px rgba(109, 93, 253, 0.2), 0 20px 60px -20px rgba(109, 93, 253, 0.3);
+        border-color: #6d5dfd;
+      }
+      50% {
+        box-shadow: 0 0 50px rgba(109, 93, 253, 0.35), 0 20px 80px -20px rgba(109, 93, 253, 0.5);
+        border-color: #a99fff;
+      }
     }
 
     .pricing-popular .popular-badge {
@@ -180,15 +256,25 @@
       top: -14px;
       left: 50%;
       transform: translateX(-50%);
-      background: linear-gradient(135deg, #6d5dfd, #4f46e5);
+      background: linear-gradient(135deg, #6d5dfd, #22d3ee);
       color: white;
-      padding: 4px 20px;
+      padding: 6px 24px;
       border-radius: 20px;
       font-size: 12px;
       font-weight: 700;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
       white-space: nowrap;
+      box-shadow: 0 4px 16px rgba(109, 93, 253, 0.3);
+    }
+
+    .pricing-popular .btn-primary {
+      background: linear-gradient(135deg, #6d5dfd, #a99fff);
+      box-shadow: 0 8px 24px -4px rgba(109, 93, 253, 0.35);
+    }
+
+    .pricing-popular .btn-primary:hover {
+      box-shadow: 0 12px 32px -4px rgba(109, 93, 253, 0.5);
     }
 
     /* EU flag mini */
@@ -218,14 +304,15 @@
     }
 
     .testimonial-card::before {
-      content: '"';
-      font-size: 80px;
+      content: '\201C';
+      font-size: 96px;
       line-height: 1;
       position: absolute;
-      top: -10px;
-      left: 20px;
-      color: rgba(109, 93, 253, 0.15);
+      top: -8px;
+      left: 24px;
+      color: rgba(109, 93, 253, 0.12);
       font-family: Georgia, serif;
+      font-weight: 700;
     }
 
     /* Badge pills */
@@ -240,7 +327,7 @@
       font-size: 13px;
       font-weight: 500;
       color: #c4b5fd;
-      transition: all 0.3s;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
     .tech-badge:hover {
@@ -261,7 +348,7 @@
       backdrop-filter: blur(12px);
       border: 1px solid var(--glass-border);
       border-radius: 16px;
-      transition: all 0.4s;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       text-decoration: none;
       color: #e2e8f0;
     }
@@ -295,6 +382,11 @@
       justify-content: space-between;
       align-items: center;
       user-select: none;
+      transition: color 0.2s;
+    }
+
+    .faq-question:hover {
+      color: #a99fff;
     }
 
     .faq-question::after {
@@ -302,12 +394,14 @@
       font-size: 22px;
       color: #6d5dfd;
       transition: transform 0.3s;
+      flex-shrink: 0;
+      margin-left: 12px;
     }
 
     .faq-answer {
       max-height: 0;
       overflow: hidden;
-      transition: max-height 0.3s ease;
+      transition: max-height 0.3s ease, padding 0.3s ease;
       color: #94a3b8;
       font-size: 15px;
       line-height: 1.7;
@@ -371,7 +465,7 @@
       border-radius: 12px;
       border: none;
       cursor: pointer;
-      transition: all 0.3s;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       text-decoration: none;
     }
 
@@ -392,13 +486,14 @@
       border-radius: 12px;
       border: 1px solid rgba(109, 93, 253, 0.3);
       cursor: pointer;
-      transition: all 0.3s;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       text-decoration: none;
     }
 
     .btn-secondary:hover {
       border-color: rgba(109, 93, 253, 0.6);
       background: rgba(109, 93, 253, 0.08);
+      transform: translateY(-2px);
     }
 
     /* Mobile nav */
@@ -415,6 +510,7 @@
       padding: 80px 32px 32px;
       transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       z-index: 50;
+      overflow-y: auto;
     }
 
     .mobile-nav.open {
@@ -501,12 +597,21 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
     .animate-fade-in {
       animation: fadeIn 1s ease-out;
     }
 
     .animate-fade-in-up {
       animation: fadeInUp 0.8s ease-out;
+    }
+
+    .animate-scale-in {
+      animation: scaleIn 0.6s ease-out;
     }
 
     .animate-fade-up {
@@ -525,6 +630,7 @@
     .animate-delay-300 { animation-delay: 0.3s; }
     .animate-delay-400 { animation-delay: 0.4s; }
     .animate-delay-500 { animation-delay: 0.5s; }
+    .animate-delay-600 { animation-delay: 0.6s; }
 
     .animate-on-scroll {
       opacity: 0;
@@ -533,6 +639,25 @@
     }
 
     .animate-on-scroll.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Staggered children animation */
+    .stagger-children > .stagger-item {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .stagger-children.visible > .stagger-item:nth-child(1) { transition-delay: 0s; }
+    .stagger-children.visible > .stagger-item:nth-child(2) { transition-delay: 0.1s; }
+    .stagger-children.visible > .stagger-item:nth-child(3) { transition-delay: 0.2s; }
+    .stagger-children.visible > .stagger-item:nth-child(4) { transition-delay: 0.3s; }
+    .stagger-children.visible > .stagger-item:nth-child(5) { transition-delay: 0.4s; }
+    .stagger-children.visible > .stagger-item:nth-child(6) { transition-delay: 0.5s; }
+
+    .stagger-children.visible > .stagger-item {
       opacity: 1;
       transform: translateY(0);
     }
@@ -630,23 +755,27 @@
     @media (max-width: 768px) {
       .hamburger { display: flex; }
       .desktop-nav { display: none !important; }
-      .pricing-popular { transform: none; }
-      .stat-number { font-size: 2rem; }
-      .cost-table { font-size: 13px; }
+      .pricing-popular { transform: none !important; }
+      .stat-number { font-size: 1.75rem; }
+      .cost-table { font-size: 12px; }
       .cost-table th, .cost-table td { padding: 10px 12px; }
-      .hero-sub-value { font-size: 12px; padding: 6px 12px; }
-      .pricing-toggle button { padding: 6px 16px; font-size: 13px; }
+      .hero-sub-value { font-size: 11px; padding: 6px 12px; }
+      .pricing-toggle button { padding: 6px 14px; font-size: 12px; }
       .pricing-toggle .toggle-slider { width: calc(50% - 3px); }
       .partner-card { padding: 24px 16px; }
       header .btn-primary { padding: 8px 16px !important; font-size: 13px !important; }
+      .hero-sub-value { margin-bottom: 8px; }
     }
 
     @media (max-width: 480px) {
-      .brand-logo-row svg { height: 18px; }
-      .brand-logo-row { gap: 20px; }
-      .code-window pre { font-size: 12px; padding: 14px 16px; }
+      .brand-logo-row svg { height: 16px; }
+      .brand-logo-row { gap: 16px; }
+      .code-window pre { font-size: 11px; padding: 12px 14px; }
       section.py-24 { padding-top: 64px; padding-bottom: 64px; }
       .glow-purple, .glow-cyan { display: none; }
+      .hero-ambient-glow { display: none; }
+      .stat-number { font-size: 1.5rem; }
+      .grid.md\:grid-cols-2.lg\:grid-cols-5 { grid-template-columns: 1fr; }
     }
 
     @media (min-width: 769px) {
@@ -719,6 +848,48 @@
       background: rgba(109, 93, 253, 0.4);
       color: white;
     }
+
+    /* View transition speed */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* Code block for inline use */
+    code {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+
+    /* GitHub-style mark list */
+    .check-list li {
+      position: relative;
+      padding-left: 28px;
+    }
+    .check-list li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 4px;
+      width: 18px;
+      height: 18px;
+      background: rgba(52, 211, 153, 0.15);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      border-radius: 50%;
+    }
+    .check-list li::after {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 9px;
+      width: 8px;
+      height: 4px;
+      border-left: 2px solid #34d399;
+      border-bottom: 2px solid #34d399;
+      transform: rotate(-45deg);
+    }
   </style>
 </head>
 <body>
@@ -767,7 +938,7 @@
           <a href="#comparison" class="text-sm font-medium text-slate-300 hover:text-white transition-colors no-underline">Cost Comparison</a>
           <a href="#partners" class="text-sm font-medium text-slate-300 hover:text-white transition-colors no-underline">Infrastructure</a>
           <a href="#faq" class="text-sm font-medium text-slate-300 hover:text-white transition-colors no-underline">FAQ</a>
-          <a href="#" class="btn-primary" style="padding:10px 24px;font-size:14px;">Start Free →</a>
+          <a href="#" class="btn-primary btn-shine" style="padding:10px 24px;font-size:14px;">Start Free →</a>
         </div>
 
         <!-- Hamburger -->
@@ -784,13 +955,15 @@
 
     <!-- ===== HERO ===== -->
     <section class="relative min-h-screen flex items-center overflow-hidden bg-grid pt-20">
+      <!-- Ambient glow -->
+      <div class="hero-ambient-glow"></div>
       <!-- Glow orbs -->
       <div class="glow-purple" style="top:-100px;left:-200px;"></div>
       <div class="glow-cyan" style="bottom:-100px;right:-150px;"></div>
       <div class="glow-purple" style="top:40%;right:-200px;width:350px;height:350px;"></div>
 
       <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
-        <div class="grid md:grid-cols-2 gap-12 items-center">
+        <div class="grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
           <!-- Left: Text -->
           <div class="animate-fade-in-up">
             <!-- Badge -->
@@ -808,20 +981,19 @@
             <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight text-white mb-4">
               Serverless Database.
               <br>
-              <span class="gradient-text">EU Sovereign</span>
+              <span class="hero-gradient-text">EU Sovereign</span>
               <br>
               By Architecture.
             </h1>
 
             <p class="text-base sm:text-lg text-slate-300 max-w-xl mb-6 leading-relaxed">
-              Branchable MySQL &amp; PostgreSQL. <strong class="text-white">3–5× cheaper than AWS</strong>, GDPR by default — running on EuroScale's own HA multi-cloud cluster. No infra to manage. Just a connection string.
+              Branchable MySQL &amp; PostgreSQL — <strong class="text-white">3–5× cheaper than AWS</strong>, GDPR by default, running on EuroScale's own HA multi-cloud cluster. You get a connection string. Nothing else.
             </p>
 
             <!-- CTAs -->
             <div class="flex flex-wrap gap-4">
-              <a href="#" class="btn-primary text-lg px-8 py-4" style="position:relative;overflow:hidden;">
-                <span style="position:relative;z-index:1;">Get Started Free →</span>
-                <span style="position:absolute;inset:0;background:linear-gradient(135deg,#6d5dfd,#a99fff,#6d5dfd);background-size:200% 200%;animation:shimmer 3s ease-in-out infinite;opacity:0;transition:opacity 0.3s;"></span>
+              <a href="#" class="btn-primary btn-shine text-lg px-8 py-4">
+                Get Started Free →
               </a>
               <a href="#demo" class="btn-secondary text-lg px-8 py-4">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
@@ -832,7 +1004,7 @@
             <!-- Trusted by -->
             <div class="mt-10 pt-8 border-t border-slate-700/50">
               <p class="text-xs font-medium uppercase tracking-widest text-slate-500 mb-4">Built on European Infrastructure</p>
-              <div class="flex items-center gap-6">
+              <div class="flex items-center gap-6 flex-wrap">
                 <div class="flex items-center gap-2 text-slate-400 text-sm font-medium brand-logo" style="opacity:0.6;">
                   <!-- Hetzner logo -->
                   <svg width="80" height="12" viewBox="0 0 181.42 22.24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -998,15 +1170,15 @@
           </p>
         </div>
 
-        <div class="grid md:grid-cols-3 gap-6 animate-on-scroll">
-        <!-- Card 1 -->
-          <div class="glass-card p-8">
+        <div class="grid md:grid-cols-3 gap-6 animate-on-scroll stagger-children">
+          <!-- Card 1 -->
+          <div class="glass-card p-8 stagger-item">
             <div class="w-14 h-14 rounded-xl flex items-center justify-center mb-5" style="background:rgba(109,93,253,0.15);">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6d5dfd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
             </div>
             <h3 class="text-xl font-bold text-white mb-3">Market Validated</h3>
             <p class="text-slate-300 text-sm leading-relaxed mb-4">
-              PlanetScale raised <strong class="text-white">$105M</strong> at <strong class="text-white">$3.9M ARR</strong> (2024) with <strong class="text-white">250% YoY growth</strong> — the serverless database model is proven. Europe needs the same capabilities with data sovereignty.
+              PlanetScale raised <strong class="text-white">$105M</strong> at <strong class="text-white">$3.9M ARR</strong> — the serverless database model is proven at scale. Europe needs the same capabilities with data sovereignty built in, not bolted on.
             </p>
             <div class="flex flex-wrap gap-2">
               <span class="tech-badge" style="font-size:11px;padding:4px 10px;">$3.9M ARR</span>
@@ -1016,13 +1188,13 @@
           </div>
 
           <!-- Card 2 -->
-          <div class="glass-card p-8">
+          <div class="glass-card p-8 stagger-item">
             <div class="w-14 h-14 rounded-xl flex items-center justify-center mb-5" style="background:rgba(34,211,238,0.15);">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
             </div>
             <h3 class="text-xl font-bold text-white mb-3">Sovereign Cloud Boom</h3>
             <p class="text-slate-300 text-sm leading-relaxed mb-4">
-              The sovereign cloud market is projected at <strong class="text-white">$154.7B in 2025</strong> (27% CAGR). The EU cloud market alone hits <strong class="text-white">$173.6B</strong> (17.4% CAGR). European businesses are actively seeking GDPR-compliant alternatives to US hyperscalers.
+              The sovereign cloud market hits <strong class="text-white">$154.7B in 2025</strong> (27% CAGR). The EU cloud market alone reaches <strong class="text-white">$173.6B</strong> — and European businesses are actively seeking GDPR-compliant alternatives to US hyperscalers.
             </p>
             <div class="flex flex-wrap gap-2">
               <span class="tech-badge" style="font-size:11px;padding:4px 10px;">$154.7B Market</span>
@@ -1032,16 +1204,16 @@
           </div>
 
           <!-- Card 3 -->
-          <div class="glass-card p-8">
+          <div class="glass-card p-8 stagger-item">
             <div class="w-14 h-14 rounded-xl flex items-center justify-center mb-5" style="background:rgba(251,191,36,0.15);">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
             </div>
             <h3 class="text-xl font-bold text-white mb-3">3–5× Cheaper Infrastructure</h3>
             <p class="text-slate-300 text-sm leading-relaxed mb-4">
-              Hetzner — <strong class="text-white">28 years</strong>, <strong class="text-white">400K+ customers</strong> — delivers equivalent performance at <strong class="text-white">3–5× lower cost</strong> than AWS. Combined with EuroScale's multi-cloud orchestration, you get PlanetScale-class features at European prices.
+              Hetzner — <strong class="text-white">28 years</strong>, <strong class="text-white">400K+ customers</strong> — delivers equivalent performance at <strong class="text-white">3–5× lower cost</strong> than AWS. EuroScale's multi-cloud orchestration brings PlanetScale-class features at European prices.
             </p>
             <div class="flex flex-wrap gap-2">
-              <span class="tech-badge" style="font-size:11px;padding:4px 10px;">3-5× Cheaper</span>
+              <span class="tech-badge" style="font-size:11px;padding:4px 10px;">3–5× Cheaper</span>
               <span class="tech-badge" style="font-size:11px;padding:4px 10px;">28 Yr Heritage</span>
               <span class="tech-badge" style="font-size:11px;padding:4px 10px;">Multi-Cloud</span>
             </div>
@@ -1067,25 +1239,25 @@
         <div class="max-w-4xl mx-auto">
           <!-- Step flow -->
           <div class="grid md:grid-cols-3 gap-8 text-center animate-on-scroll">
-            <div>
-              <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl" style="background:rgba(109,93,253,0.15);border:1px solid rgba(109,93,253,0.2);">1</div>
+            <div class="stagger-item">
+              <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold" style="background:rgba(109,93,253,0.15);border:1px solid rgba(109,93,253,0.2);color:#a99fff;">1</div>
               <h3 class="font-bold text-white mb-2">Sign up</h3>
               <p class="text-slate-400 text-sm">Create your EuroScale account. No credit card required for the free tier.</p>
             </div>
-            <div>
-              <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl" style="background:rgba(109,93,253,0.15);border:1px solid rgba(109,93,253,0.2);">2</div>
+            <div class="stagger-item">
+              <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold" style="background:rgba(109,93,253,0.15);border:1px solid rgba(109,93,253,0.2);color:#a99fff;">2</div>
               <h3 class="font-bold text-white mb-2">Create a database</h3>
-              <p class="text-slate-400 text-sm">One CLI command or API call. Pick MySQL or PostgreSQL, choose a region.</p>
+              <p class="text-slate-400 text-sm">One CLI command. Pick MySQL or PostgreSQL, choose a region.</p>
             </div>
-            <div>
-              <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl" style="background:rgba(109,93,253,0.15);border:1px solid rgba(109,93,253,0.2);">3</div>
+            <div class="stagger-item">
+              <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold" style="background:rgba(109,93,253,0.15);border:1px solid rgba(109,93,253,0.2);color:#a99fff;">3</div>
               <h3 class="font-bold text-white mb-2">Get your credentials</h3>
-              <p class="text-slate-400 text-sm">Connection string, username, and password delivered instantly. Connect and ship.</p>
+              <p class="text-slate-400 text-sm">Connection string, username, password. Delivered instantly. Connect and ship.</p>
             </div>
           </div>
 
           <!-- Terminal output -->
-          <div class="mt-12 code-window">
+          <div class="mt-12 code-window animate-on-scroll">
             <div class="traffic-lights">
               <span class="red"></span><span class="yellow"></span><span class="green"></span>
               <span class="text-xs text-slate-500 ml-4 font-mono">What you see — nothing you don't need</span>
@@ -1102,7 +1274,7 @@
 <span class="token-output">  EUROSCOPE_DB_NAME=my_app</span>
 <span class="token-output">  </span>
 <span class="token-output">  ✨ Connection string:</span>
-<span class="token-string">    mysql://u_a1b2c3d4:••••••••@my-app.euroscale.app:3306/my_app</span>
+<span class="token-string">    mysql://u_a1b2c3d4:***@my-app.euroscale.app:3306/my_app</span>
 <span class="token-output">  </span>
 <span class="token-comment"># Done. Your database is live. Nothing else to configure.</span></pre>
           </div>
@@ -1123,27 +1295,27 @@
           </p>
         </div>
 
-        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-on-scroll">
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-on-scroll stagger-children">
           <!-- Feature 1 -->
-          <div class="glass-card p-6">
+          <div class="glass-card p-6 stagger-item">
             <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-4" style="background:rgba(109,93,253,0.15);">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6d5dfd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
             </div>
             <h3 class="text-lg font-bold text-white mb-2">Database Branching</h3>
-            <p class="text-slate-400 text-sm leading-relaxed">Clone production in seconds for development, CI/CD, and staging. Zero-downtime schema deployments via Vitess VReplication.</p>
+            <p class="text-slate-400 text-sm leading-relaxed">Clone production in seconds for dev, CI/CD, and staging. Zero-downtime schema deployments via Vitess VReplication.</p>
           </div>
 
           <!-- Feature 2 -->
-          <div class="glass-card p-6">
+          <div class="glass-card p-6 stagger-item">
             <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-4" style="background:rgba(34,211,238,0.15);">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><path d="M6 6h.01M6 18h.01"/></svg>
             </div>
             <h3 class="text-lg font-bold text-white mb-2">Serverless &amp; Elastic</h3>
-            <p class="text-slate-400 text-sm leading-relaxed">Auto-scaling compute and storage. Pay only for what you use. No capacity planning needed.</p>
+            <p class="text-slate-400 text-sm leading-relaxed">Auto-scaling compute and storage. Pay only for what you use. No capacity planning.</p>
           </div>
 
           <!-- Feature 3 -->
-          <div class="glass-card p-6">
+          <div class="glass-card p-6 stagger-item">
             <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-4" style="background:rgba(52,211,153,0.15);">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
@@ -1152,7 +1324,7 @@
           </div>
 
           <!-- Feature 4 -->
-          <div class="glass-card p-6">
+          <div class="glass-card p-6 stagger-item">
             <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-4" style="background:rgba(251,191,36,0.15);">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             </div>
@@ -1161,7 +1333,7 @@
           </div>
 
           <!-- Feature 5 -->
-          <div class="glass-card p-6">
+          <div class="glass-card p-6 stagger-item">
             <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-4" style="background:rgba(109,93,253,0.15);">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6d5dfd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             </div>
@@ -1170,7 +1342,7 @@
           </div>
 
           <!-- Feature 6 -->
-          <div class="glass-card p-6">
+          <div class="glass-card p-6 stagger-item">
             <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-4" style="background:rgba(34,211,238,0.15);">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
@@ -1194,16 +1366,14 @@
           </p>
         </div>
 
-        <div class="flex flex-wrap justify-center gap-4">
+        <div class="flex flex-wrap justify-center gap-4 animate-on-scroll">
           <span class="tech-badge text-base px-6 py-3">
-            <!-- Vitess logo -->
             <svg width="18" height="18" viewBox="0 0 24 24" fill="#c4b5fd" xmlns="http://www.w3.org/2000/svg" class="brand-logo-tech">
               <path d="m19.206 1.045-7.217 13.186L4.817 1.045H0l11.904 21.91L24 1.045h-4.794Z"/>
             </svg>
             Vitess (MySQL)
           </span>
           <span class="tech-badge text-base px-6 py-3">
-            <!-- Citus logo -->
             <svg width="18" height="18" viewBox="0 0 64 64" fill="#c4b5fd" xmlns="http://www.w3.org/2000/svg" class="brand-logo-tech">
               <path fill-rule="evenodd" d="M43.3,26.1c0.9-4.5-12-6.4-19.4,2.7c-8.3,10.2,8.4,20.9,27.4,6.6c12.1-9.2,16-21.8,8.9-28.2C46.4-5.4,13,6.3,1.8,31.3C13,12.4,41.1,3.5,52.3,15c4.7,4.8,2.1,14.5-6.5,18.6C31.9,40.1,33.2,25.9,43.3,26.1"/>
               <path fill-rule="evenodd" d="M42.6,16.2c-23-6.9-54.2,21.3-38.2,39.9C15,68.5,52.1,62.5,64,25.1C49.9,50.9,23.3,54.7,13.2,47.3C1.3,38.6,16.1,14.2,42.6,16.2"/>
@@ -1211,14 +1381,12 @@
             Citus (PostgreSQL)
           </span>
           <span class="tech-badge text-base px-6 py-3">
-            <!-- Kubernetes logo -->
             <svg width="18" height="18" viewBox="0 0 777 754" fill="#c4b5fd" xmlns="http://www.w3.org/2000/svg" class="brand-logo-tech">
               <path d="M386.93,178.6a48.93,48.53,0,0,0-18.75,4.75L112.31,305.6A48.93,48.53,0,0,0,85.83,338.52L22.71,613.15a48.93,48.53,0,0,0,6.64,37.21,48.93,48.53,0,0,0,2.78,3.86L209.24,874.42a48.93,48.53,0,0,0,38.26,18.26l284.02-.07a48.93,48.53,0,0,0,38.25-18.23L746.81,654.15a48.93,48.53,0,0,0,9.46-41.07L693.04,338.46a48.93,48.53,0,0,0-26.48-28.92L410.66,183.34a48.93,48.53,0,0,0-23.73-4.75z"/>
             </svg>
             Kubernetes
           </span>
           <span class="tech-badge text-base px-6 py-3">
-            <!-- Terraform logo -->
             <svg width="18" height="18" viewBox="0 0 64 64" fill="#c4b5fd" xmlns="http://www.w3.org/2000/svg" class="brand-logo-tech">
               <g fill-rule="evenodd" transform="matrix(.826767 0 0 .826767 8.416322 51.138164)">
                 <path d="M39.1 15.557v-24.43l-21.16-12.22v24.43zm0-27.1l-21.16-12.22v-24.44l21.16 12.22z" fill="#5c4ee5"/>
@@ -1229,7 +1397,6 @@
             Terraform
           </span>
           <span class="tech-badge text-base px-6 py-3">
-            <!-- WAL-G logo (monogram) -->
             <svg width="18" height="18" viewBox="0 0 24 24" fill="#c4b5fd" xmlns="http://www.w3.org/2000/svg" class="brand-logo-tech">
               <path d="M3 3h4l4 6-4 6h-4l4-6-4-6zm10 0h4l4 6-4 6h-4l4-6-4-6z" opacity="0.7"/>
               <path d="M8 3h4l4 6-4 6h-4l4-6-4-6z" opacity="0.5" transform="translate(2,-1)"/>
@@ -1239,7 +1406,7 @@
         </div>
 
         <!-- Architecture diagram -->
-        <div class="mt-12 glass-card-static p-8 text-center">
+        <div class="mt-12 glass-card-static p-8 text-center animate-on-scroll">
           <p class="text-xs font-semibold uppercase tracking-widest text-purple-400 mb-6">How it works — EuroScale's Multi-Cloud HA Architecture</p>
           <div class="flex flex-col items-center gap-4 text-sm">
             <!-- Customer layer -->
@@ -1454,7 +1621,7 @@
               </li>
               <li class="flex items-start gap-2">
                 <svg class="w-4 h-4 mt-0.5 text-green-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                Dedicated clusters
+                Dedicated clusters (EuroScale-managed)
               </li>
               <li class="flex items-start gap-2">
                 <svg class="w-4 h-4 mt-0.5 text-green-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1462,7 +1629,7 @@
               </li>
               <li class="flex items-start gap-2">
                 <svg class="w-4 h-4 mt-0.5 text-green-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                Dedicated clusters (EuroScale-managed)
+                24/7 dedicated support
               </li>
             </ul>
             <a href="#" class="btn-primary w-full justify-center" style="padding:12px 24px;font-size:14px;background:linear-gradient(135deg,#4f46e5,#6d5dfd);">Contact Us →</a>
@@ -1564,7 +1731,7 @@
             <div class="flex flex-wrap justify-center gap-2 mt-2">
               <span class="text-xs px-2 py-1 rounded" style="background:rgba(52,211,153,0.15);color:#34d399;">28 years</span>
               <span class="text-xs px-2 py-1 rounded" style="background:rgba(52,211,153,0.15);color:#34d399;">400K+ customers</span>
-              <span class="text-xs px-2 py-1 rounded" style="background:rgba(52,211,153,0.15);color:#34d399;">3-5× cheaper</span>
+              <span class="text-xs px-2 py-1 rounded" style="background:rgba(52,211,153,0.15);color:#34d399;">3–5× cheaper</span>
             </div>
             <p class="text-xs text-slate-500 mt-3 text-center">Primary partner · Best price/performance in Europe</p>
           </div>
@@ -1612,7 +1779,7 @@
         </div>
 
         <!-- Multi-cloud note -->
-        <div class="mt-10 text-center">
+        <div class="mt-10 text-center animate-on-scroll">
           <div class="inline-flex items-center gap-3 px-6 py-4 rounded-xl" style="background:rgba(109,93,253,0.08);border:1px solid rgba(109,93,253,0.15);">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6d5dfd" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
             <span class="text-sm text-slate-300"><strong class="text-white">Single HA K8s cluster across all providers:</strong> Worker nodes span Hetzner, OVH, and Exoscale. If any provider or zone fails, workloads redistribute automatically. <strong class="text-white">You just use your database.</strong></span>
@@ -1635,14 +1802,14 @@
           <!-- Testimonial 1 -->
           <div class="testimonial-card glass-card p-8">
             <div class="flex items-center gap-1 mb-4">
-              <svg class="w-4 h-4 text-gold-400" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              <svg class="w-4 h-4 text-gold-400" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              <svg class="w-4 h-4 text-gold-400" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              <svg class="w-4 h-4 text-gold-400" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              <svg class="w-4 h-4 text-gold-400" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg class="w-4 h-4" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg class="w-4 h-4" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg class="w-4 h-4" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg class="w-4 h-4" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg class="w-4 h-4" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             </div>
             <p class="text-slate-300 text-sm leading-relaxed mb-6">
-              &ldquo;We migrated from PlanetScale to EuroScale for GDPR compliance. The branching workflow is identical, performance is comparable, and we're saving 70% on our monthly bill. A no-brainer for any EU-based startup.&rdquo;
+              &ldquo;We moved from PlanetScale for GDPR compliance. The branching workflow is identical, performance is on par, and we cut our monthly bill by 70%. For any EU-based startup, this is a no-brainer.&rdquo;
             </p>
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style="background:linear-gradient(135deg,#6d5dfd,#4f46e5);color:white;">MK</div>
@@ -1656,14 +1823,14 @@
           <!-- Testimonial 2 -->
           <div class="testimonial-card glass-card p-8">
             <div class="flex items-center gap-1 mb-4">
-              <svg class="w-4 h-4 text-gold-400" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              <svg class="w-4 h-4 text-gold-400" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              <svg class="w-4 h-4 text-gold-400" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              <svg class="w-4 h-4 text-gold-400" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              <svg class="w-4 h-4 text-gold-400" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg class="w-4 h-4" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg class="w-4 h-4" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg class="w-4 h-4" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg class="w-4 h-4" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg class="w-4 h-4" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             </div>
             <p class="text-slate-300 text-sm leading-relaxed mb-6">
-              &ldquo;Database branching in seconds transformed our CI/CD pipeline. Schema migrations are now zero-downtime and ship daily. Knowing our data never leaves EU soil gives investors the confidence they need.&rdquo;
+              &ldquo;Database branching in seconds transformed our CI/CD pipeline. We ship schema migrations daily with zero downtime. Knowing our data never leaves EU soil gave investors the confidence to close our Series A.&rdquo;
             </p>
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style="background:linear-gradient(135deg,#22d3ee,#0891b2);color:white;">TL</div>
@@ -1677,14 +1844,14 @@
           <!-- Testimonial 3 -->
           <div class="testimonial-card glass-card p-8">
             <div class="flex items-center gap-1 mb-4">
-              <svg class="w-4 h-4 text-gold-400" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              <svg class="w-4 h-4 text-gold-400" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              <svg class="w-4 h-4 text-gold-400" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              <svg class="w-4 h-4 text-gold-400" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              <svg class="w-4 h-4 text-gold-400" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg class="w-4 h-4" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg class="w-4 h-4" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg class="w-4 h-4" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg class="w-4 h-4" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg class="w-4 h-4" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             </div>
             <p class="text-slate-300 text-sm leading-relaxed mb-6">
-              &ldquo;As a public sector contractor, data sovereignty isn't optional — it's the law. EuroScale is the only platform that gives us PlanetScale-class features with the GDPR compliance we need. Hetzner-backed, EU-hosted, and certified.&rdquo;
+              &ldquo;For public sector work, data sovereignty isn't optional — it's the law. EuroScale is the only platform delivering PlanetScale-class features with the GDPR compliance we require. Hetzner-backed, EU-hosted, and audit-ready.&rdquo;
             </p>
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style="background:linear-gradient(135deg,#34d399,#059669);color:white;">SJ</div>
@@ -1783,7 +1950,7 @@
           Join hundreds of European teams building on EuroScale. Get started free — no credit card, no commitment, no nonsense.
         </p>
         <div class="flex flex-wrap justify-center gap-4">
-          <a href="#" class="btn-primary text-lg px-10 py-4">
+          <a href="#" class="btn-primary btn-shine text-lg px-10 py-4">
             Get Started Free →
           </a>
           <a href="#" class="btn-secondary text-lg px-10 py-4">
@@ -1923,6 +2090,7 @@
       nav.classList.toggle('open');
       overlay.classList.toggle('hidden');
       hamburger.classList.toggle('active');
+      document.body.style.overflow = nav.classList.contains('open') ? 'hidden' : '';
     }
 
     document.getElementById('mobileOverlay')?.addEventListener('click', toggleMobile);
@@ -1966,6 +2134,23 @@
 
       document.querySelectorAll('.animate-on-scroll').forEach(el => {
         observer.observe(el);
+      });
+
+      // Also handle stagger-children
+      const staggerObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            staggerObserver.unobserve(entry.target);
+          }
+        });
+      }, {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      });
+
+      document.querySelectorAll('.stagger-children').forEach(el => {
+        staggerObserver.observe(el);
       });
     });
   </script>
