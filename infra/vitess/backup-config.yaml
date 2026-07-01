@@ -1,0 +1,179 @@
+# ─────────────────────────────────────────────────────────────────────
+# EuroScale — Vitess Native Backups: S3 (MinIO) Configuration
+# ─────────────────────────────────────────────────────────────────────
+# Configures Vitess's built-in backup/restore engine to stream encrypted
+# backups to MinIO (in-cluster S3-compatible object storage).
+#
+# Architecture:
+#   ┌─────────────┐     S3 API (HTTPS)     ┌──────────────────┐
+#   │  vttablet   │ ────────────────────── ▶ │     MinIO        │
+#   │  vtbackup   │   host:port, bucket     │  euroscale-minio │
+#   │  vtctld     │   forcePathStyle=true   │  port 9000/443   │
+#   └─────────────┘                         └──────────────────┘
+#                                                  │
+#                                          rclone sync (Task 8)
+#                                                  ▼
+#                                         ┌──────────────────┐
+#                                         │  Hetzner Storage  │
+#                                         │  Box (off-site)   │
+#                                         └──────────────────┘
+#
+# ── Prerequisites ───────────────────────────────────────────────────
+# 1. MinIO must be deployed in the euroscale namespace.
+#    (See deploy-minio.sh or a MinIO Helm chart)
+# 2. The `vitess-backup-creds` Secret must exist in the euroscale
+#    namespace.
+# 3. A bucket named `vitess-backups` must exist in MinIO.
+#
+# ── Applying ────────────────────────────────────────────────────────
+#   1. kubectl apply -f vitess-backup-creds.yaml -n euroscale
+#   2. Update vitess-cluster.yaml with the backup section below
+#   3. kubectl apply -f ../vitess-cluster.yaml -n euroscale
+#
+# ── Restoring ───────────────────────────────────────────────────────
+#   # List available backups
+#   kubectl get vitessbackups -n euroscale
+#
+#   # Restore a keyspace to a point in time
+#   vtctldclient BackupShard main/- --backup_location minio
+#   vtctldclient RestoreFromBackup main/-
+#
+#   # PITR: restore to specific timestamp
+#   vtctldclient RestoreFromBackup main/- --restore_to_timestamp "2026-07-03T02:00:00Z"
+# ─────────────────────────────────────────────────────────────────────
+
+# ═════════════════════════════════════════════════════════════════════
+# SECTION 1: Backup section to ADD to vitess-cluster.yaml
+# ═════════════════════════════════════════════════════════════════════
+# Add this under `spec:` in infra/vitess/vitess-cluster.yaml
+#
+#   backup:
+#     engine: builtin
+#     locations:
+#       - name: minio
+#         s3:
+#           region: eu-central-1
+#           bucket: vitess-backups
+#           endpoint: euroscale-backups.minio:9000
+#           forcePathStyle: true
+#           keyPrefix: euroscale/
+#           authSecret:
+#             name: vitess-backup-creds
+#             key: credentials
+#     schedules:
+#       - name: daily-full
+#         frequency: 24h
+#         backupMethod: vtbackup
+#         strategies:
+#           - name: all-shards
+#             scope: Cluster
+#         resources:
+#           requests:
+#             cpu: 200m
+#             memory: 256Mi
+#           limits:
+#             cpu: 500m
+#             memory: 512Mi
+#         startingDeadlineSeconds: 3600
+#         successfulJobsHistoryLimit: 3
+#         failedJobsHistoryLimit: 1
+#
+#       - name: incremental-15m
+#         frequency: 15m
+#         backupMethod: vtctldclient
+#         strategies:
+#           - name: all-shards
+#             scope: Cluster
+#         resources:
+#           requests:
+#             cpu: 100m
+#             memory: 128Mi
+#           limits:
+#             cpu: 200m
+#             memory: 256Mi
+#         successfulJobsHistoryLimit: 96   # 24h worth of 15-min jobs
+#         failedJobsHistoryLimit: 4
+#
+#       - name: pitr-binlogs
+#         frequency: 5m
+#         backupMethod: vtbackup
+#         strategies:
+#           - name: pitr-main
+#             scope: Keyspace
+#             keyspace: main
+#             extraFlags:
+#               pitr: "true"
+#         resources:
+#           requests:
+#             cpu: 100m
+#             memory: 128Mi
+#           limits:
+#             cpu: 200m
+#             memory: 256Mi
+#         successfulJobsHistoryLimit: 288  # 24h worth
+#         failedJobsHistoryLimit: 2
+
+# ═════════════════════════════════════════════════════════════════════
+# SECTION 2: MinIO Bucket Creation Job
+# ═════════════════════════════════════════════════════════════════════
+# Run this once after MinIO is deployed to create the backup bucket.
+# Alternatively, use the MinIO web console at port 9001.
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-create-bucket
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: backups
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: mc
+          image: minio/mc:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              mc alias set euroscale http://euroscale-minio:9000 \
+                "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" && \
+              mc mb euroscale/vitess-backups --ignore-existing && \
+              mc policy set none euroscale/vitess-backups && \
+              echo "Bucket 'vitess-backups' ready."
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: minio-admin-creds
+                  key: root-user
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: minio-admin-creds
+                  key: root-password
+
+# ═════════════════════════════════════════════════════════════════════
+# SECTION 3: Verification (one-shot) — Restore Test Job
+# ═════════════════════════════════════════════════════════════════════
+# Applied during Task 8 (restore testing). Listed here FYI.
+# See: infra/backups/ in Task 8.
+
+# ═════════════════════════════════════════════════════════════════════
+# SECTION 4: MinIO Deployment Reference
+# ═════════════════════════════════════════════════════════════════════
+# If MinIO is not yet deployed, use this minimal StatefulSet definition.
+# For production, use the official MinIO Operator or Helm chart:
+#   helm repo add minio https://charts.min.io/
+#   helm upgrade --install minio minio/minio \
+#     --namespace euroscale \
+#     --set rootUser=admin,rootPassword=<strong-password> \
+#     --set persistence.size=50Gi \
+#     --set resources.requests.memory=256Mi \
+#     --set service.type=ClusterIP
+#
+# The service should be reachable at: euroscale-minio.euroscale.svc:9000
+# Console (web UI) at: euroscale-minio-console.euroscale.svc:9001

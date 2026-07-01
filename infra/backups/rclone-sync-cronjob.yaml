@@ -1,0 +1,189 @@
+# ─────────────────────────────────────────────────────────────────────
+# EuroScale — Layer 1: Off-Site Backup (rclone sync MinIO → Hetzner Storage Box)
+# ─────────────────────────────────────────────────────────────────────
+# CronJob that syncs Vitess backups from in-cluster MinIO to a Hetzner
+# Storage Box (SFTP-based) every 6 hours.  Uses rclone with --backup-dir
+# to archive changed/deleted files before syncing.
+#
+# Architecture:
+#   ┌──────────────────┐    rclone sync (S3→SFTP)    ┌──────────────────┐
+#   │  MinIO (in-cluster)│ ──────────────────────────▶ │ Hetzner Storage   │
+#   │  euroscale-backups │   every 6h + --backup-dir  │ Box (off-site)   │
+#   └──────────────────┘                              └──────────────────┘
+#
+# ── Prerequisites ───────────────────────────────────────────────────
+# 1. Hetzner Storage Box provisioned with SSH access enabled.
+# 2. Kubernetes Secret `storagebox-ssh-key` created in euroscale ns:
+#      kubectl create secret generic storagebox-ssh-key \
+#        --from-file=id_rsa=/path/to/storagebox-ssh-key \
+#        --from-file=known_hosts=/path/to/known_hosts \
+#        -n euroscale
+# 3. MinIO credentials available (reuse vitess-backup-creds Secret).
+# 4. rclone image must support both s3 and sftp backends.
+#
+# ── Applying ────────────────────────────────────────────────────────
+#   kubectl apply -f rclone-sync-cronjob.yaml
+#   kubectl create job --from=cronjob/euroscale-rclone-sync rclone-sync-manual -n euroscale
+#
+# ── Testing ─────────────────────────────────────────────────────────
+#   kubectl logs -l app=euroscale-rclone-sync -n euroscale --tail=100
+# ─────────────────────────────────────────────────────────────────────
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: euroscale-rclone-sync
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: backups
+    layer: off-site
+spec:
+  # Every 6 hours at 00:00, 06:00, 12:00, 18:00 UTC
+  schedule: "0 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 900
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: euroscale-rclone-sync
+            component: backups
+        spec:
+          restartPolicy: OnFailure
+          # ── SSH Key Volume (Storage Box) ──────────────────────
+          volumes:
+            - name: storagebox-ssh-key
+              secret:
+                secretName: storagebox-ssh-key
+                defaultMode: 0600
+            - name: rclone-config
+              emptyDir: {}
+          containers:
+            - name: rclone
+              image: rclone/rclone:latest
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  # ── Generate rclone config from env vars ──────
+                  mkdir -p /root/.config/rclone
+
+                  cat > /root/.config/rclone/rclone.conf <<RCLONE
+                  [minio]
+                  type = s3
+                  provider = Minio
+                  env_auth = false
+                  access_key_id = ${MINIO_ACCESS_KEY}
+                  secret_access_key = ${MINIO_SECRET_KEY}
+                  endpoint = ${MINIO_ENDPOINT}
+                  acl = private
+                  no_check_bucket = true
+
+                  [storagebox]
+                  type = sftp
+                  host = ${STORAGEBOX_HOST}
+                  user = ${STORAGEBOX_USER}
+                  port = 23
+                  key_file = /etc/storagebox-ssh/id_rsa
+                  known_hosts_file = /etc/storagebox-ssh/known_hosts
+                  RCLONE
+
+                  # ── Sync: MinIO → Storage Box ─────────────────
+                  echo "=== rclone sync started at $(date -u +%Y-%m-%dT%H:%M:%SZ) ==="
+
+                  # Sync with --backup-dir to preserve changed/deleted files
+                  # for a rolling 30-day archive window
+                  rclone sync minio:euroscale-backups storagebox:euroscale-backups \
+                    --backup-dir storagebox:euroscale-backups-archive/$(date +%Y-%m-%d) \
+                    --checksum \
+                    --retries 3 \
+                    --stats 60s \
+                    --progress \
+                    --log-level INFO
+
+                  EXIT_CODE=$?
+                  if [ $EXIT_CODE -eq 0 ]; then
+                    echo "=== rclone sync SUCCESS at $(date -u +%Y-%m-%dT%H:%M:%SZ) ==="
+                  else
+                    echo "=== rclone sync FAILED (exit=$EXIT_CODE) at $(date -u +%Y-%m-%dT%H:%M:%SZ) ==="
+                  fi
+
+                  # ── Expose sync timestamp for Prometheus alerting ──
+                  echo "rclone_last_sync_timestamp $(date +%s)" > /tmp/metrics
+
+                  exit $EXIT_CODE
+              env:
+                # ── MinIO Credentials ────────────────────────────
+                - name: MINIO_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: vitess-backup-creds
+                      key: access-key
+                - name: MINIO_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: vitess-backup-creds
+                      key: secret-key
+                - name: MINIO_ENDPOINT
+                  value: "http://euroscale-backups.minio:9000"
+                # ── Storage Box Connection ───────────────────────
+                - name: STORAGEBOX_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: storagebox-ssh-key
+                      key: host
+                      optional: true
+                - name: STORAGEBOX_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: storagebox-ssh-key
+                      key: user
+                      optional: true
+              envFrom:
+                # Fallback: host/user can also be set directly in this ConfigMap
+                - configMapRef:
+                    name: euroscale-storagebox-config
+                    optional: true
+              volumeMounts:
+                - name: storagebox-ssh-key
+                  mountPath: /etc/storagebox-ssh
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+              securityContext:
+                runAsUser: 1000
+                runAsGroup: 1000
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false   # rclone needs to write config
+                capabilities:
+                  drop:
+                    - ALL
+
+---
+# ─────────────────────────────────────────────────────────────────────
+# ConfigMap: Storage Box connection details (fallback)
+# ─────────────────────────────────────────────────────────────────────
+# Use this if you prefer ConfigMap over Secret for host/user.
+# For production, put everything in the Secret.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: euroscale-storagebox-config
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: backups
+    layer: off-site
+data:
+  # ── Replace with your actual Storage Box details ───────────────
+  STORAGEBOX_HOST: "CHANGEME.your-storagebox.de"
+  STORAGEBOX_USER: "CHANGEME"

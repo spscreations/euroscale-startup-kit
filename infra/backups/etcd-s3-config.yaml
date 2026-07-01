@@ -1,0 +1,125 @@
+# ─────────────────────────────────────────────────────────────────────
+# EuroScale — Layer 2: etcd S3 Backup Configuration (K3s)
+# ─────────────────────────────────────────────────────────────────────
+# Configures K3s to stream etcd snapshots directly to MinIO (S3-compatible
+# object storage) for off-cluster durability of the cluster state.
+#
+# Without this, etcd snapshots are stored only on the local control-plane
+# node's filesystem.  If that node fails completely, both the running
+# cluster AND its backup state are lost.
+#
+# Architecture:
+#   ┌─────────────────┐     S3 API      ┌──────────────────┐
+#   │   K3s Server    │ ──────────────▶ │     MinIO        │
+#   │  (control-plane)│  etcd-s3: true  │  euroscale-backups│
+#   │  snapshot every │  bucket, ep     │  port 9000       │
+#   │      6h         │                 └──────────────────┘
+#   └─────────────────┘                        │
+#                                      rclone sync (Layer 1)
+#                                              ▼
+#                                     ┌──────────────────┐
+#                                     │  Hetzner Storage  │
+#                                     │  Box (off-site)   │
+#                                     └──────────────────┘
+#
+# ── Prerequisites ───────────────────────────────────────────────────
+# 1. MinIO running and accessible from control-plane nodes.
+# 2. A bucket named `euroscale-backups` exists in MinIO.
+# 3. The MinIO access/secret keys are available.
+#
+# ── Applying ────────────────────────────────────────────────────────
+# On EACH K3s server node:
+#
+#   1. Copy the config snippet below into:
+#      /etc/rancher/k3s/config.yaml
+#      OR pass via k3s install script as --etcd-s3, --etcd-s3-bucket, etc.
+#
+#   2. Restart K3s:
+#      systemctl restart k3s
+#
+#   3. Verify snapshots are flowing:
+#      kubectl logs -n kube-system -l component=etcd | grep -i s3
+#      # OR check MinIO bucket for etcd-snapshots/ prefix
+#
+# ── Alternative: k3s install script flags ───────────────────────────
+#   curl -sfL https://get.k3s.io | sh -s - server \
+#     --etcd-s3 \
+#     --etcd-s3-bucket=euroscale-backups \
+#     --etcd-s3-endpoint=euroscale-backups.minio:9000 \
+#     --etcd-s3-region=euroscale \
+#     --etcd-s3-access-key=YOUR_ACCESS_KEY \
+#     --etcd-s3-secret-key=YOUR_SECRET_KEY \
+#     --etcd-s3-insecure=true \
+#     --etcd-s3-folder=etcd-snapshots \
+#     --etcd-s3-timeout=60s
+# ─────────────────────────────────────────────────────────────────────
+
+# ═════════════════════════════════════════════════════════════════════
+# ConfigMap: Reference config for k3s etcd-s3 additions
+# ═════════════════════════════════════════════════════════════════════
+# This ConfigMap documents the etcd-s3 config. It is NOT directly
+# consumed by K3s — it serves as documentation and can be sourced
+# by automation scripts that template the real K3s config.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k3s-etcd-s3-config
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: backups
+    layer: etcd-s3
+data:
+  # ── Full k3s config.yaml additions ──
+  # Merge these into /etc/rancher/k3s/config.yaml on each server node.
+  k3s-config-additions.yaml: |
+    # ──────────────────────────────────────────────────────────────
+    # etcd S3 Backup Configuration
+    # Add to /etc/rancher/k3s/config.yaml on all K3s server nodes
+    # ──────────────────────────────────────────────────────────────
+    etcd-s3: true
+    etcd-s3-bucket: euroscale-backups
+    etcd-s3-endpoint: euroscale-backups.minio:9000
+    etcd-s3-region: euroscale
+    etcd-s3-folder: etcd-snapshots/
+    etcd-s3-insecure: true
+    etcd-s3-timeout: 60s
+    # CREDENTIALS: Set via environment or inline below
+    # etcd-s3-access-key: "YOUR_MINIO_ACCESS_KEY"
+    # etcd-s3-secret-key: "YOUR_MINIO_SECRET_KEY"
+    # Or pass as environment variables to k3s systemd service:
+    #   ETCD_S3_ACCESS_KEY=xxx
+    #   ETCD_S3_SECRET_KEY=xxx
+
+  # ── Snapshot schedule reference ──
+  # K3s default: snapshot every 6 hours (embedded etcd only).
+  # To adjust, add to config.yaml:
+  #   etcd-snapshot-schedule-cron: "0 */6 * * *"
+  #   etcd-snapshot-retention: 48
+  snapshot-schedule: "0 */6 * * *"
+  snapshot-retention: "48"
+
+  # ── Manual snapshot commands ──────────────────────────────────
+  # On any control-plane node:
+  #   k3s etcd-snapshot save --s3 --s3-bucket=euroscale-backups --s3-endpoint=euroscale-backups.minio:9000 --s3-insecure
+  #
+  # List S3 snapshots:
+  #   k3s etcd-snapshot ls --s3 --s3-bucket=euroscale-backups --s3-endpoint=euroscale-backups.minio:9000 --s3-insecure
+  #
+  # Restore from S3 (destructive — full cluster reset):
+  #   k3s server \
+  #     --cluster-reset \
+  #     --etcd-s3 \
+  #     --cluster-reset-restore-path=etcd-snapshots/<snapshot-name> \
+  #     --etcd-s3-bucket=euroscale-backups \
+  #     --etcd-s3-endpoint=euroscale-backups.minio:9000 \
+  #     --etcd-s3-insecure
+
+  # ── Verification ──────────────────────────────────────────────
+  # Check that snapshots are landing in MinIO:
+  #   kubectl run mc-check --rm -it --image=minio/mc --restart=Never -n euroscale -- \
+  #     mc alias set euroscale http://euroscale-backups.minio:9000 $ACCESS_KEY $SECRET_KEY && \
+  #     mc ls euroscale/euroscale-backups/etcd-snapshots/
+  verify-command: |
+    kubectl run mc-check --rm -it --image=minio/mc --restart=Never -n euroscale -- \
+      /bin/sh -c "mc alias set euroscale http://euroscale-backups.minio:9000 \$MINIO_ACCESS_KEY \$MINIO_SECRET_KEY && mc ls euroscale/euroscale-backups/etcd-snapshots/"

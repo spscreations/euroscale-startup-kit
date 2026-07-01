@@ -1,15 +1,37 @@
-# EuroScale — Vitess Backup Credentials
-# K8s Secret with MinIO access key + secret key in AWS credentials format
-# Vitess S3 backup location reads this via authSecret reference
+# ─────────────────────────────────────────────────────────────────────
+# EuroScale — Vitess Backup Credentials (MinIO)
+# ─────────────────────────────────────────────────────────────────────
+# Kubernetes Secret containing MinIO S3-compatible storage credentials.
+# Vitess uses the standard AWS credentials file format internally.
+#
+# Usage:
+#   1. Edit placeholders below (base64-encode actual values)
+#   2. kubectl apply -f vitess-backup-creds.yaml -n euroscale
+#
+# Generate strong random keys:
+#   MINIO_ACCESS_KEY=$(openssl rand -base64 24)
+#   MINIO_SECRET_KEY=$(openssl rand -base64 48)
+#   echo -n "$MINIO_ACCESS_KEY" | base64 -w0
+#   echo -n "$MINIO_SECRET_KEY" | base64 -w0
+# ─────────────────────────────────────────────────────────────────────
 apiVersion: v1
 kind: Secret
 metadata:
   name: vitess-backup-creds
   namespace: euroscale
+  labels:
+    app: euroscale
+    component: backups
 type: Opaque
-stringData:
-  # AWS credentials file format expected by Vitess S3 backup driver
-  credentials: |
-    [default]
-    aws_access_key_id = minioadmin
-    aws_secret_access_key = minioadmin
+data:
+  # MinIO access/secret keys (base64-encoded plaintext, NOT the aws format)
+  # Replace: echo -n 'your-access-key' | base64
+  access-key: <base64-encoded-minio-access-key>
+  secret-key: <base64-encoded-minio-secret-key>
+  # AWS credentials file format — mounted and read by Vitess vtbackup
+  credentials: PGRlZmF1bHQ+Xgphe3NfYWNjZXNzX2tleV9pZCA9IDxtaW5pby1hY2Nlc3Mta2V5Pl4KYXdzX3NlY3JldF9hY2Nlc3Nfa2V5ID0gPG1pbmlvLXNlY3JldC1rZXk+Xg==
+  #                                                                  ^
+  #                TEMPLATE: base64 of the following (replace with real keys):
+  #                [default]
+  #                aws_access_key_id = <minio-access-key>
+  #                aws_secret_access_key = <minio-secret-key>

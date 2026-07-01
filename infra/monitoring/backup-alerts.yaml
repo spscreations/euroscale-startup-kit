@@ -1,0 +1,344 @@
+# ─────────────────────────────────────────────────────────────────────
+# EuroScale — Layer 5: Backup Monitoring Alerts (PrometheusRule)
+# ─────────────────────────────────────────────────────────────────────
+# Prometheus alerting rules that monitor the health of all 5 backup
+# layers.  These alerts fire when backups are stale, off-site sync
+# fails, or automated restore tests don't pass.
+#
+# These rules expect the following metrics to be available:
+#   - vitess_backup_last_timestamp  (from vtbackup metrics / ServiceMonitor)
+#   - vitess_backup_last_success_timestamp  (backup completion time)
+#   - vitess_backup_success_total  (counter of successful backups)
+#   - euroscale_restore_test_status  (1 = passed, 0 = failed; from restore-test.sh)
+#   - rclone_sync_last_success  (timestamp of last successful rclone run)
+#
+# If these metrics aren't available via ServiceMonitor (because Vitess
+# Operator doesn't expose them natively), consider:
+#   1. Adding a sidecar that scrapes vtbackup logs and exposes metrics.
+#   2. Using kube-state-metrics to track CronJob success/failure.
+#   3. Using Pushgateway for rclone sync metrics (as done in restore-test.sh).
+#
+# ── Prerequisites ───────────────────────────────────────────────────
+# 1. kube-prometheus-stack deployed (infra/monitoring/deploy.sh)
+# 2. Prometheus Pushgateway (optional — for rclone/restore metrics)
+# 3. Vitess ServiceMonitors applied
+#
+# ── Applying ────────────────────────────────────────────────────────
+#   kubectl apply -f backup-alerts.yaml
+#   # Verify rules were loaded:
+#   kubectl get prometheusrule -n monitoring
+#   kubectl describe prometheusrule euroscale-backup-alerts -n monitoring
+# ─────────────────────────────────────────────────────────────────────
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: euroscale-backup-alerts
+  namespace: monitoring
+  labels:
+    app: euroscale
+    component: backups
+    layer: alerts
+    release: kube-prometheus-stack    # Required by helm chart label selectors
+    prometheus: kube-prometheus-stack-prometheus
+spec:
+  groups:
+    # ─────────────────────────────────────────────────────────────
+    # Group: Backup Freshness
+    # ─────────────────────────────────────────────────────────────
+    - name: euroscale-backup-freshness
+      rules:
+        # ── Alert 1: No Recent Vitess Backup ────────────────────
+        # Fires when no successful Vitess backup has been recorded
+        # in the last 36 hours (allows for 1 missed daily + buffer).
+        - alert: NoRecentVitessBackup
+          expr: |
+            (
+              time() - (
+                max by (cluster, keyspace, shard) (
+                  vitess_backup_last_success_timestamp
+                )
+              )
+            ) > 129600   # 36 hours in seconds
+            OR
+            absent(vitess_backup_last_success_timestamp)
+          for: 15m
+          labels:
+            severity: critical
+            team: platform
+            component: vitess-backups
+            layer: "2"
+          annotations:
+            summary: "No recent Vitess backup for keyspace {{ $labels.keyspace }}"
+            description: >
+              The last successful Vitess backup for keyspace {{ $labels.keyspace }}
+              on shard {{ $labels.shard }} was more than 36 hours ago
+              ({{ $value | humanizeDuration }}).
+              
+              This indicates the backup CronJob may have failed, MinIO may be
+              unreachable, or the Vitess backup engine is not working.
+              
+              ACTION:
+              1. Check CronJob status: kubectl get cronjobs -n euroscale | grep backup
+              2. Check vtbackup pod logs.
+              3. Verify MinIO is accessible from vttablet pods.
+              4. Check MinIO disk space: kubectl exec -n euroscale deploy/minio -- df -h
+
+        # ── Alternative Alert: Backup CronJob Failure (kube-state-metrics) ──
+        # Falls back to CronJob status if Vitess metrics aren't available.
+        - alert: NoRecentVitessBackupCronJob
+          expr: |
+            (
+              time() - (
+                max by (namespace, cronjob) (
+                  kube_cronjob_status_last_schedule_time{
+                    namespace="euroscale",
+                    cronjob=~"euroscale-full-backup.*|euroscale-incremental-backup.*"
+                  }
+                )
+              )
+            ) > 129600   # 36 hours
+            OR
+            absent(
+              kube_cronjob_status_last_schedule_time{
+                namespace="euroscale",
+                cronjob=~"euroscale-full-backup.*"
+              }
+            )
+          for: 15m
+          labels:
+            severity: critical
+            team: platform
+            component: vitess-backups
+            layer: "2"
+          annotations:
+            summary: "Vitess backup CronJob has not scheduled recently"
+            description: >
+              The Vitess backup CronJob {{ $labels.cronjob }} has not been
+              scheduled in the last 36 hours.
+              
+              ACTION:
+              1. kubectl get cronjobs -n euroscale
+              2. kubectl describe cronjob {{ $labels.cronjob }} -n euroscale
+              3. Check for suspended CronJobs or scheduling conflicts.
+
+    # ─────────────────────────────────────────────────────────────
+    # Group: Restore Test Health
+    # ─────────────────────────────────────────────────────────────
+    - name: euroscale-restore-test
+      rules:
+        # ── Alert 2: Restore Test Failed ────────────────────────
+        # Fires when the automated restore test (Layer 5) reports
+        # failure.  The restore-test.sh script pushes:
+        #   euroscale_restore_test_status{result="passed"} → 1
+        #   euroscale_restore_test_status{result="failed_*"} → 0
+        - alert: RestoreTestFailed
+          expr: |
+            euroscale_restore_test_status{result!~"passed"} == 1
+            OR
+            (
+              euroscale_restore_test_status{result="passed"} == 0
+              AND
+              euroscale_restore_test_status{result="passed"} != 1
+            )
+            OR
+            absent(euroscale_restore_test_status)
+          for: 30m
+          labels:
+            severity: critical
+            team: platform
+            component: restore-test
+            layer: "5"
+          annotations:
+            summary: "Automated restore test has failed"
+            description: >
+              The weekly automated restore test (euroscale-restore-test) has
+              failed or the result metric is missing.
+              
+              This means backups may be unusable or the restore procedure is
+              broken.  Investigate IMMEDIATELY — if a real disaster occurs,
+              you may not be able to recover.
+              
+              Result: {{ $labels.result | default "metric absent" }}
+              
+              ACTION:
+              1. Check CronJob logs:
+                 kubectl logs -l app=euroscale-restore-test -n euroscale --tail=200
+              2. Manually trigger a restore test:
+                 kubectl create job --from=cronjob/euroscale-restore-test \
+                   manual-restore -n euroscale
+              3. Verify backups exist in MinIO:
+                 kubectl exec -n euroscale deploy/euroscale-vtctld -- \
+                   vtctldclient GetBackups main/-
+              4. Check storage space on nodes and MinIO PVC.
+
+        # ── Alert 2b: Restore Test Not Run (stale metric) ───────
+        # Fires when the restore test hasn't run in > 8 days (missed
+        # a weekly run + 1 day buffer).
+        - alert: RestoreTestStale
+          expr: |
+            (
+              time() - euroscale_restore_test_last_run_timestamp
+            ) > 691200   # 8 days in seconds
+          for: 1h
+          labels:
+            severity: warning
+            team: platform
+            component: restore-test
+            layer: "5"
+          annotations:
+            summary: "Restore test has not run in over 8 days"
+            description: >
+              The automated restore test last ran {{ $value | humanizeDuration }}
+              ago.  Weekly tests should run every Sunday at 03:00 UTC.
+              
+              ACTION:
+              1. Check if CronJob is suspended:
+                 kubectl get cronjob euroscale-restore-test -n euroscale
+              2. Check CronJob schedule and history.
+              3. Trigger manually if needed.
+
+    # ─────────────────────────────────────────────────────────────
+    # Group: Off-Site Sync Health
+    # ─────────────────────────────────────────────────────────────
+    - name: euroscale-offsite-sync
+      rules:
+        # ── Alert 3: Off-Site Sync Stale ────────────────────────
+        # Fires when rclone sync hasn't completed in > 12 hours
+        # (missed 2 scheduled runs at 6h interval).
+        - alert: OffSiteSyncStale
+          expr: |
+            (
+              time() - rclone_sync_last_success
+            ) > 43200   # 12 hours in seconds
+            OR
+            absent(rclone_sync_last_success)
+          for: 30m
+          labels:
+            severity: critical
+            team: platform
+            component: offsite-sync
+            layer: "3"
+          annotations:
+            summary: "Off-site backup sync to Hetzner Storage Box is stale"
+            description: >
+              The rclone sync from MinIO to Hetzner Storage Box has not
+              completed successfully in over 12 hours.
+              
+              This means off-site backups are out of date.  If the cluster
+              fails now, up to 12+ hours of data could be lost.
+              
+              Last successful sync: {{ $value | humanizeTimestamp | default "unknown" }}
+              
+              ACTION:
+              1. Check CronJob status:
+                 kubectl get cronjob euroscale-rclone-sync -n euroscale
+              2. Check latest job logs:
+                 kubectl logs -l app=euroscale-rclone-sync -n euroscale --tail=200
+              3. Verify Storage Box is accessible (SSH/sftp test).
+              4. Verify Storage Box hasn't reached quota.
+              5. Check if SFTP key has expired or changed.
+
+        # ── Alert 3b: rclone CronJob Failure ────────────────────
+        # Fallback using kube-state-metrics if rclone metric isn't pushed.
+        - alert: OffSiteSyncCronJobFailed
+          expr: |
+            (
+              time() - (
+                max by (namespace, cronjob) (
+                  kube_cronjob_status_last_schedule_time{
+                    namespace="euroscale",
+                    cronjob="euroscale-rclone-sync"
+                  }
+                )
+              )
+            ) > 43200   # 12 hours
+          for: 30m
+          labels:
+            severity: critical
+            team: platform
+            component: offsite-sync
+            layer: "3"
+          annotations:
+            summary: "Off-site rclone sync CronJob not scheduling"
+            description: >
+              The rclone sync CronJob (euroscale-rclone-sync) has not been
+              scheduled in over 12 hours.
+              
+              ACTION:
+              1. kubectl get cronjob euroscale-rclone-sync -n euroscale
+              2. kubectl describe cronjob euroscale-rclone-sync -n euroscale
+              3. Check recent job pod logs for errors.
+
+    # ─────────────────────────────────────────────────────────────
+    # Group: MinIO Storage Health
+    # ─────────────────────────────────────────────────────────────
+    - name: euroscale-minio-storage
+      rules:
+        # ── Alert: MinIO Backup Storage Running Low ──────────────
+        - alert: MinIOBackupStorageLow
+          expr: |
+            (
+              minio_bucket_usage_total_bytes{bucket="euroscale-backups"}
+              /
+              minio_cluster_capacity_usable_total_bytes
+            ) > 0.85
+          for: 1h
+          labels:
+            severity: warning
+            team: platform
+            component: minio
+            layer: "2"
+          annotations:
+            summary: "MinIO backup storage is over 85% capacity"
+            description: >
+              The MinIO bucket 'euroscale-backups' is using {{ $value | humanizePercentage }}
+              of available capacity.
+              
+              Backups may start failing if storage fills up.
+              
+              ACTION:
+              1. Increase MinIO PVC size.
+              2. Reduce backup retention (shorter lifecycle).
+              3. Purge old backup objects manually.
+
+    # ─────────────────────────────────────────────────────────────
+    # Group: etcd Snapshot Health
+    # ─────────────────────────────────────────────────────────────
+    - name: euroscale-etcd-snapshots
+      rules:
+        # ── Alert: etcd Snapshot Stale ───────────────────────────
+        - alert: EtcdSnapshotStale
+          expr: |
+            (
+              time() - (
+                max(
+                  kube_node_info{} * 0
+                  + on() group_left()
+                  (
+                    # etcd snapshots are tracked via K3s metrics
+                    # or filesystem age.  Fallback: check via
+                    # node-exporter file age on /var/lib/rancher/k3s/server/db/snapshots/
+                    # This is a placeholder — adjust based on available metrics.
+                    k3s_etcd_snapshot_latest_timestamp
+                  )
+                )
+              )
+            ) > 43200   # 12 hours
+            OR
+            absent(k3s_etcd_snapshot_latest_timestamp)
+          for: 30m
+          labels:
+            severity: warning
+            team: platform
+            component: etcd-snapshots
+            layer: "4"
+          annotations:
+            summary: "K3s etcd snapshots may be stale"
+            description: >
+              K3s etcd snapshots have not been taken in over 12 hours.
+              
+              ACTION:
+              1. Check K3s etcd-snapshot status on control-plane nodes.
+              2. Verify MinIO connectivity from server nodes.
+              3. Check k3s service logs: journalctl -u k3s | grep snapshot
+              4. Verify etcd-s3 config in /etc/rancher/k3s/config.yaml.

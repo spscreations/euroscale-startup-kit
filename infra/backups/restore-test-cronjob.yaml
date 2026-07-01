@@ -1,0 +1,198 @@
+# ─────────────────────────────────────────────────────────────────────
+# EuroScale — Weekly Restore Test CronJob (Layer 5b)
+# ─────────────────────────────────────────────────────────────────────
+# Automates weekly restore testing of Vitess backups with checksum
+# verification and Prometheus metric export.
+#
+# Architecture:
+#   1. List available Vitess backups via vtctld
+#   2. Pick the latest full backup
+#   3. Restore into a temporary namespace/evironment
+#   4. Compute SHA-256 checksums of restored table data
+#   5. Compare against known-good checksum reference file
+#   6. Export result as Prometheus metric
+#   7. Clean up temporary resources
+#   8. Alert if verification fails
+#
+# ── Prerequisites ───────────────────────────────────────────────────
+#   - kubectl configured for the K3s cluster
+#   - vtctldclient available (or kubectl exec via vtctld pod)
+#   - MinIO and Vitess cluster operational
+#   - backup-alerts.yaml applied (PrometheusRule)
+#
+# ── Applying ─────────────────────────────────────────────────────────
+#   kubectl apply -f restore-test-cronjob.yaml
+#
+# ── Manual Trigger ──────────────────────────────────────────────────
+#   kubectl create job --from=cronjob/euroscale-restore-test restore-test-manual -n euroscale
+#
+# ── Checking Results ────────────────────────────────────────────────
+#   kubectl logs -l app=euroscale-restore-test -n euroscale --tail=50
+#   kubectl get pods -l job-name=restore-test-manual -n euroscale
+# ─────────────────────────────────────────────────────────────────────
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: euroscale-restore-test
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: backups
+    layer: restore-test
+spec:
+  # Every Sunday at 03:00 UTC (after Saturday's full backup)
+  schedule: "0 3 * * 0"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 4
+  failedJobsHistoryLimit: 2
+  startingDeadlineSeconds: 1800
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 604800   # Keep results for 7 days
+      template:
+        metadata:
+          labels:
+            app: euroscale-restore-test
+            component: backups
+        spec:
+          restartPolicy: Never
+          serviceAccountName: euroscale-restore-test-sa
+          volumes:
+            - name: scripts
+              emptyDir: {}
+            - name: checksum-data
+              emptyDir:
+                sizeLimit: 1Gi
+          initContainers:
+            - name: script-install
+              image: busybox:1.36
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  # Copy restore test script to shared volume
+                  cp /tmp/restore-test.sh /scripts/restore-test.sh
+                  chmod +x /scripts/restore-test.sh
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+          containers:
+            - name: restore-test
+              image: vitess/lite:v20.0.0
+              command:
+                - /scripts/restore-test.sh
+              env:
+                - name: NAMESPACE
+                  value: euroscale
+                - name: KEYSPACE
+                  value: main
+                - name: SHARD
+                  value: "0"
+                - name: VTCTLD_SVC
+                  value: euroscale-vtctld.euroscale
+                - name: VTCTLD_PORT
+                  value: "15999"
+                - name: TEST_NAMESPACE
+                  value: euroscale-restore-test
+                - name: PROMETHEUS_METRICS_FILE
+                  value: /tmp/metrics/restore-test.prom
+                - name: CHKSUM_FILE
+                  value: /checksum/known-good.sha256
+                - name: LOG_LEVEL
+                  value: INFO
+              envFrom:
+                - configMapRef:
+                    name: euroscale-backup-config
+                    optional: true
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+                - name: checksum-data
+                  mountPath: /checksum
+              resources:
+                requests:
+                  cpu: 200m
+                  memory: 256Mi
+                limits:
+                  cpu: 500m
+                  memory: 1Gi
+              securityContext:
+                runAsUser: 1000
+                runAsGroup: 1000
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+---
+# ── ServiceAccount for restore test ──────────────────────────────────
+# Needs permissions to create namespaces, pods, and services in the
+# temporary test namespace, plus read access to Vitess resources.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: euroscale-restore-test-sa
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: backups
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: euroscale-restore-test
+  labels:
+    app: euroscale
+    component: backups
+rules:
+  - apiGroups: [""]
+    resources:
+      - namespaces
+      - pods
+      - services
+      - configmaps
+      - secrets
+    verbs: ["get", "list", "create", "delete"]
+  - apiGroups: ["planetscale.com"]
+    resources: ["vitessclusters", "vitessbackups", "vitessbackupschedules"]
+    verbs: ["get", "list"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "create", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: euroscale-restore-test-binding
+  labels:
+    app: euroscale
+    component: backups
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: euroscale-restore-test
+subjects:
+  - kind: ServiceAccount
+    name: euroscale-restore-test-sa
+    namespace: euroscale
+---
+# ── ConfigMap: Backup config (tunable parameters) ───────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: euroscale-backup-config
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: backups
+data:
+  # Restore test timeout in seconds
+  RESTORE_TIMEOUT: "600"
+  # Tables to verify checksums on (space-separated)
+  VERIFY_TABLES: "_vt.replication_log"
+  # Minimum backup age to test (hours)
+  MIN_BACKUP_AGE_HOURS: "1"
+  # Known-good checksum reference (recomputed on first successful run)
+  # Stored as a ConfigMap key:value, values are SHA-256 hashes
+  # Populated automatically by the restore test on first successful run

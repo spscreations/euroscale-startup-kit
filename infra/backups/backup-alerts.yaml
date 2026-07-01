@@ -1,0 +1,175 @@
+# ─────────────────────────────────────────────────────────────────────
+# EuroScale — Backup Monitoring Alerts (PrometheusRule)
+# ─────────────────────────────────────────────────────────────────────
+# PrometheusRule CRD that defines alerting rules for all backup layers.
+# Applied to the monitoring namespace where kube-prometheus-stack is
+# deployed. Fires alerts to Alertmanager for notification routing.
+#
+# Architecture:
+#   ┌─────────────┐     scrape      ┌──────────────────┐
+#   │  vtbackup   │ ───────────────▶│    Prometheus     │
+#   │  rclone     │                 │  (in monitoring)  │
+#   │  restore    │                 │                   │
+#   │  test       │                 │  PrometheusRule   │
+#   │  etcd       │                 │  → ALERTS →       │
+#   └─────────────┘                 │  Alertmanager     │
+#                                   │  → Slack/Email    │
+#                                   └──────────────────┘
+#
+# ── Applying ───────────────────────────────────────────────────────
+#   kubectl apply -f backup-alerts.yaml
+#
+# ── Testing an Alert ───────────────────────────────────────────────
+#   kubectl port-forward -n monitoring svc/kube-prometheus-stack-prometheus 9090:9090
+#   # Open http://localhost:9090/alerts and filter for "EuroScale"
+# ─────────────────────────────────────────────────────────────────────
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: euroscale-backup-alerts
+  namespace: monitoring
+  labels:
+    app: euroscale
+    component: backups
+    layer: alerting
+    prometheus: kube-prometheus-stack
+spec:
+  groups:
+    - name: euroscale-backups
+      interval: 5m
+      rules:
+
+        # ── Layer 2: Vitess Full Backup Age ──────────────────────────
+        # Fires if no successful full backup in > 30 hours
+        # (daily backup @ 02:00 UTC → expect one within 26h of each other)
+        - alert: BackupAgeTooOld
+          expr: |
+            time() - max(vitess_backup_created_timestamp{type="full"}) > 108000
+          for: 1h
+          labels:
+            severity: critical
+            layer: "2-vitess-s3"
+          annotations:
+            summary: "Vitess full backup is too old (> 30 hours)"
+            description: >
+              No successful full Vitess backup in the last 30 hours.
+              Last backup: {{ $value | humanizeDuration }} ago.
+              Keyspace: main. Check vtbackup logs and MinIO connectivity.
+            runbook_url: "https://github.com/spscreations/euroscale-startup-kit/wiki/runbooks/BackupAgeTooOld.md"
+
+        # ── Layer 2: Vitess Incremental Backup Age ───────────────────
+        # Fires if no incremental backup in > 30 minutes
+        # (incremental runs every 15 minutes)
+        - alert: BackupIncrementalAgeTooOld
+          expr: |
+            time() - max(vitess_backup_created_timestamp{type="incremental"}) > 1800
+          for: 5m
+          labels:
+            severity: warning
+            layer: "2-vitess-s3"
+          annotations:
+            summary: "Vitess incremental backup is too old (> 30 minutes)"
+            description: >
+              No incremental Vitess backup in the last 30 minutes.
+              Expected every 15 minutes. Check PITR subsystem health.
+
+        # ── Layer 3: rclone Off-Site Sync ────────────────────────────
+        # Fires if rclone sync to Storage Box hasn't succeeded in > 7h
+        # (rclone runs every 6h, so 7h means at least one missed run)
+        - alert: RcloneSyncFailed
+          expr: |
+            time() - kube_cronjob_status_last_successful_time{cronjob="euroscale-rclone-sync"} > 25200
+          for: 1h
+          labels:
+            severity: critical
+            layer: "3-off-site-sync"
+          annotations:
+            summary: "rclone off-site sync to Hetzner Storage Box has not succeeded in > 7 hours"
+            description: >
+              The last successful rclone sync was {{ $value | humanizeDuration }} ago.
+              Check rclone CronJob logs:
+              kubectl logs -l app=euroscale-rclone-sync -n euroscale --tail=50
+            runbook_url: "https://github.com/spscreations/euroscale-startup-kit/wiki/runbooks/RcloneSyncFailed.md"
+
+        # ── Layer 5: Restore Test ────────────────────────────────────
+        # Fires if the weekly restore test failed on its last run
+        - alert: BackupRestoreTestFailed
+          expr: |
+            vitess_backup_restore_test_success{status="0"} == 1
+          for: 5m
+          labels:
+            severity: critical
+            layer: "5-restore-test"
+          annotations:
+            summary: "Weekly restore test FAILED — backup data may be corrupt"
+            description: >
+              The automated restore test did not pass checksum verification.
+              Backup may be corrupt or the restore process may be broken.
+              Check logs: kubectl logs -l app=euroscale-restore-test -n euroscale --tail=100
+            runbook_url: "https://github.com/spscreations/euroscale-startup-kit/wiki/runbooks/BackupRestoreTestFailed.md"
+
+        # ── Layer 4: etcd Snapshot Age ───────────────────────────────
+        # Fires if no etcd snapshot in > 8 hours
+        # (etcd snapshots run every 6h, so 8h means at least one missed)
+        - alert: EtcdBackupAgeTooOld
+          expr: |
+            time() - kube_cronjob_status_last_successful_time{cronjob="etcd-snapshot"} > 28800
+          for: 30m
+          labels:
+            severity: warning
+            layer: "4-etcd-snapshots"
+          annotations:
+            summary: "etcd snapshot is too old (> 8 hours)"
+            description: >
+              No etcd snapshot has been taken in the last 8 hours.
+              Expected every 6 hours. Check K3s etcd snapshot subsystem.
+              SSH to control plane: ls -la /var/lib/rancher/k3s/server/db/snapshots/
+
+        # ── Cross-Layer: MinIO Disk Usage ────────────────────────────
+        # Fires if MinIO PVC usage exceeds 85%
+        - alert: BackupDiskUsageHigh
+          expr: |
+            kubelet_volume_stats_used_bytes{persistentvolumeclaim="minio"} /
+            kubelet_volume_stats_capacity_bytes{persistentvolumeclaim="minio"} * 100 > 85
+          for: 10m
+          labels:
+            severity: warning
+            layer: "2-vitess-s3"
+          annotations:
+            summary: "MinIO backup storage > 85% full"
+            description: >
+              MinIO PVC (100Gi) is {{ $value | humanizePercentage }} full.
+              Current usage: {{ $value | humanize1024 }}.
+              Plan to expand or review retention policy.
+
+        # ── Cross-Layer: Backup Job Failures (any layer) ─────────────
+        - alert: BackupJobFailure
+          expr: |
+            count(kube_job_status_failed{job=~"euroscale-.*backup|euroscale-rclone.*|euroscale-restore.*"} > 0) > 0
+          for: 5m
+          labels:
+            severity: critical
+            layer: "all"
+          annotations:
+            summary: "A backup-related job has failed"
+            description: >
+              One or more backup jobs are in Failed state.
+              Check: kubectl get jobs -n euroscale | grep -E 'backup|rclone|restore'
+
+        # ── Cross-Layer: No Backup Jobs at All ──────────────────────
+        # Fires if no backup-related metrics are found for > 1 hour
+        # (indicates Prometheus targets or backup system is down)
+        - alert: BackupSystemDown
+          expr: |
+            absent(vitess_backup_created_timestamp) and
+            absent(kube_cronjob_status_last_successful_time{cronjob=~"euroscale.*"})
+          for: 1h
+          labels:
+            severity: critical
+            layer: "all"
+          annotations:
+            summary: "Backup system metrics are absent — system may be offline"
+            description: >
+              No backup metrics have been received by Prometheus for over 1 hour.
+              This could indicate Vitess, MinIO, or Prometheus target is down.
+              Check: kubectl get pods -n euroscale

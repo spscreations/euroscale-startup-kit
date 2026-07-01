@@ -55,6 +55,7 @@ bash deploy.sh
 | File | Description |
 |------|-------------|
 | `vitess-cluster.yaml` | VitessCluster CRD manifest — defines cells, keyspaces, tablets, vtgate, vtctld, vtadmin, backups |
+| `backup-config.yaml` | Detailed backup reference — full Vitess backup spec, MinIO bucket creation Job, restore commands |
 | `vitess-backup-creds.yaml` | K8s Secret — MinIO access key + secret key in AWS credentials format for Vitess S3 backup driver |
 | `backup-test.sh` | Backup verification script — lists backups, triggers manual backup, confirms |
 | `deploy.sh` | One-shot deployment script — installs operator, creates namespace, applies cluster, verifies |
