@@ -10,7 +10,7 @@
 #
 # To deploy individual components:
 #   kubectl apply -f infra/backups/rclone-sync-cronjob.yaml
-#   kubectl apply -f infra/backups/restore-test-cronjob.yaml
+#   kubectl apply -f infra/backups/weekly-restore-cronjob.yaml
 #   kubectl apply -f infra/backups/backup-alerts.yaml
 # ──────────────────────────────────────────────────────────────────
 set -euo pipefail
@@ -103,8 +103,8 @@ echo ""
 echo "[5/5] Deploying restore testing and alerts (Layer 5)..."
 
 # Restore test CronJob
-if [ -f "${SCRIPT_DIR}/restore-test-cronjob.yaml" ]; then
-  kubectl apply -f "${SCRIPT_DIR}/restore-test-cronjob.yaml"
+if [ -f "${SCRIPT_DIR}/weekly-restore-cronjob.yaml" ]; then
+  kubectl apply -f "${SCRIPT_DIR}/weekly-restore-cronjob.yaml"
   echo "      ✓ Restore test CronJob applied (weekly @ Sunday 03:00 UTC)"
 fi
 

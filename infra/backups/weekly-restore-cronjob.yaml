@@ -1,44 +1,22 @@
 # ─────────────────────────────────────────────────────────────────────
-# EuroScale — Layer 3: Weekly Automated Restore Test CronJob
+# EuroScale — Layer 5: Weekly Automated Restore Test CronJob
 # ─────────────────────────────────────────────────────────────────────
 # Runs a full backup → restore → verify cycle every Sunday at 03:00 UTC
 # inside an isolated test namespace.  Validates that backups are usable
 # and that the recovery procedure works end-to-end.
 #
-# Architecture:
-#   ┌──────────────────┐    Sunday 03:00 UTC    ┌────────────────────┐
-#   │  Weekly CronJob   │ ────────────────────▶ │  Isolated Test     │
-#   │  runs restore-    │   Deploy → Restore →  │  Namespace         │
-#   │  test.sh          │   Verify → Cleanup    │  (temporary)       │
-#   └──────────────────┘                        └────────────────────┘
-#                                                        │
-#                                                Metrics → Pushgateway
-#                                                        │
-#                                                ┌──────────────────┐
-#                                                │  Prometheus       │
-#                                                │  → RestoreTest-   │
-#                                                │    Failed alert   │
-#                                                └──────────────────┘
-#
 # ── Prerequisites ───────────────────────────────────────────────────
 # 1. Vitess Operator installed in the cluster.
 # 2. MinIO accessible with backup data.
 # 3. vitess-backup-creds Secret exists in euroscale namespace.
-# 4. Prometheus Pushgateway deployed (optional, for metrics export).
-# 5. restore-test.sh is available (packaged via ConfigMap below).
+# 4. restore-test.sh available (packaged via ConfigMap below).
 #
 # ── Applying ────────────────────────────────────────────────────────
 #   kubectl apply -f weekly-restore-cronjob.yaml
-#   # Trigger manually:
-#   kubectl create job --from=cronjob/euroscale-restore-test manual-restore-test -n euroscale
-#   kubectl logs -l app=euroscale-restore-test -n euroscale --tail=200 -f
 #
-# ── RBAC ────────────────────────────────────────────────────────────
-# The CronJob runs with a ServiceAccount that needs:
-#   - Create/delete namespaces
-#   - Full control within the test namespace
-#   - Read Secrets from euroscale namespace
-# These are defined in the RBAC resources below.
+# ── Manual Trigger ──────────────────────────────────────────────────
+#   kubectl create job --from=cronjob/euroscale-restore-test manual-restore -n euroscale
+#   kubectl logs -l app=euroscale-restore-test -n euroscale -f
 # ─────────────────────────────────────────────────────────────────────
 
 ---
@@ -115,26 +93,6 @@ subjects:
 
 ---
 # ═════════════════════════════════════════════════════════════════════
-# ConfigMap: restore-test.sh script
-# ═════════════════════════════════════════════════════════════════════
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: euroscale-restore-test-script
-  namespace: euroscale
-  labels:
-    app: euroscale
-    component: backups
-    layer: restore-test
-data:
-  restore-test.sh: |
-    # See: infra/backups/restore-test.sh for the full script.
-    # The CronJob below uses the script baked into the image;
-    # this ConfigMap documents the expected location and serves
-    # as a reference when customizing the job.
-
----
-# ═════════════════════════════════════════════════════════════════════
 # CronJob: Weekly Restore Test
 # ═════════════════════════════════════════════════════════════════════
 apiVersion: batch/v1
@@ -156,7 +114,7 @@ spec:
   jobTemplate:
     spec:
       backoffLimit: 1
-      activeDeadlineSeconds: 1800   # 30 min max (RTO SLA)
+      activeDeadlineSeconds: 1800   # 30 min max
       ttlSecondsAfterFinished: 86400  # Keep pod logs for 24h
       template:
         metadata:
@@ -173,22 +131,10 @@ spec:
                 - /bin/bash
                 - -c
                 - |
-                  # ── Install prerequisites ──────────────────────
-                  apt-get update -qq && apt-get install -y -qq curl wget >/dev/null 2>&1 || true
-
-                  # ── Download restore-test.sh or run inline ─────
-                  # The full restore-test.sh is stored as a ConfigMap
-                  # and can be mounted as a volume, or downloaded from
-                  # the repo.  For the CronJob, we embed the logic
-                  # directly below OR mount a ConfigMap volume.
-
-                  # Export required env vars (from Secret refs)
                   export MINIO_ENDPOINT="http://euroscale-backups.minio:9000"
                   export MINIO_BUCKET="euroscale-backups"
                   export MINIO_REGION="euroscale"
-                  export TEST_NAMESPACE="euroscale-restore-test-\$(date +%s)"
-
-                  # ── Run the restore test ───────────────────────
+                  export TEST_NAMESPACE="euroscale-restore-test-$(date +%s)"
                   exec /bin/bash /scripts/restore-test.sh
               env:
                 - name: MINIO_ACCESS_KEY
@@ -219,3 +165,22 @@ spec:
               configMap:
                 name: euroscale-restore-test-script
                 defaultMode: 0755
+
+---
+# ═════════════════════════════════════════════════════════════════════
+# ConfigMap: restore-test.sh script template
+# ═════════════════════════════════════════════════════════════════════
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: euroscale-restore-test-script
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: backups
+    layer: restore-test
+data:
+  restore-test.sh: |
+    # See: infra/backups/restore-test.sh for the full script.
+    # Mount this ConfigMap as /scripts/restore-test.sh.
+    # The main script is maintained at infra/backups/restore-test.sh in the repo.

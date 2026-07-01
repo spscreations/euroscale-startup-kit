@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -353,6 +354,51 @@ func extractDBName(connStr string) string {
 	return dbPart
 }
 
+// ── health endpoints ─────────────────────────────────────────────────────────
+
+// startHealthServer runs a simple HTTP mux on :8080 for K8s liveness/readiness probes.
+func startHealthServer(ready chan struct{}) *http.Server {
+	mux := http.NewServeMux()
+
+	// /healthz — liveness: always OK while the process is running.
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintln(w, "ok")
+	})
+
+	// /ready — readiness: blocks until the gRPC server is fully initialised.
+	mux.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-ready:
+			w.Header().Set("Content-Type", "text/plain")
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprintln(w, "ready")
+		default:
+			w.Header().Set("Content-Type", "text/plain")
+			w.WriteHeader(http.StatusServiceUnavailable)
+			fmt.Fprintln(w, "not ready")
+		}
+	})
+
+	srv := &http.Server{
+		Addr:         ":8080",
+		Handler:      mux,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 5 * time.Second,
+		IdleTimeout:  30 * time.Second,
+	}
+
+	go func() {
+		log.Printf("Health server listening on :8080")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("WARNING: health server error: %v", err)
+		}
+	}()
+
+	return srv
+}
+
 // ── main ────────────────────────────────────────────────────────────────────
 
 func main() {
@@ -382,6 +428,15 @@ func main() {
 	if host == "" {
 		host = "db.euroscale.app"
 	}
+
+	// ── Health server ─────────────────────────────────────────────────────
+	ready := make(chan struct{})
+	healthSrv := startHealthServer(ready)
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = healthSrv.Shutdown(ctx)
+	}()
 
 	// ── Connect to Vitess vtgate ────────────────────────────────────────────
 	log.Printf("Connecting to vtgate at %s...", vtgateAddr)
@@ -437,6 +492,7 @@ func main() {
 
 	go func() {
 		log.Printf("gRPC server listening on %s", grpcPort)
+		close(ready) // signal health checks that we're ready for traffic
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatalf("gRPC server failed: %v", err)
 		}

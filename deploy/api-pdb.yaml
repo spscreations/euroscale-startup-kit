@@ -1,0 +1,17 @@
+---
+# PodDisruptionBudget: ensure at least 1 replica is always available during
+# voluntary disruptions (node drain, cluster autoscaler, etc.).
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: euroscale-api
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: api
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: euroscale
+      component: api

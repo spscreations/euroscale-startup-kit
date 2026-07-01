@@ -32,6 +32,14 @@ cat ~/.kube/config | base64 -w0 | gh secret set KUBECONFIG
 
 No Docker Hub or GHCR credentials are needed — the workflow authenticates with the built-in `GITHUB_TOKEN`.
 
+### Multi-Architecture Builds
+
+The workflow builds and pushes images for **both `linux/amd64` and `linux/arm64`** platforms. On an ARM-based cluster (K3s on Raspberry Pi / Hetzner CAX), the correct variant is pulled automatically.
+
+### Manual / Workflow Dispatch
+
+The workflow supports [`workflow_dispatch`](https://docs.github.com/en/actions/using-manual-workflow) for manual runs. You can optionally pass an `image_tag` input to tag the image with a custom name.
+
 ---
 
 ## Kubernetes Manifests
@@ -54,7 +62,10 @@ kubectl apply -f deploy/euroscale-config.yaml
 # 5. TLS certs for Vitess
 kubectl apply -f api/deploy/tls-certs.yaml
 
-# 6. Service + Deployment
+# 6. PodDisruptionBudget (ensure HA during node maintenance)
+kubectl apply -f deploy/api-pdb.yaml
+
+# 7. Service + Deployment
 kubectl apply -f deploy/api-service.yaml
 kubectl apply -f deploy/api-deployment.yaml
 ```
