@@ -1,36 +1,32 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
-import "./globals.css";
+import { Inter } from "next/font/google";
 import { Providers } from "@/providers";
-import { APP_NAME } from "@/lib/constants";
+import "./globals.css";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  variable: "--font-inter",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: `${APP_NAME} — Serverless MySQL`,
+  title: "EuroScale — Dashboard",
   description:
-    "Serverless MySQL databases on European infrastructure. Provision, scale, and manage Vitess databases with PlanetScale-compatible APIs.",
+    "EuroScale customer dashboard — manage your cloud infrastructure, monitor usage, and scale effortlessly.",
+  keywords: ["EuroScale", "cloud", "dashboard", "infrastructure", "scale-up"],
+  authors: [{ name: "EuroScale" }],
+  robots: "noindex, nofollow",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html lang="en" className={`${inter.variable} dark`}>
+      <body className="min-h-screen bg-navy-900 text-text-primary font-inter antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

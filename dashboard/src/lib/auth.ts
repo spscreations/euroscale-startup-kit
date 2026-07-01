@@ -5,94 +5,86 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
 import { apiClient, ApiError } from "@/lib/api";
 import { API_BASE_URL, SESSION_DURATION_MS } from "@/lib/constants";
 
-// ── Shape of a logged-in user ──────────────────────────────────────────────
+// ── Session shape ───────────────────────────────────────────────────────────
 
-export interface User {
+export interface UserSession {
   id: string;
   email: string;
   name?: string;
-}
-
-export interface Session {
   token: string;
-  user: User;
   expiresAt: number;
 }
 
-// ── Context type ───────────────────────────────────────────────────────────
-
-export interface AuthContextValue {
-  /** The full session object (null when logged out). */
-  session: Session | null;
-  /** Convenience alias for `session?.user ?? null`. */
-  user: User | null;
-  /** True while the initial session is being hydrated from localStorage. */
+interface AuthState {
+  session: UserSession | null;
   isLoading: boolean;
-  /** True when a valid, non-expired session exists. */
   isAuthenticated: boolean;
-  /** The raw JWT / bearer token (null when logged out). */
-  token: string | null;
-  /** Authenticate with email + password. Throws on failure. */
   login: (email: string, password: string) => Promise<void>;
-  /** Destroy the session and clear stored state. */
+  signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
-// ── Context + Provider ─────────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────────
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+const STORAGE_KEY = "euroscale_session";
 
-function loadSession(): Session | null {
+function loadSession(): UserSession | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem("euroscale_session");
+    const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    const session: Session = JSON.parse(raw);
-    // Immediately discard expired sessions
-    if (Date.now() >= session.expiresAt) {
-      localStorage.removeItem("euroscale_session");
+    const session: UserSession = JSON.parse(raw);
+    if (Date.now() > session.expiresAt) {
+      localStorage.removeItem(STORAGE_KEY);
       return null;
     }
     return session;
   } catch {
-    localStorage.removeItem("euroscale_session");
+    localStorage.removeItem(STORAGE_KEY);
     return null;
   }
 }
 
-function saveSession(session: Session): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem("euroscale_session", JSON.stringify(session));
+function persist(session: UserSession) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
 }
 
-function clearSession(): void {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem("euroscale_session");
+function clear() {
+  localStorage.removeItem(STORAGE_KEY);
 }
+
+/** Synchronous check — usable outside React (e.g. AuthGuard). */
+export function isAuthenticated(): boolean {
+  return loadSession() !== null;
+}
+
+// ── Context ────────────────────────────────────────────────────────────────
+
+const AuthContext = createContext<AuthState | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [session, setSession] = useState<UserSession | null>(null);
+  const [hydrated, setHydrated] = useState(false);
 
-  // ── Hydrate from localStorage on mount ────────────────────────────────
+  // Hydrate from localStorage
   useEffect(() => {
     const existing = loadSession();
     setSession(existing);
-    setIsLoading(false);
+    setHydrated(true);
   }, []);
 
-  // ── Keep apiClient token in sync with current session ─────────────────
+  // Wire token into apiClient whenever session changes
   useEffect(() => {
     apiClient.setTokenGetter(() => session?.token ?? null);
   }, [session]);
 
-  // ── login ─────────────────────────────────────────────────────────────
   const login = useCallback(async (email: string, password: string) => {
     const res = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
       method: "POST",
@@ -102,72 +94,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (!res.ok) {
       let message = "Login failed";
-      try {
-        const body = await res.json();
-        message = body.message ?? message;
-      } catch {
-        // keep default message
-      }
+      try { const body = await res.json(); message = body.message ?? message; } catch {}
       throw new ApiError(message, res.status);
     }
 
     const data = await res.json();
-    const newSession: Session = {
-      token: data.token,
-      user: data.user,
-      expiresAt:
-        Date.now() +
-        (data.expires_in_seconds ?? SESSION_DURATION_MS / 1000) * 1000,
+    const newSession: UserSession = {
+      id: data.user?.id ?? "",
+      name: data.user?.name ?? "",
+      email: data.user?.email ?? email,
+      token: data.token ?? "",
+      expiresAt: Date.now() + (data.expires_in_seconds ?? SESSION_DURATION_MS / 1000) * 1000,
     };
-
-    saveSession(newSession);
+    persist(newSession);
     setSession(newSession);
   }, []);
 
-  // ── logout ────────────────────────────────────────────────────────────
+  const signup = useCallback(
+    async (name: string, email: string, password: string) => {
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+      if (!res.ok) {
+        let message = "Signup failed";
+        try { const body = await res.json(); message = body.message ?? message; } catch {}
+        throw new ApiError(message, res.status);
+      }
+      // Auto-login after signup
+      await login(email, password);
+    },
+    [login],
+  );
+
   const logout = useCallback(() => {
-    clearSession();
     setSession(null);
+    clear();
   }, []);
 
-  // ── Derived values ────────────────────────────────────────────────────
-  const isAuthenticated = session != null;
-  const token = session?.token ?? null;
-  const user = session?.user ?? null;
-
-  return (
-    <AuthContext.Provider
-      value={{
-        session,
-        user,
-        isLoading,
-        isAuthenticated,
-        token,
-        login,
-        logout,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo<AuthState>(
+    () => ({
+      session,
+      isLoading: !hydrated,
+      isAuthenticated: session !== null,
+      login,
+      signup,
+      logout,
+    }),
+    [session, hydrated, login, signup, logout],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-/**
- * Access the auth context from any client component.
- *
- * @throws if used outside of `<AuthProvider>`.
- *
- * @example
- * ```tsx
- * const { session, isLoading, login, logout } = useAuth();
- * ```
- */
-export function useAuth(): AuthContextValue {
+export function useAuth(): AuthState {
   const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error("useAuth must be used within an <AuthProvider>");
-  }
+  if (ctx === undefined) throw new Error("useAuth must be used within an <AuthProvider>");
   return ctx;
 }
-
-export default AuthContext;
