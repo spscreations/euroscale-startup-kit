@@ -1,0 +1,27 @@
+# EuroScale — etcd Encryption at Rest
+# This config enables AES-GCM encryption for Kubernetes Secrets stored in etcd.
+#
+# ⚠️  IMPORTANT: Replace the placeholder key below with a real AES key before applying.
+# Generate a key with: head -c 32 /dev/urandom | base64
+#
+# To apply on the control-plane node:
+#   1. Copy this file to /var/lib/rancher/k3s/server/cred/encryption-config.yaml
+#   2. Edit /etc/systemd/system/k3s.service and add:
+#      --encryption-provider-config=/var/lib/rancher/k3s/server/cred/encryption-config.yaml
+#   3. systemctl daemon-reload && systemctl restart k3s
+
+apiVersion: apiserver.config.k8s.io/v1
+kind: EncryptionConfiguration
+resources:
+  - resources:
+      - secrets
+    providers:
+      # First provider listed is used for all new writes.
+      # Keep aesgcm as the primary for strong encryption.
+      - aesgcm:
+          keys:
+            - name: key1
+              secret: REPLACE_ME  # ← Generate with: head -c 32 /dev/urandom | base64
+      # Identity fallback allows reading unencrypted secrets during migration.
+      # Remove after all existing secrets have been re-written.
+      - identity: {}
