@@ -25,7 +25,7 @@ Three forces converge to create a once-in-a-decade opportunity:
 We are building the missing layer on top of European cloud infrastructure:
 
 - **Proven OSS stack** — Vitess (YouTube, GitHub), Citus (Microsoft), Kubernetes (all of cloud-native) — no unproven technology
-- **K8s-native by design** — Operators, CRDs, GitOps. Works the way modern platform teams want to work
+- **PaaS delivery** — Sign up, get a connection string, nothing else to manage
 - **Multi-cloud from day one** — Hetzner, OVH, Exoscale. Not locked to one provider
 - **Cost structure that wins** — 3–5× cheaper infra costs than AWS-based competitors. Better margins at lower prices
 - **GDPR-native architecture** — Not a checkbox compliance add-on. Data never leaves EU borders. Gaia-X ready
@@ -62,9 +62,9 @@ We are building the missing layer on top of European cloud infrastructure:
 | Moat | Details |
 |------|---------|
 | **EU Infrastructure Partnerships** | Deep integrations with Hetzner, OVH, Exoscale — preferred pricing, joint go-to-market |
-| **K8s Operator Expertise** | Specialized Vitess + Citus operators for European clouds — non-trivial to replicate |
+| **HA K8s Operations** | Specialized Vitess + Citus operators running on a single multi-cloud HA cluster — non-trivial to replicate |
 | **Gaia-X Certification** | First-mover certification as compliant sovereign database platform |
-| **Developer Community** | Open-source operators, Terraform provider, VSCode extension — switching cost |
+| **Developer Experience** | CLI, API, connection strings — frictionless PaaS with zero infrastructure surface |
 | **Regulatory Navigation** | GDPR, EU Data Act, sovereign cloud compliance — expertise that compounds |
 
 ---

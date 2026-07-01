@@ -28,12 +28,12 @@
 |------------|---------------|
 | 🪄 **Database Branching** | Instant prod clones for dev/CI |
 | 📈 **Horizontal Auto-Scale** | Vitess (MySQL) + Citus (Postgres) |
-| 🇪🇺 **Multi-Cloud EU Infra** | Hetzner + OVH + Exoscale |
+| 🇪🇺 **Multi-Cloud HA Cluster** | Single K8s cluster across Hetzner + OVH + Exoscale — self-healing |
 | 🛡️ **GDPR by Architecture** | Data never leaves the EU |
 | 💶 **European Pricing** | 3–5× cheaper than US equivalents |
-| ☸️ **K8s-Native** | Operators, CRDs, GitOps-ready |
+| 🔌 **Just a Connection String** | `mysql://user:pass@db.euroscale.app` — nothing else to manage |
 
-> **PlanetScale's features + European infrastructure + K8s-native operations = EuroScale**
+> **PlanetScale's features × European HA infrastructure ÷ zero ops = EuroScale**
 
 ---
 

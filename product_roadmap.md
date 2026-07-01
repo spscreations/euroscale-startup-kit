@@ -9,10 +9,10 @@
 ### 🔷 Month 1: Foundation
 | Milestone | Details |
 |-----------|---------|
-| K8s Operator Skeleton | Vitess operator with Hetzner Cloud Provider integration |
-| Hetzner Cluster Automation | Terraform module to provision Hetzner K8s cluster (k3s) |
-| Database Provisioning API | gRPC API to create/destroy Vitess keyspaces |
-| CI/CD Pipeline | GitLab CI, staging/QA environment on Hetzner |
+| K8s Operator Skeleton | Vitess operator on EuroScale's HA cluster (single multi-cloud K8s, not customer-deployed) |
+| Hetzner Cluster Provisioning | Terraform module to provision Hetzner worker nodes into EuroScale's HA cluster |
+| Database Provisioning API | gRPC API to create/destroy Vitess keyspaces — emits connection string + creds |
+| CI/CD Pipeline | GitLab CI, staging/QA environment on EuroScale's own cluster
 
 ### 🔷 Month 2: Branching
 | Milestone | Details |

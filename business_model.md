@@ -51,7 +51,7 @@
 | 1 TB SSD Block Storage | ~€57/mo | ~€120/mo (gp3) | **52%** |
 | 1 TB S3-compatible Storage | ~€7/mo | ~€23/mo | **70%** |
 
-> EuroScale's core infrastructure cost is **3–5× lower** than AWS-based competitors (PlanetScale, Neon), enabling better margins at lower prices.
+> EuroScale's core infrastructure cost is **3–5× lower** than AWS-based competitors (PlanetScale, Neon), enabling better margins at lower prices. All databases run on EuroScale's own multi-cloud HA Kubernetes cluster — customers never provision infrastructure.
 
 ---
 

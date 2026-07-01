@@ -30,12 +30,13 @@ European startups and enterprises face an impossible choice:
 - No-sharding-required for 90% of workloads — only shards when you cross 100GB+
 - Connection pooling and query routing built in
 
-### Feature 3: Multi-Cloud EU Infrastructure
-**Runs on the best European clouds, not US hyperscalers.**
-- Deploy on **Hetzner Cloud** (Germany/Finland), **OVHcloud** (France/Poland/UK), **Exoscale** (Switzerland/Germany)
-- Single control plane across all providers
-- Automatic failover across availability zones and providers
+### Feature 3: Multi-Cloud HA Infrastructure — Our Cluster
+**EuroScale runs on its own highly available Kubernetes cluster spanning multiple European cloud providers — you don't deploy anything.**
+- **Single EuroScale-managed K8s cluster** connected to **Hetzner Cloud** (Germany/Finland), **OVHcloud** (France/Poland/UK), and **Exoscale** (Switzerland/Germany) simultaneously
+- Cluster is **fully HA** — if a node, zone, or entire provider goes down, the cluster self-heals and workloads redistribute automatically
+- All database instances run inside this cluster; customers never provision, manage, or touch Kubernetes
 - Data never leaves EU borders — GDPR-compliant by architecture
+- Credentials (connection strings, usernames, passwords) stored securely in **Kubernetes Secrets**, encrypted at rest
 
 ### Feature 4: Serverless Pricing Model
 **Pay for what you use, not for allocated capacity.**
@@ -45,13 +46,14 @@ European startups and enterprises face an impossible choice:
 - Predictable pricing: ~€19/mo for production single-node, ~€99/mo for sharded cluster
 - No surprise bills — usage caps and alerts built in
 
-### Feature 5: Kubernetes-Native Control Plane
-**Built for modern DevOps, GitOps, and platform teams.**
-- EuroScale Kubernetes Operator (CRD-based)
-- `kubectl`-native database provisioning
-- GitOps integration with ArgoCD/Flux
-- REST API + Terraform Provider + Pulumi provider
-- Prometheus metrics, Grafana dashboards, OpenTelemetry tracing
+### Feature 5: PaaS Delivery — You Get a Connection String
+**Customers never see Kubernetes. You sign up, get a database, and receive your credentials.**
+- Simple API / CLI to provision databases: `euroscale db create <name>`
+- **What you receive**: `mysql://<user>:<password>@<db>.euroscale.app:3306/<name>` (or Postgres equivalent)
+- Credentials stored internally in **Kubernetes Secrets**, encrypted at rest
+- Internal Grafana dashboard for **EuroScale's own observability** — cluster health, node status, query performance across all providers
+- Auto-scaling, backups, failover — all handled by EuroScale's control plane, invisible to customers
+- REST API for programmatic database management
 
 ---
 
@@ -59,56 +61,81 @@ European startups and enterprises face an impossible choice:
 
 | Layer | Technology | Rationale |
 |-------|-----------|-----------|
-| **Control Plane** | Go + Kubernetes Operator SDK | K8s-native, performant, cloud-agnostic |
+| **Control Plane** | Go + Kubernetes Operator SDK | K8s-native, performant, cloud-agnostic (internal only) |
 | **Database Engine - MySQL** | Vitess (v20+) | Proven at planet scale, branch support |
 | **Database Engine - Postgres** | Citus + PgBouncer | Distributed Postgres, connection pooling |
-| **Orchestration** | Kubernetes (k3s/kubeadm) | Multi-cloud, self-healing, operator pattern |
-| **Infrastructure Layer** | Terraform / Crossplane | Provision Hetzner/OVH resources programmatically |
-| **Storage** | Rook/Ceph (on-block-storage) vs provider-native volumes | Cost-performance trade-off per provider |
+| **Orchestration** | Kubernetes (k3s/kubeadm) — **EuroScale-managed** | Single multi-cloud HA cluster across Hetzner, OVH, Exoscale |
+| **Infrastructure Layer** | Terraform / Crossplane (internal) | Programmatic provisioning of Hetzner/OVH/Exoscale resources |
+| **Storage** | Rook/Ceph + provider-native volumes | Cost-performance trade-off per provider |
 | **API Layer** | gRPC + Connect | Type-safe, performant API contracts |
-| **Dashboard** | Next.js + Tailwind + React Query | Modern, fast, delightful developer UX |
+| **Dashboard** | Next.js + Tailwind + React Query (customer-facing) + Grafana (internal observability) | Modern, fast, delightful developer UX + internal ops visibility |
+| **Credential Store** | Kubernetes Secrets + encryption at rest | Secure storage of customer database credentials |
 | **Auth** | OAuth 2.0 / OIDC (Keycloak) | EU-made IAM, SSO-ready |
-| **Monitoring** | VictoriaMetrics + Grafana | EU-made (Russian-origin but independent), Prometheus-compatible |
-| **CI/CD** | GitLab CI / GitHub Actions | Developer familiarity |
+| **Monitoring** | VictoriaMetrics + Grafana (internal) | EU-made (Russian-origin but independent), Prometheus-compatible |
 | **Backups** | WAL-G + S3-compatible (Ceph/MinIO on EU infra) | Point-in-time recovery, encrypted |
 
 ## Core Differentiator
 
-> **"The best of PlanetScale and Neon — fully European. Same database branching. Same horizontal scaling. Running on Hetzner and OVH for a fraction of AWS cost. Your data never leaves the EU."**
+> **"The best of PlanetScale and Neon — fully European. Same database branching. Same horizontal scaling. Running on EuroScale's own HA Kubernetes cluster across Hetzner, OVH, and Exoscale. You get a connection string — nothing else to manage. Your data never leaves the EU."**
 
 ---
 
 ## Architecture Diagram (Conceptual)
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    EuroScale Control Plane               │
-│  ┌─────────┐  ┌──────────┐  ┌────────┐  ┌───────────┐  │
-│  │ API     │  │ Dashboard│  │ Auth   │  │ Billing   │  │
-│  │ Gateway │  │ (Next.js)│  │ (KC)   │  │ (Stripe)  │  │
-│  └────┬────┘  └──────────┘  └────────┘  └───────────┘  │
-│       │                                                  │
-│  ┌────▼──────────────────────────────────────────────┐   │
-│  │          EuroScale K8s Operator (Go)               │   │
-│  │  ┌──────────┐ ┌──────────┐ ┌──────────────────┐   │   │
-│  │  │ Vitess   │ │ Citus    │ │ Backup/Snapshot  │   │   │
-│  │  │ Operator │ │ Operator │ │ Controller       │   │   │
-│  │  └──────────┘ └──────────┘ └──────────────────┘   │   │
-│  └──────────────┬─────────────────────────────────────┘   │
-└─────────────────┼─────────────────────────────────────────┘
-                  │
-    ┌─────────────┼─────────────┐
-    │             │             │
-┌───▼────┐  ┌────▼───┐  ┌─────▼───┐
-│Hetzner  │  │OVHcloud │  │Exoscale │
-│K8s      │  │K8s      │  │K8s      │
-│Cluster  │  │Cluster  │  │Cluster  │
-│ ┌────┐  │  │ ┌────┐  │  │ ┌────┐  │
-│ │VT  │  │  │ │VT  │  │  │ │VT  │  │
-│ │Keysp│  │  │ │Keysp│  │  │ │Keysp│  │
-│ └────┘  │  │ └────┘  │  │ └────┘  │
-│ ┌────┐  │  │ ┌────┐  │  │ ┌────┐  │
-│ │Citus│  │  │ │Citus│  │  │ │Citus│  │
-│ └────┘  │  │ └────┘  │  │ └────┘  │
-└────────┘  └─────────┘  └──────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                         CUSTOMER                                      │
+│                                                                       │
+│  ┌──────────────────────────────────────────────────────────────┐    │
+│  │         You receive via API / CLI:                            │    │
+│  │  mysql://<user>:<password>@ecommerce.euroscale.app:3306/db    │    │
+│  │  postgres://<user>:<password>@analytics.euroscale.app:5432/db │    │
+│  └──────────────────────────────────────────────────────────────┘    │
+└──────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    EuroScale Control Plane (Managed)                     │
+│  ┌─────────┐  ┌──────────┐  ┌────────┐  ┌───────────┐  ┌────────────┐ │
+│  │ API     │  │ Dashboard│  │ Auth   │  │ Billing   │  │  Grafana   │ │
+│  │ Gateway │  │ (Next.js)│  │ (KC)   │  │ (Stripe)  │  │ (Internal) │ │
+│  └────┬────┘  └──────────┘  └────────┘  └───────────┘  └────────────┘ │
+│       │                                                               │
+│  ┌────▼──────────────────────────────────────────────────────────┐    │
+│  │          EuroScale K8s Operator (Go) — Internal                │    │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────────┐ ┌─────────────┐  │    │
+│  │  │ Vitess   │ │ Citus    │ │ Backup/WAL-G │ │ Credential   │  │    │
+│  │  │ Operator │ │ Operator │ │ Controller   │ │ Controller   │  │    │
+│  │  └──────────┘ └──────────┘ └──────────────┘ └─────────────┘  │    │
+│  └───────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│            EuroScale HA Kubernetes Cluster (Multi-Cloud)                 │
+│                                                                         │
+│  ┌──────────────────────────────────────────────────────────────────┐   │
+│  │                    Control Plane Nodes (HA × 3)                   │   │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────────────┐  │   │
+│  │  │ etcd     │  │ API Svr  │  │ Scheduler│  │ Controller Mgr │  │   │
+│  │  └──────────┘  └──────────┘  └──────────┘  └────────────────┘  │   │
+│  └──────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ┌──────────── Hetzner (DE) ────────┐ ┌────── OVHcloud (FR) ──────────┐ │
+│  │  ┌──────┐ ┌──────┐ ┌──────┐     │ │  ┌──────┐ ┌──────┐ ┌──────┐   │ │
+│  │  │Worker│ │Worker│ │Worker│     │ │  │Worker│ │Worker│ │Worker│   │ │
+│  │  │Node 1│ │Node 2│ │Node 3│ ... │ │  │Node 1│ │Node 2│ │Node 3│...│ │
+│  │  └──────┘ └──────┘ └──────┘     │ │  └──────┘ └──────┘ └──────┘   │ │
+│  └──────────────────────────────────┘ └───────────────────────────────┘ │
+│  ┌──────────────── Exoscale (CH) ────────────────────┐                  │
+│  │  ┌──────┐ ┌──────┐ ┌──────┐                       │                  │
+│  │  │Worker│ │Worker│ │Worker│  ...                   │                  │
+│  │  │Node 1│ │Node 2│ │Node 3│                       │                  │
+│  │  └──────┘ └──────┘ └──────┘                       │                  │
+│  └────────────────────────────────────────────────────┘                  │
+│                                                                         │
+│  ┌──────────────── K8s Secrets ─────────────────┐                       │
+│  │  Customer DB credentials (encrypted at rest) │                       │
+│  └──────────────────────────────────────────────┘                       │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
