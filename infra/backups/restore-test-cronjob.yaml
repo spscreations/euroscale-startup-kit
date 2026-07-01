@@ -79,7 +79,7 @@ spec:
                   mountPath: /scripts
           containers:
             - name: restore-test
-              image: vitess/lite:v20.0.0
+              image: vitess/lite:v24.0.1
               command:
                 - /scripts/restore-test.sh
               env:

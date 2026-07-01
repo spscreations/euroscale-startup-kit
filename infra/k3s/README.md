@@ -68,7 +68,7 @@ kubectl get nodes
 | `WK1_IP`      | *(required)*   | Worker 1 node public IP              |
 | `WK2_IP`      | *(required)*   | Worker 2 node public IP              |
 | `SSH_USER`    | `root`         | SSH user for all nodes               |
-| `K3S_VERSION` | `v1.30.2+k3s2` | K3s version to install               |
+| `K3S_VERSION` | `v1.34.5+k3s1` | K3s version to install               |
 
 ### `deploy-addons.sh`
 

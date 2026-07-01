@@ -105,7 +105,7 @@ Per tablet storage: 10 Gi PVC (30 Gi total for 3 tablets).
 
 ## Key Decisions
 
-- **`vitess/lite:v20.0.0`** — single image for all Vitess components + MySQL 8.0
+- **`vitess/lite:v24.0.1`** — single image for all Vitess components + MySQL 8.0
 - **`durabilityPolicy: cross_cell`** — enables cross-cell primary failover
 - **`updateStrategy: Immediate`** — auto-apply changes (good for MVP; switch to `External` for production GitOps)
 - **vtadmin API-only** — no web UI deployed (`webResources` omitted)

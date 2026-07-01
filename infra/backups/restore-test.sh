@@ -28,7 +28,7 @@ MINIO_BUCKET="${MINIO_BUCKET:-euroscale-backups}"
 MINIO_REGION="${MINIO_REGION:-euroscale}"
 TEST_CLUSTER_NAME="euroscale-restore-test"
 KUBECTL="${KUBECTL:-kubectl}"
-VITESS_IMAGE="${VITESS_IMAGE:-vitess/lite:v20.0.0}"
+VITESS_IMAGE="${VITESS_IMAGE:-vitess/lite:v24.0.1}"
 PROMETHEUS_PUSHGATEWAY="${PROMETHEUS_PUSHGATEWAY:-pushgateway.monitoring:9091}"
 START_TIME=$(date +%s)
 

@@ -9,12 +9,12 @@
 #
 # Optional environment variables:
 #   SSH_USER       — SSH user for all nodes (default: root)
-#   K3S_VERSION    — K3s version to install (default: v1.30.2+k3s2)
+#   K3S_VERSION    — K3s version to install (default: v1.34.5+k3s1)
 
 set -euo pipefail
 
 SSH_USER="${SSH_USER:-root}"
-K3S_VERSION="${K3S_VERSION:-v1.30.2+k3s2}"
+K3S_VERSION="${K3S_VERSION:-v1.34.5+k3s1}"
 
 echo "=== EuroScale K3s Cluster Install ==="
 echo "Control Plane: ${CP_IP}"
