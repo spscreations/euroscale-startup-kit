@@ -907,6 +907,66 @@
 
     <div class="section-divider"></div>
 
+    <!-- ===== WHAT YOU GET SECTION ===== -->
+    <section class="py-24 md:py-32 relative overflow-hidden bg-grid">
+      <div class="glow-purple" style="top:10%;right:-200px;width:400px;height:400px;"></div>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="text-center mb-16">
+          <span class="text-sm font-semibold uppercase tracking-widest text-purple-400">What You Get</span>
+          <h2 class="text-3xl md:text-5xl font-extrabold text-white mt-4 mb-6">That's it. <span class="gradient-text-simple">Just a database.</span></h2>
+          <p class="text-slate-300 text-lg max-w-2xl mx-auto">
+            No Kubernetes to learn. No cloud accounts to set up. No ops team required.
+          </p>
+        </div>
+
+        <div class="max-w-4xl mx-auto">
+          <!-- Step flow -->
+          <div class="grid md:grid-cols-3 gap-8 text-center">
+            <div>
+              <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl" style="background:rgba(109,93,253,0.15);border:1px solid rgba(109,93,253,0.2);">1</div>
+              <h3 class="font-bold text-white mb-2">Sign up</h3>
+              <p class="text-slate-400 text-sm">Create your EuroScale account. No credit card required for the free tier.</p>
+            </div>
+            <div>
+              <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl" style="background:rgba(109,93,253,0.15);border:1px solid rgba(109,93,253,0.2);">2</div>
+              <h3 class="font-bold text-white mb-2">Create a database</h3>
+              <p class="text-slate-400 text-sm">One CLI command or API call. Pick MySQL or PostgreSQL, choose a region.</p>
+            </div>
+            <div>
+              <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl" style="background:rgba(109,93,253,0.15);border:1px solid rgba(109,93,253,0.2);">3</div>
+              <h3 class="font-bold text-white mb-2">Get your credentials</h3>
+              <p class="text-slate-400 text-sm">Connection string, username, and password delivered instantly. Connect and ship.</p>
+            </div>
+          </div>
+
+          <!-- Terminal output -->
+          <div class="mt-12 code-window">
+            <div class="traffic-lights">
+              <span class="red"></span><span class="yellow"></span><span class="green"></span>
+              <span class="text-xs text-slate-500 ml-4 font-mono">What you see — nothing you don't need</span>
+            </div>
+            <pre><span class="token-prompt">$</span> <span class="token-command">euroscale db create my-app --engine mysql --region eu-central</span>
+<span class="token-output">✓ Creating database 'my-app'...</span>
+<span class="token-output">✓ Deployed to eu-central (Hetzner DC) on EuroScale HA cluster</span>
+<span class="token-output">✓</span> <span class="token-string">Credentials saved to ./euroscale-my-app.env</span>
+<span class="token-output">  </span>
+<span class="token-output">  EUROSCOPE_DB_HOST=my-app.euroscale.app</span>
+<span class="token-output">  EUROSCOPE_DB_PORT=3306</span>
+<span class="token-output">  EUROSCOPE_DB_USER=u_a1b2c3d4</span>
+<span class="token-output">  EUROSCOPE_DB_PASS=••••••••••••</span>
+<span class="token-output">  EUROSCOPE_DB_NAME=my_app</span>
+<span class="token-output">  </span>
+<span class="token-output">  ✨ Connection string:</span>
+<span class="token-string">    mysql://u_a1b2c3d4:••••••••@my-app.euroscale.app:3306/my_app</span>
+<span class="token-output">  </span>
+<span class="token-comment"># Done. Your database is live. Nothing else to configure.</span></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="section-divider"></div>
+
     <!-- ===== FEATURES ===== -->
     <section class="py-24 md:py-32" id="features">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -960,8 +1020,8 @@
             <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-4" style="background:rgba(109,93,253,0.15);">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6d5dfd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             </div>
-            <h3 class="text-lg font-bold text-white mb-2">K8s-Native Architecture</h3>
-            <p class="text-slate-400 text-sm leading-relaxed">Built on Kubernetes operators, CRDs, and GitOps-flavored management. Deploy on your own K8s cluster or ours.</p>
+            <h3 class="text-lg font-bold text-white mb-2">Just a Connection String</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">No Kubernetes to manage. No infrastructure to provision. You get <code class="text-purple-300 text-xs font-mono">mysql://user:pass@db.euroscale.app:3306</code> — that's it. We handle the rest on our HA cluster.</p>
           </div>
 
           <!-- Feature 6 -->
@@ -985,7 +1045,7 @@
           <span class="text-sm font-semibold uppercase tracking-widest text-purple-400">Tech Stack</span>
           <h2 class="text-3xl md:text-5xl font-extrabold text-white mt-4 mb-6">Battle-Tested Open Source, <span class="gradient-text-simple">European-Backed</span></h2>
           <p class="text-slate-300 text-lg max-w-3xl mx-auto">
-            Powered by the same technologies that run the world's largest databases — fully managed by EuroScale.
+            The same battle-tested technologies behind PlanetScale and the world's largest databases — running on EuroScale's own HA Kubernetes cluster. <strong class="text-white">You never touch any of this.</strong>
           </p>
         </div>
 
@@ -1033,27 +1093,40 @@
           </span>
         </div>
 
-        <!-- Architecture diagram placeholder -->
+        <!-- Architecture diagram -->
         <div class="mt-12 glass-card-static p-8 text-center">
-          <div class="flex flex-wrap items-center justify-center gap-8 text-sm">
-            <div class="flex flex-col items-center gap-2">
-              <div class="px-4 py-2 rounded-lg" style="background:rgba(109,93,253,0.2);border:1px solid rgba(109,93,253,0.3);">Your App</div>
-              <span class="text-slate-500 text-xs">Any language</span>
+          <p class="text-xs font-semibold uppercase tracking-widest text-purple-400 mb-6">How it works — EuroScale's Multi-Cloud HA Architecture</p>
+          <div class="flex flex-col items-center gap-4 text-sm">
+            <!-- Customer layer -->
+            <div class="px-6 py-3 rounded-xl font-mono text-sm" style="background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.3);color:#34d399;">
+              mysql://user:***@ecommerce.euroscale.app:3306/ecommerce
             </div>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6d5dfd" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            <div class="flex flex-col items-center gap-2">
-              <div class="px-4 py-2 rounded-lg" style="background:rgba(34,211,238,0.2);border:1px solid rgba(34,211,238,0.3);">EuroScale Proxy</div>
-              <span class="text-slate-500 text-xs">Vitess VTGate / Citus Coordinator</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6d5dfd" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+            <!-- Control plane -->
+            <div class="px-6 py-3 rounded-xl" style="background:rgba(109,93,253,0.15);border:1px solid rgba(109,93,253,0.3);">
+              <span class="text-purple-300">EuroScale Control Plane</span>
+              <span class="text-slate-500 text-xs ml-2">Operators · API · Backups · Credentials</span>
             </div>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            <div class="flex flex-col items-center gap-2">
-              <div class="px-4 py-2 rounded-lg" style="background:rgba(52,211,153,0.2);border:1px solid rgba(52,211,153,0.3);">K8s Cluster</div>
-              <span class="text-slate-500 text-xs">Hetzner · OVH · Exoscale</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6d5dfd" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+            <!-- HA K8s Cluster -->
+            <div class="px-6 py-3 rounded-xl font-semibold" style="background:rgba(34,211,238,0.15);border:1px solid rgba(34,211,238,0.3);color:#22d3ee;">
+              EuroScale HA K8s Cluster
             </div>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            <div class="flex flex-col items-center gap-2">
-              <div class="px-4 py-2 rounded-lg" style="background:rgba(251,191,36,0.2);border:1px solid rgba(251,191,36,0.3);">Object Storage</div>
-              <span class="text-slate-500 text-xs">S3-compatible, EU-hosted</span>
+            <!-- Provider nodes -->
+            <div class="flex flex-wrap justify-center gap-3 mt-2">
+              <span class="px-3 py-1.5 rounded-lg text-xs font-medium" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);">
+                🇩🇪 Hetzner · 3 nodes
+              </span>
+              <span class="px-3 py-1.5 rounded-lg text-xs font-medium" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);">
+                🇫🇷 OVHcloud · 3 nodes
+              </span>
+              <span class="px-3 py-1.5 rounded-lg text-xs font-medium" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);">
+                🇨🇭 Exoscale · 2 nodes
+              </span>
+            </div>
+            <!-- HA badge -->
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs mt-1" style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);color:#34d399;">
+              <span>✓</span> Self-healing · Multi-zone · Multi-provider HA
             </div>
           </div>
         </div>
@@ -1310,9 +1383,9 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
           <span class="text-sm font-semibold uppercase tracking-widest text-purple-400">Infrastructure</span>
-          <h2 class="text-3xl md:text-5xl font-extrabold text-white mt-4 mb-6">European Cloud, <span class="gradient-text-simple">Choose Your Infrastructure</span></h2>
+          <h2 class="text-3xl md:text-5xl font-extrabold text-white mt-4 mb-6">European Cloud, <span class="gradient-text-simple">United Under One Cluster</span></h2>
           <p class="text-slate-300 text-lg max-w-3xl mx-auto">
-            Deploy on your choice of European cloud providers. EuroScale orchestrates your K8s clusters across any of these partners.
+            EuroScale runs its own highly available Kubernetes cluster spanning all three providers simultaneously. Your databases are always online — if a provider goes down, the cluster self-heals.
           </p>
         </div>
 
@@ -1388,7 +1461,7 @@
         <div class="mt-10 text-center">
           <div class="inline-flex items-center gap-3 px-6 py-4 rounded-xl" style="background:rgba(109,93,253,0.08);border:1px solid rgba(109,93,253,0.15);">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6d5dfd" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-            <span class="text-sm text-slate-300"><strong class="text-white">Multi-cloud orchestration:</strong> Run across Hetzner, OVH, and Exoscale simultaneously for maximum resilience.</span>
+            <span class="text-sm text-slate-300"><strong class="text-white">Single HA K8s cluster across all providers:</strong> Worker nodes span Hetzner, OVH, and Exoscale. If any provider or zone fails, workloads redistribute automatically. <strong class="text-white">You just use your database.</strong></span>
           </div>
         </div>
       </div>
