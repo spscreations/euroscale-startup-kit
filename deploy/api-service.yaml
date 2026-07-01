@@ -1,0 +1,23 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: euroscale-api
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: api
+spec:
+  type: ClusterIP
+  selector:
+    app: euroscale
+    component: api
+  ports:
+    - name: grpc
+      port: 50051
+      targetPort: 50051
+      protocol: TCP
+    - name: health
+      port: 8080
+      targetPort: 8080
+      protocol: TCP

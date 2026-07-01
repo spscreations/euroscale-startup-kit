@@ -1,0 +1,190 @@
+syntax = "proto3";
+
+package euroscale.v1;
+
+option go_package = "github.com/spscreations/euroscale-startup-kit/api/gen/euroscale/v1;euroscalev1";
+
+// DatabaseService provisions and manages Vitess databases on demand.
+service DatabaseService {
+  // CreateDatabase provisions a new Vitess database with auto-generated credentials.
+  // The credentials (username/password) are returned ONCE in this response and never again.
+  rpc CreateDatabase(CreateDatabaseRequest) returns (CreateDatabaseResponse);
+
+  // DeleteDatabase drops a database and removes all associated credentials and secrets.
+  rpc DeleteDatabase(DeleteDatabaseRequest) returns (DeleteDatabaseResponse);
+
+  // ListDatabases returns all databases owned by a given user.
+  rpc ListDatabases(ListDatabasesRequest) returns (ListDatabasesResponse);
+
+  // GetDatabase returns metadata for a single database (no credentials).
+  rpc GetDatabase(GetDatabaseRequest) returns (GetDatabaseResponse);
+
+  // RotateCredentials generates new credentials for an existing database,
+  // invalidating the old ones. Returns the new credentials ONCE.
+  rpc RotateCredentials(RotateCredentialsRequest) returns (RotateCredentialsResponse);
+}
+
+// ── CreateDatabase ──────────────────────────────────────────────────────────
+
+message CreateDatabaseRequest {
+  // Required. Name of the database to create. Must be a valid MySQL identifier.
+  string name = 1;
+
+  // Database engine. Must be "mysql".
+  string engine = 2;
+
+  // Region to provision in: "nuremberg" or "helsinki".
+  string region = 3;
+
+  // ID of the user who will own this database.
+  string user_id = 4;
+}
+
+message CreateDatabaseResponse {
+  // Unique ID assigned to this database (UUID v4).
+  string database_id = 1;
+
+  // Full MySQL connection string with embedded credentials.
+  // Format: mysql://{user}:{pass}@{host}:3306/{db_name}?ssl-mode=VERIFY_IDENTITY
+  string connection_string = 2;
+
+  // Hostname for connecting (vtgate address).
+  string host = 3;
+
+  // Port number (3306).
+  int32 port = 4;
+
+  // Auto-generated username (prefix "u_" + 12 alphanumeric chars).
+  string username = 5;
+
+  // Auto-generated password (48 chars with special chars). Returned ONCE.
+  string password = 6;
+
+  // PEM-encoded CA certificate for TLS verification (base64).
+  string ssl_ca_pem = 7;
+
+  // Engine used ("mysql").
+  string engine = 8;
+
+  // Region where the database was provisioned.
+  string region = 9;
+
+  // Current status of the database.
+  string status = 10;
+
+  // Timestamp of creation (RFC 3339).
+  string created_at = 11;
+}
+
+// ── DeleteDatabase ──────────────────────────────────────────────────────────
+
+message DeleteDatabaseRequest {
+  // ID of the database to delete.
+  string database_id = 1;
+}
+
+message DeleteDatabaseResponse {
+  // Whether the deletion succeeded.
+  bool success = 1;
+
+  // Human-readable message.
+  string message = 2;
+}
+
+// ── ListDatabases ───────────────────────────────────────────────────────────
+
+message ListDatabasesRequest {
+  // Filter by user ID. Required.
+  string user_id = 1;
+
+  // Optional pagination: max results per page (default 50, max 100).
+  int32 page_size = 2;
+
+  // Optional pagination token from previous response.
+  string page_token = 3;
+}
+
+message ListDatabasesResponse {
+  // List of databases owned by the user.
+  repeated Database databases = 1;
+
+  // Token for the next page, empty if no more pages.
+  string next_page_token = 2;
+
+  // Total number of databases for this user.
+  int32 total = 3;
+}
+
+// ── GetDatabase ─────────────────────────────────────────────────────────────
+
+message GetDatabaseRequest {
+  // ID of the database to retrieve.
+  string database_id = 1;
+}
+
+message GetDatabaseResponse {
+  // Database metadata (no credentials).
+  Database database = 1;
+}
+
+// ── RotateCredentials ──────────────────────────────────────────────────────
+
+message RotateCredentialsRequest {
+  // ID of the database whose credentials to rotate.
+  string database_id = 1;
+}
+
+message RotateCredentialsResponse {
+  // Database ID.
+  string database_id = 1;
+
+  // New connection string with updated credentials.
+  string connection_string = 2;
+
+  // New username.
+  string username = 3;
+
+  // New password. Returned ONCE.
+  string password = 4;
+
+  // PEM-encoded CA certificate (base64).
+  string ssl_ca_pem = 5;
+
+  // Hostname.
+  string host = 6;
+
+  // Port.
+  int32 port = 7;
+}
+
+// ── Shared Types ────────────────────────────────────────────────────────────
+
+// Database metadata. Never contains credentials.
+message Database {
+  // Unique ID (UUID v4).
+  string database_id = 1;
+
+  // Database name.
+  string name = 2;
+
+  // Engine ("mysql").
+  string engine = 3;
+
+  // Region ("nuremberg" or "helsinki").
+  string region = 4;
+
+  // Hostname for connections.
+  string host = 5;
+
+  // Port number.
+  int32 port = 6;
+
+  // Username (prefix "u_" prefix, credentials never returned here).
+  string username = 7;
+
+  // Status: "creating", "ready", "deleting", "deleted", "error".
+  string status = 8;
+
+  // Creation timestamp (RFC 3339).
+  string created_at = 9;
+}

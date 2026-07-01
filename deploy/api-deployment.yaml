@@ -1,0 +1,106 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: euroscale-api
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: api
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: euroscale
+      component: api
+  template:
+    metadata:
+      labels:
+        app: euroscale
+        component: api
+    spec:
+      serviceAccountName: euroscale-api
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: api
+          image: ghcr.io/spscreations/euroscale-api:latest
+          imagePullPolicy: Always
+          ports:
+            - name: grpc
+              containerPort: 50051
+              protocol: TCP
+            - name: health
+              containerPort: 8080
+              protocol: TCP
+          env:
+            # ── From ConfigMap ─────────────────────────────────────────
+            - name: VTGATE_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: euroscale-config
+                  key: vtgate_addr
+                  optional: true
+            - name: K8S_NAMESPACE
+              valueFrom:
+                configMapKeyRef:
+                  name: euroscale-config
+                  key: namespace
+                  optional: true
+            - name: MINIO_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: euroscale-config
+                  key: minio_endpoint
+                  optional: true
+            - name: API_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: euroscale-config
+                  key: api_host
+                  optional: true
+            # ── From Secret ────────────────────────────────────────────
+            - name: EUROSCALE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: euroscale-api-key
+                  key: api_key
+          volumeMounts:
+            - name: tls-certs
+              mountPath: /etc/euroscale/tls
+              readOnly: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+      volumes:
+        - name: tls-certs
+          secret:
+            secretName: euroscale-vtgate-tls
+            items:
+              - key: ca.crt
+                path: ca.crt

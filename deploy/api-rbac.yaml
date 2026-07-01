@@ -1,0 +1,44 @@
+---
+# ServiceAccount for the EuroScale API to manage K8s Secrets.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: euroscale-api
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: api
+
+---
+# Role granting the API permission to manage Secrets.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: euroscale-api-secrets
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: api
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "create", "update", "delete", "patch"]
+
+---
+# RoleBinding attaching the Role to the ServiceAccount.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: euroscale-api-secrets
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: api
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: euroscale-api-secrets
+subjects:
+  - kind: ServiceAccount
+    name: euroscale-api
+    namespace: euroscale

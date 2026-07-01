@@ -1,0 +1,75 @@
+---
+# Self-signed CA Issuer — the root certificate authority for EuroScale database TLS.
+# All server certificates are issued by this CA. Clients must trust this CA cert.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: euroscale-db-ca-issuer
+  namespace: euroscale
+spec:
+  selfSigned: {}
+
+---
+# EuroScale Root CA Certificate.
+# This Certificate resource triggers cert-manager to generate a self-signed
+# CA certificate and store it in the euroscale-db-ca Secret.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: euroscale-db-ca
+  namespace: euroscale
+spec:
+  # CA certificate valid for 5 years.
+  isCA: true
+  commonName: euroscale-db-ca
+  secretName: euroscale-db-ca
+  duration: 43800h # 5 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    algorithm: RSA
+    size: 4096
+  issuerRef:
+    name: euroscale-db-ca-issuer
+    kind: Issuer
+    group: cert-manager.io
+
+---
+# CA Issuer (signs with the CA cert) — used by the server Certificate below.
+# This enables cert-manager to issue server certificates signed by our CA.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: euroscale-ca-issuer
+  namespace: euroscale
+spec:
+  ca:
+    secretName: euroscale-db-ca
+
+---
+# Server certificate for vtgate TLS connections.
+# Covers *.euroscale.app (and db.euroscale.app specifically).
+# Stored in Secret "euroscale-vtgate-tls" with 1-year validity,
+# auto-renewed 30 days before expiry.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: euroscale-vtgate-tls
+  namespace: euroscale
+spec:
+  secretName: euroscale-vtgate-tls
+  duration: 8760h # 1 year
+  renewBefore: 720h # 30 days
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  dnsNames:
+    - "*.euroscale.app"
+    - "db.euroscale.app"
+    - "euroscale-vtgate"
+    - "euroscale-vtgate.euroscale"
+    - "euroscale-vtgate.euroscale.svc"
+    - "euroscale-vtgate.euroscale.svc.cluster.local"
+  issuerRef:
+    name: euroscale-ca-issuer
+    kind: Issuer
+    group: cert-manager.io
