@@ -496,6 +496,11 @@
       to { opacity: 1; }
     }
 
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .animate-fade-in {
       animation: fadeIn 1s ease-out;
     }
@@ -504,11 +509,122 @@
       animation: fadeInUp 0.8s ease-out;
     }
 
+    .animate-fade-up {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    }
+
+    .animate-fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
     .animate-delay-100 { animation-delay: 0.1s; }
     .animate-delay-200 { animation-delay: 0.2s; }
     .animate-delay-300 { animation-delay: 0.3s; }
     .animate-delay-400 { animation-delay: 0.4s; }
     .animate-delay-500 { animation-delay: 0.5s; }
+
+    .animate-on-scroll {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .animate-on-scroll.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Pricing toggle */
+    .pricing-toggle {
+      position: relative;
+      display: inline-flex;
+      background: rgba(109, 93, 253, 0.1);
+      border: 1px solid rgba(109, 93, 253, 0.2);
+      border-radius: 100px;
+      padding: 4px;
+    }
+
+    .pricing-toggle button {
+      position: relative;
+      z-index: 1;
+      padding: 8px 24px;
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.3s;
+      border-radius: 100px;
+    }
+
+    .pricing-toggle button.active {
+      color: white;
+    }
+
+    .pricing-toggle .toggle-slider {
+      position: absolute;
+      top: 4px;
+      bottom: 4px;
+      width: calc(50% - 4px);
+      background: linear-gradient(135deg, #6d5dfd, #4f46e5);
+      border-radius: 100px;
+      transition: left 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      z-index: 0;
+    }
+
+    .pricing-toggle .toggle-slider.left {
+      left: 4px;
+    }
+
+    .pricing-toggle .toggle-slider.right {
+      left: calc(50% + 0px);
+    }
+
+    .pricing-save-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 10px;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(52, 211, 153, 0.15);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      color: #34d399;
+      margin-left: 8px;
+    }
+
+    /* Hero sub-value prop */
+    .hero-sub-value {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(109, 93, 253, 0.08);
+      border: 1px solid rgba(109, 93, 253, 0.2);
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #c4b5fd;
+      margin-bottom: 12px;
+    }
+
+    .hero-sub-value .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #22d3ee;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
 
     /* Responsive fixes */
     @media (max-width: 768px) {
@@ -518,6 +634,19 @@
       .stat-number { font-size: 2rem; }
       .cost-table { font-size: 13px; }
       .cost-table th, .cost-table td { padding: 10px 12px; }
+      .hero-sub-value { font-size: 12px; padding: 6px 12px; }
+      .pricing-toggle button { padding: 6px 16px; font-size: 13px; }
+      .pricing-toggle .toggle-slider { width: calc(50% - 3px); }
+      .partner-card { padding: 24px 16px; }
+      header .btn-primary { padding: 8px 16px !important; font-size: 13px !important; }
+    }
+
+    @media (max-width: 480px) {
+      .brand-logo-row svg { height: 18px; }
+      .brand-logo-row { gap: 20px; }
+      .code-window pre { font-size: 12px; padding: 14px 16px; }
+      section.py-24 { padding-top: 64px; padding-bottom: 64px; }
+      .glow-purple, .glow-cyan { display: none; }
     }
 
     @media (min-width: 769px) {
@@ -574,6 +703,17 @@
       scroll-behavior: smooth;
     }
 
+    /* Nav gradient line */
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(109, 93, 253, 0.4), rgba(34, 211, 238, 0.3), transparent);
+    }
+
     /* Selection */
     ::selection {
       background: rgba(109, 93, 253, 0.4);
@@ -599,7 +739,7 @@
   </nav>
 
   <!-- HEADER -->
-  <header class="fixed top-0 left-0 right-0 z-30" style="background: rgba(7, 11, 26, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(109, 93, 253, 0.1);">
+  <header class="fixed top-0 left-0 right-0 z-30" style="background: rgba(7, 11, 26, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(109, 93, 253, 0.1); box-shadow: inset 0 -1px 0 rgba(109, 93, 253, 0.05); position: relative;">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16 md:h-20">
         <!-- Logo -->
@@ -659,24 +799,29 @@
               Now in Public Beta · EU Sovereign Cloud
             </div>
 
-            <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight text-white mb-6">
-              The European
+            <!-- Sub-value prop -->
+            <div class="hero-sub-value">
+              <span class="dot"></span>
+              The European PlanetScale Alternative
+            </div>
+
+            <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight text-white mb-4">
+              Serverless Database.
               <br>
-              <span class="gradient-text">PlanetScale</span>
+              <span class="gradient-text">EU Sovereign</span>
               <br>
-              Alternative
+              By Architecture.
             </h1>
 
-            <p class="text-lg sm:text-xl text-slate-300 max-w-lg mb-8 leading-relaxed">
-              Serverless, horizontally-scalable MySQL &amp; PostgreSQL on European cloud infrastructure. 
-              <strong class="text-white">GDPR by architecture</strong>, Gaia-X ready. 
-              Built for startups and enterprises who demand data sovereignty — without sacrificing performance.
+            <p class="text-base sm:text-lg text-slate-300 max-w-xl mb-6 leading-relaxed">
+              Branchable MySQL &amp; PostgreSQL. <strong class="text-white">3–5× cheaper than AWS</strong>, GDPR by default — running on EuroScale's own HA multi-cloud cluster. No infra to manage. Just a connection string.
             </p>
 
             <!-- CTAs -->
             <div class="flex flex-wrap gap-4">
-              <a href="#" class="btn-primary text-lg px-8 py-4">
-                Get Started Free →
+              <a href="#" class="btn-primary text-lg px-8 py-4" style="position:relative;overflow:hidden;">
+                <span style="position:relative;z-index:1;">Get Started Free →</span>
+                <span style="position:absolute;inset:0;background:linear-gradient(135deg,#6d5dfd,#a99fff,#6d5dfd);background-size:200% 200%;animation:shimmer 3s ease-in-out infinite;opacity:0;transition:opacity 0.3s;"></span>
               </a>
               <a href="#demo" class="btn-secondary text-lg px-8 py-4">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
@@ -853,8 +998,8 @@
           </p>
         </div>
 
-        <div class="grid md:grid-cols-3 gap-6">
-          <!-- Card 1 -->
+        <div class="grid md:grid-cols-3 gap-6 animate-on-scroll">
+        <!-- Card 1 -->
           <div class="glass-card p-8">
             <div class="w-14 h-14 rounded-xl flex items-center justify-center mb-5" style="background:rgba(109,93,253,0.15);">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6d5dfd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -921,7 +1066,7 @@
 
         <div class="max-w-4xl mx-auto">
           <!-- Step flow -->
-          <div class="grid md:grid-cols-3 gap-8 text-center">
+          <div class="grid md:grid-cols-3 gap-8 text-center animate-on-scroll">
             <div>
               <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl" style="background:rgba(109,93,253,0.15);border:1px solid rgba(109,93,253,0.2);">1</div>
               <h3 class="font-bold text-white mb-2">Sign up</h3>
@@ -978,7 +1123,7 @@
           </p>
         </div>
 
-        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-on-scroll">
           <!-- Feature 1 -->
           <div class="glass-card p-6">
             <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-4" style="background:rgba(109,93,253,0.15);">
@@ -994,7 +1139,7 @@
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><path d="M6 6h.01M6 18h.01"/></svg>
             </div>
             <h3 class="text-lg font-bold text-white mb-2">Serverless &amp; Elastic</h3>
-            <p class="text-slate-400 text-sm leading-relaxed">Auto-scaling compute and storage. Pay only for what you use with burstable capacity. No capacity planning needed.</p>
+            <p class="text-slate-400 text-sm leading-relaxed">Auto-scaling compute and storage. Pay only for what you use. No capacity planning needed.</p>
           </div>
 
           <!-- Feature 3 -->
@@ -1003,7 +1148,7 @@
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
             <h3 class="text-lg font-bold text-white mb-2">EU Data Sovereignty</h3>
-            <p class="text-slate-400 text-sm leading-relaxed">All data stays within EU borders. GDPR by architecture, Gaia-X ready, Schrems II compliant. No US CLOUD Act exposure.</p>
+            <p class="text-slate-400 text-sm leading-relaxed">All data stays within EU borders. GDPR by architecture, Gaia-X ready, Schrems II compliant.</p>
           </div>
 
           <!-- Feature 4 -->
@@ -1021,7 +1166,7 @@
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6d5dfd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             </div>
             <h3 class="text-lg font-bold text-white mb-2">Just a Connection String</h3>
-            <p class="text-slate-400 text-sm leading-relaxed">No Kubernetes to manage. No infrastructure to provision. You get <code class="text-purple-300 text-xs font-mono">mysql://user:pass@db.euroscale.app:3306</code> — that's it. We handle the rest on our HA cluster.</p>
+            <p class="text-slate-400 text-sm leading-relaxed">No Kubernetes to manage. No infra to provision. Just <code class="text-purple-300 text-xs font-mono">mysql://user:***@db.euroscale.app:3306</code>. We handle the rest on our HA cluster.</p>
           </div>
 
           <!-- Feature 6 -->
@@ -1147,15 +1292,24 @@
           </p>
         </div>
 
+        <!-- Pricing Toggle -->
+        <div class="flex justify-center mb-10">
+          <div class="pricing-toggle" id="pricingToggle">
+            <div class="toggle-slider left" id="toggleSlider"></div>
+            <button class="active" data-period="monthly" onclick="setPricing('monthly')">Monthly</button>
+            <button data-period="annual" onclick="setPricing('annual')">Annual <span class="pricing-save-badge">Save 20%</span></button>
+          </div>
+        </div>
+
         <!-- Pricing Cards -->
-        <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-4 items-start max-w-6xl mx-auto">
+        <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-4 items-start max-w-6xl mx-auto animate-on-scroll">
           <!-- Free -->
           <div class="glass-card p-6 text-center">
             <h3 class="text-lg font-bold text-white mb-1">Free</h3>
             <p class="text-sm text-slate-400 mb-4">For side projects &amp; evaluation</p>
             <div class="mb-6">
-              <span class="text-4xl font-extrabold text-white">€0</span>
-              <span class="text-slate-400 text-sm">/mo</span>
+              <span class="text-4xl font-extrabold text-white pricing-amount" data-monthly="€0" data-annual="€0">€0</span>
+              <span class="text-slate-400 text-sm pricing-period">/mo</span>
             </div>
             <ul class="text-left text-sm text-slate-300 space-y-3 mb-8">
               <li class="flex items-start gap-2">
@@ -1187,8 +1341,8 @@
             <h3 class="text-lg font-bold text-white mb-1">Scale</h3>
             <p class="text-sm text-slate-400 mb-4">For growing startups</p>
             <div class="mb-6">
-              <span class="text-4xl font-extrabold text-white">€29</span>
-              <span class="text-slate-400 text-sm">/mo</span>
+              <span class="text-4xl font-extrabold text-white pricing-amount" data-monthly="€29" data-annual="€23">€29</span>
+              <span class="text-slate-400 text-sm pricing-period">/mo</span>
             </div>
             <ul class="text-left text-sm text-slate-300 space-y-3 mb-8">
               <li class="flex items-start gap-2">
@@ -1221,8 +1375,8 @@
             <h3 class="text-lg font-bold text-white mb-1">Team</h3>
             <p class="text-sm text-slate-400 mb-4">For teams &amp; production workloads</p>
             <div class="mb-6">
-              <span class="text-4xl font-extrabold text-white">€99</span>
-              <span class="text-slate-400 text-sm">/mo</span>
+              <span class="text-4xl font-extrabold text-white pricing-amount" data-monthly="€99" data-annual="€79">€99</span>
+              <span class="text-slate-400 text-sm pricing-period">/mo</span>
             </div>
             <ul class="text-left text-sm text-slate-300 space-y-3 mb-8">
               <li class="flex items-start gap-2">
@@ -1254,8 +1408,8 @@
             <h3 class="text-lg font-bold text-white mb-1">Business</h3>
             <p class="text-sm text-slate-400 mb-4">For scale-ups &amp; high-growth</p>
             <div class="mb-6">
-              <span class="text-4xl font-extrabold text-white">€399</span>
-              <span class="text-slate-400 text-sm">/mo</span>
+              <span class="text-4xl font-extrabold text-white pricing-amount" data-monthly="€399" data-annual="€319">€399</span>
+              <span class="text-slate-400 text-sm pricing-period">/mo</span>
             </div>
             <ul class="text-left text-sm text-slate-300 space-y-3 mb-8">
               <li class="flex items-start gap-2">
@@ -1308,7 +1462,7 @@
               </li>
               <li class="flex items-start gap-2">
                 <svg class="w-4 h-4 mt-0.5 text-green-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                On-prem deployment option
+                Dedicated clusters (EuroScale-managed)
               </li>
             </ul>
             <a href="#" class="btn-primary w-full justify-center" style="padding:12px 24px;font-size:14px;background:linear-gradient(135deg,#4f46e5,#6d5dfd);">Contact Us →</a>
@@ -1330,7 +1484,7 @@
           </p>
         </div>
 
-        <div class="max-w-4xl mx-auto overflow-x-auto">
+        <div class="max-w-4xl mx-auto overflow-x-auto animate-on-scroll">
           <table class="cost-table">
             <thead>
               <tr>
@@ -1389,7 +1543,7 @@
           </p>
         </div>
 
-        <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto animate-on-scroll">
           <!-- Hetzner -->
           <div class="partner-card">
             <div class="brand-logo-partner" style="height:28px;margin-bottom:4px;">
@@ -1477,7 +1631,7 @@
           <h2 class="text-3xl md:text-5xl font-extrabold text-white mt-4 mb-6">What Early Adopters Say</h2>
         </div>
 
-        <div class="grid md:grid-cols-3 gap-6">
+        <div class="grid md:grid-cols-3 gap-6 animate-on-scroll">
           <!-- Testimonial 1 -->
           <div class="testimonial-card glass-card p-8">
             <div class="flex items-center gap-1 mb-4">
@@ -1488,7 +1642,7 @@
               <svg class="w-4 h-4 text-gold-400" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             </div>
             <p class="text-slate-300 text-sm leading-relaxed mb-6">
-              "We migrated from PlanetScale to EuroScale for GDPR compliance. The branching workflow is identical, performance is comparable, and we're saving 70% on our monthly bill. A no-brainer for any EU-based startup."
+              &ldquo;We migrated from PlanetScale to EuroScale for GDPR compliance. The branching workflow is identical, performance is comparable, and we're saving 70% on our monthly bill. A no-brainer for any EU-based startup.&rdquo;
             </p>
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style="background:linear-gradient(135deg,#6d5dfd,#4f46e5);color:white;">MK</div>
@@ -1509,7 +1663,7 @@
               <svg class="w-4 h-4 text-gold-400" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             </div>
             <p class="text-slate-300 text-sm leading-relaxed mb-6">
-              "Database branching in seconds changed our CI/CD pipeline. We went from schema migration nightmares to confident, zero-downtime deploys. And knowing our data never leaves EU soil gives us peace of mind with our investors."
+              &ldquo;Database branching in seconds transformed our CI/CD pipeline. Schema migrations are now zero-downtime and ship daily. Knowing our data never leaves EU soil gives investors the confidence they need.&rdquo;
             </p>
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style="background:linear-gradient(135deg,#22d3ee,#0891b2);color:white;">TL</div>
@@ -1530,7 +1684,7 @@
               <svg class="w-4 h-4 text-gold-400" fill="#fbbf24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             </div>
             <p class="text-slate-300 text-sm leading-relaxed mb-6">
-              "As a public sector contractor, data sovereignty isn't optional — it's the law. EuroScale is the only platform that gives us PlanetScale-class features with the GDPR compliance we need. Hetzner-backed, EU-hosted, and certified."
+              &ldquo;As a public sector contractor, data sovereignty isn't optional — it's the law. EuroScale is the only platform that gives us PlanetScale-class features with the GDPR compliance we need. Hetzner-backed, EU-hosted, and certified.&rdquo;
             </p>
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style="background:linear-gradient(135deg,#34d399,#059669);color:white;">SJ</div>
@@ -1554,7 +1708,7 @@
           <h2 class="text-3xl md:text-5xl font-extrabold text-white mt-4 mb-6">Questions? <span class="gradient-text-simple">We Have Answers.</span></h2>
         </div>
 
-        <div class="glass-card-static p-2 md:p-8">
+        <div class="glass-card-static p-2 md:p-8 animate-on-scroll">
           <details class="faq-item px-4 md:px-6">
             <summary class="faq-question text-white">How is EuroScale different from PlanetScale?</summary>
             <div class="faq-answer">
@@ -1579,7 +1733,7 @@
           <details class="faq-item px-4 md:px-6">
             <summary class="faq-question text-white">Can I use my own cloud infrastructure?</summary>
             <div class="faq-answer">
-              Yes! EuroScale's Enterprise plan supports bring-your-own-cluster (BYOK) — deploy EuroScale on your existing K8s clusters running on Hetzner, OVHcloud, Exoscale, or any CNCF-compliant Kubernetes distribution. EuroScale handles the database orchestration; you keep control of the infrastructure. This is ideal for organizations with existing cloud commitments or specific compliance requirements.
+              No. EuroScale runs on our own highly available Kubernetes cluster spanning Hetzner, OVHcloud, and Exoscale across multiple EU regions. You get a connection string — nothing else to provision. Enterprise customers can request dedicated clusters within the same EuroScale-managed multi-cloud infrastructure, but you never manage servers, Kubernetes, or cloud accounts yourself.
             </div>
           </details>
 
@@ -1622,11 +1776,11 @@
       <div class="glow-cyan" style="bottom:-100px;left:-100px;width:500px;height:500px;"></div>
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
         <h2 class="text-3xl md:text-5xl font-extrabold text-white mb-6">
-          Ready to Take Control of<br>
-          <span class="gradient-text">Your European Data?</span>
+          Deploy in Minutes.<br>
+          <span class="gradient-text">Stay Sovereign Forever.</span>
         </h2>
         <p class="text-lg text-slate-300 max-w-2xl mx-auto mb-10">
-          Join hundreds of European startups and enterprises building on EuroScale. Get started free — no credit card required.
+          Join hundreds of European teams building on EuroScale. Get started free — no credit card, no commitment, no nonsense.
         </p>
         <div class="flex flex-wrap justify-center gap-4">
           <a href="#" class="btn-primary text-lg px-10 py-4">
@@ -1746,7 +1900,7 @@
       <!-- Bottom bar -->
       <div class="mt-12 pt-8 border-t border-slate-700/50 flex flex-col md:flex-row justify-between items-center gap-4">
         <p class="text-sm text-slate-500">
-          &copy; 2025 EuroScale. All rights reserved. Built with ❤️ in the EU.
+          &copy; 2026 EuroScale. All rights reserved. Built with ❤️ in the EU.
         </p>
         <div class="flex items-center gap-3 text-sm text-slate-500">
           <span>🇪🇺 EU Sovereign Cloud</span>
@@ -1761,6 +1915,7 @@
 
   <!-- Mobile Menu Toggle -->
   <script>
+    // Mobile menu toggle
     function toggleMobile() {
       const nav = document.getElementById('mobileNav');
       const overlay = document.getElementById('mobileOverlay');
@@ -1771,6 +1926,48 @@
     }
 
     document.getElementById('mobileOverlay')?.addEventListener('click', toggleMobile);
+
+    // Pricing toggle (monthly / annual)
+    function setPricing(period) {
+      const buttons = document.querySelectorAll('#pricingToggle button');
+      const slider = document.getElementById('toggleSlider');
+      const amounts = document.querySelectorAll('.pricing-amount');
+      const periods = document.querySelectorAll('.pricing-period');
+
+      buttons.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.period === period);
+      });
+
+      slider.classList.toggle('left', period === 'monthly');
+      slider.classList.toggle('right', period === 'annual');
+
+      amounts.forEach(el => {
+        el.textContent = el.dataset[period];
+      });
+
+      periods.forEach(el => {
+        el.textContent = period === 'annual' ? '/mo billed annually' : '/mo';
+      });
+    }
+
+    // Intersection Observer for scroll animations
+    document.addEventListener('DOMContentLoaded', function() {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      });
+
+      document.querySelectorAll('.animate-on-scroll').forEach(el => {
+        observer.observe(el);
+      });
+    });
   </script>
 
 </body>
