@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: euroscale-dashboard
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: euroscale
+      component: dashboard
+  template:
+    metadata:
+      labels:
+        app: euroscale
+        component: dashboard
+    spec:
+      containers:
+        - name: dashboard
+          image: ghcr.io/spscreations/euroscale-dashboard:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            - name: NEXT_PUBLIC_API_BASE_URL
+              value: "http://euroscale-api:50051"
+            - name: NEXT_PUBLIC_RPC_BASE_URL
+              value: "http://euroscale-api:50051"
+            - name: HOST
+              value: "0.0.0.0"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: euroscale-dashboard
+  namespace: euroscale
+spec:
+  type: NodePort
+  ports:
+    - port: 3000
+      targetPort: 3000
+      nodePort: 30300
+      name: http
+  selector:
+    app: euroscale
+    component: dashboard
