@@ -38,11 +38,19 @@ resource "hcloud_firewall" "euroscale" {
     port       = "8472"
   }
   
-  # HTTP/HTTPS for admin dashboard
+  # HTTP for admin dashboard
   rule {
     direction  = "in"
     protocol   = "tcp"
     source_ips = ["0.0.0.0/0"]
-    port       = "80,443"
+    port       = "80"
+  }
+  
+  # HTTPS for admin dashboard
+  rule {
+    direction  = "in"
+    protocol   = "tcp"
+    source_ips = ["0.0.0.0/0"]
+    port       = "443"
   }
 }

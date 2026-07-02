@@ -15,5 +15,5 @@ output "k3s_control_plane_ip" {
 }
 
 output "total_monthly_cost_estimate" {
-  value = "~€31.47/mo (3 × cax21 @ €10.49/mo each)"
+  value = "~€16.47/mo (3 × cx23 @ €5.49/mo each)"
 }

@@ -15,7 +15,7 @@ provider "hcloud" {
 resource "hcloud_server" "nodes" {
   for_each    = var.node_specs
   name        = each.value.name
-  server_type = "cax21"    # 4 vCPU, 8 GB RAM ARM — €10.49/mo each (post June 2026 pricing)
+  server_type = "cx23"    # 2 vCPU, 4 GB RAM x86 — €5.49/mo each
   image       = "ubuntu-24.04"
   location    = each.value.location
   ssh_keys    = [var.ssh_key_name]
@@ -37,7 +37,6 @@ resource "hcloud_volume" "data" {
   server_id = hcloud_server.nodes[each.key].id
   automount = false
   format    = "ext4"
-  location  = each.value.location
   labels = {
     cluster = "euroscale"
     type    = "database-data"

@@ -16,8 +16,8 @@ variable "node_specs" {
     type     = string  # "control" or "worker"
   }))
   default = {
-    node-1 = { name = "euroscale-cp-1", location = "nbg1",  type = "control" }
-    node-2 = { name = "euroscale-wk-1", location = "nbg1",  type = "worker"  }
-    node-3 = { name = "euroscale-wk-2", location = "hel1",  type = "worker"  }
+    node-1 = { name = "euroscale-cp-1", location = "fsn1",  type = "control" }
+    node-2 = { name = "euroscale-wk-1", location = "fsn1",  type = "worker"  }
+    node-3 = { name = "euroscale-wk-2", location = "fsn1",  type = "worker"  }
   }
 }
