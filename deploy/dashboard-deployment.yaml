@@ -29,9 +29,9 @@ spec:
               name: http
           env:
             - name: NEXT_PUBLIC_API_BASE_URL
-              value: "http://euroscale-api:50051"
+              value: "http://91.99.187.108:30151"
             - name: NEXT_PUBLIC_RPC_BASE_URL
-              value: "http://euroscale-api:50051"
+              value: "http://91.99.187.108:30151"
             - name: HOST
               value: "0.0.0.0"
           resources:
@@ -48,11 +48,10 @@ metadata:
   name: euroscale-dashboard
   namespace: euroscale
 spec:
-  type: NodePort
+  type: ClusterIP
   ports:
-    - port: 3000
+    - port: 80
       targetPort: 3000
-      nodePort: 30300
       name: http
   selector:
     app: euroscale
