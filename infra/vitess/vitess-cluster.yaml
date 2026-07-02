@@ -114,7 +114,10 @@ spec:
             cpu: 256m
             memory: 256Mi
         extraFlags:
-          tablet_types_to_wait: REPLICA,PRIMARY
+          mysql_auth_server_impl: "none"
+          tablet_types_to_wait: "REPLICA,PRIMARY"
+          mysql_server_version: "8.0.36"
+          mysql_auth_server_static_string: '{"mysql_user":[{"Password":"","UserData":"mysql_user"}]}'
 
     - name: helsinki
       gateway:
@@ -127,7 +130,10 @@ spec:
             cpu: 256m
             memory: 256Mi
         extraFlags:
-          tablet_types_to_wait: REPLICA,PRIMARY
+          mysql_auth_server_impl: "none"
+          tablet_types_to_wait: "REPLICA,PRIMARY"
+          mysql_server_version: "8.0.36"
+          mysql_auth_server_static_string: '{"mysql_user":[{"Password":"","UserData":"mysql_user"}]}'
 
   # ── Keyspaces ────────────────────────────────────────────────
   keyspaces:
