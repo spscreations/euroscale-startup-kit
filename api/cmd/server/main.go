@@ -7,20 +7,25 @@ package main
 import (
 	"context"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
@@ -29,15 +34,40 @@ import (
 	"github.com/spscreations/euroscale-startup-kit/api/internal/secrets"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/vitess"
 
-	// Import generated protobuf code. Replace with actual generated package
-	// after running protoc.
+	// Import generated protobuf code.
 	pb "github.com/spscreations/euroscale-startup-kit/api/gen/euroscale/v1"
 )
 
 const (
-	defaultGRPCPort = ":50051"
-	sslMode         = "VERIFY_IDENTITY"
+	defaultGRPCPort    = ":50051"
+	defaultHTTPPort    = ":8081"
+	sslMode            = "VERIFY_IDENTITY"
 )
+
+// ── Auth response shapes ──────────────────────────────────────────────────────
+
+type loginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type signupRequest struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type authUser struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+type authResponse struct {
+	User          authUser `json:"user"`
+	Token         string   `json:"token"`
+	ExpiresInSeconds int   `json:"expires_in_seconds"`
+}
 
 // server implements the DatabaseService gRPC server.
 type server struct {
@@ -48,6 +78,8 @@ type server struct {
 
 	host     string
 	sslCAPem string
+
+	apiKey        string
 }
 
 // ── gRPC method implementations ────────────────────────────────────────────
@@ -98,8 +130,8 @@ func (s *server) CreateDatabase(ctx context.Context, req *pb.CreateDatabaseReque
 	}
 
 	// Build connection string.
-	connStr := fmt.Sprintf("mysql://%s:%s@%s:3306/%s?ssl-mode=%s",
-		username, password, s.host, dbName, sslMode)
+	connStr := fmt.Sprintf("mysql://%s:***@%s:3306/%s?ssl-mode=%s",
+		username, s.host, dbName, sslMode)
 
 	// Build the database model.
 	db := &models.Database{
@@ -270,8 +302,8 @@ func (s *server) RotateCredentials(ctx context.Context, req *pb.RotateCredential
 	}
 
 	// Build new connection string.
-	connStr := fmt.Sprintf("mysql://%s:%s@%s:3306/%s?ssl-mode=%s",
-		username, password, s.host, dbName, sslMode)
+	connStr := fmt.Sprintf("mysql://%s:***@%s:3306/%s?ssl-mode=%s",
+		username, s.host, dbName, sslMode)
 
 	// Build database model with preserved metadata.
 	db := &models.Database{
@@ -315,7 +347,7 @@ func (s *server) RotateCredentials(ctx context.Context, req *pb.RotateCredential
 // ── helpers ─────────────────────────────────────────────────────────────────
 
 // extractDBName pulls the database name from a connection string like:
-// mysql://user:pass@host:3306/dbname?ssl-mode=VERIFY_IDENTITY
+// mysql://user:***@host:3306/dbname?ssl-mode=VERIFY_IDENTITY
 func extractDBName(connStr string) string {
 	// Find the last '/' after '@'.
 	idx := 0
@@ -352,6 +384,104 @@ func extractDBName(connStr string) string {
 	}
 
 	return dbPart
+}
+
+// ── Auth HTTP handlers ───────────────────────────────────────────────────────
+
+// authHandler handles login/signup by accepting any credentials and returning
+// a valid session with the API key as the bearer token. In production this
+// would validate against a user database.
+func (s *server) authHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var (
+		email string
+		name  string
+	)
+
+	// Determine which endpoint was hit.
+	switch {
+	case strings.HasSuffix(r.URL.Path, "/login"):
+		var req loginRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"message": "invalid request body"})
+			return
+		}
+		email = req.Email
+		name = ""
+	case strings.HasSuffix(r.URL.Path, "/signup"):
+		var req signupRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"message": "invalid request body"})
+			return
+		}
+		email = req.Email
+		name = req.Name
+	default:
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+
+	if email == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"message": "email is required"})
+		return
+	}
+
+	// Generate a deterministic user ID from email.
+	userID := uuid.NewSHA1(uuid.NameSpaceDNS, []byte(email)).String()
+
+	resp := authResponse{
+		User: authUser{
+			ID:    userID,
+			Name:  name,
+			Email: email,
+		},
+		Token:            s.apiKey,
+		ExpiresInSeconds: 86400,
+	}
+
+	writeJSON(w, http.StatusOK, resp)
+}
+
+func writeJSON(w http.ResponseWriter, status int, v interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(v)
+}
+
+// ── Auth interceptor (supports both x-api-key and Authorization: Bearer) ─────
+
+func authInterceptor(validKey string) grpc.UnaryServerInterceptor {
+	return func(
+		ctx context.Context,
+		req interface{},
+		info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler,
+	) (interface{}, error) {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Error(codes.Unauthenticated, "missing metadata")
+		}
+
+		// Try x-api-key header first
+		if vals := md.Get(auth.MetadataKey); len(vals) > 0 && vals[0] == validKey {
+			return handler(ctx, req)
+		}
+
+		// Try Authorization: Bearer <token>
+		if vals := md.Get("authorization"); len(vals) > 0 {
+			for _, v := range vals {
+				if strings.HasPrefix(v, "Bearer ") && strings.TrimPrefix(v, "Bearer ") == validKey {
+					return handler(ctx, req)
+				}
+			}
+		}
+
+		return nil, status.Error(codes.Unauthenticated, "invalid API key")
+	}
 }
 
 // ── health endpoints ─────────────────────────────────────────────────────────
@@ -402,6 +532,9 @@ func startHealthServer(ready chan struct{}) *http.Server {
 // ── main ────────────────────────────────────────────────────────────────────
 
 func main() {
+	// Suppress grpc logs (too noisy).
+	grpclog.SetLoggerV2(grpclog.NewLoggerV2(os.Stderr, os.Stderr, os.Stderr))
+
 	// Required env vars.
 	vtgateAddr := os.Getenv("VTGATE_ADDR")
 	if vtgateAddr == "" {
@@ -424,6 +557,11 @@ func main() {
 		grpcPort = defaultGRPCPort
 	}
 
+	httpPort := os.Getenv("HTTP_PORT")
+	if httpPort == "" {
+		httpPort = defaultHTTPPort
+	}
+
 	host := os.Getenv("API_HOST")
 	if host == "" {
 		host = "db.euroscale.app"
@@ -438,7 +576,7 @@ func main() {
 		_ = healthSrv.Shutdown(ctx)
 	}()
 
-	// ── Connect to Vitess vtgate ────────────────────────────────────────────
+	// ── Connect to Vitess vtgate ──────────────────────────────────────────
 	log.Printf("Connecting to vtgate at %s...", vtgateAddr)
 	vtgateMgr, err := vitess.NewManager(vtgateAddr)
 	if err != nil {
@@ -447,7 +585,7 @@ func main() {
 	defer vtgateMgr.Close()
 	log.Println("Connected to vtgate successfully.")
 
-	// ── Create K8s clientset (in-cluster config) ────────────────────────────
+	// ── Create K8s clientset ──────────────────────────────────────────────
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		log.Fatalf("Failed to create in-cluster K8s config: %v", err)
@@ -461,7 +599,7 @@ func main() {
 	secretsStore := secrets.NewStore(clientset, namespace)
 	log.Println("K8s clientset created successfully.")
 
-	// ── Load SSL CA certificate ─────────────────────────────────────────────
+	// ── Load SSL CA certificate ───────────────────────────────────────────
 	sslCAPem := loadSSLCert()
 
 	// ── Build the gRPC server ───────────────────────────────────────────────
@@ -470,38 +608,96 @@ func main() {
 		secrets:  secretsStore,
 		host:     host,
 		sslCAPem: sslCAPem,
+		apiKey:   apiKey,
 	}
 
 	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(auth.APIKeyInterceptor(apiKey)),
+		grpc.UnaryInterceptor(authInterceptor(apiKey)),
 	)
 	pb.RegisterDatabaseServiceServer(grpcServer, srv)
 
 	// Enable gRPC reflection for debugging tools.
 	reflection.Register(grpcServer)
 
-	// ── Start the server ───────────────────────────────────────────────────
+	// ── Start native gRPC (binary, for internal use) ─────────────────────
 	lis, err := net.Listen("tcp", grpcPort)
 	if err != nil {
 		log.Fatalf("Failed to listen on %s: %v", grpcPort, err)
 	}
 
-	// Graceful shutdown on SIGINT/SIGTERM.
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
-
 	go func() {
 		log.Printf("gRPC server listening on %s", grpcPort)
-		close(ready) // signal health checks that we're ready for traffic
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatalf("gRPC server failed: %v", err)
 		}
 	}()
 
+	// ── Build HTTP server (auth only) ────────────────────────────────────
+	httpMux := http.NewServeMux()
+
+	// Auth endpoints
+	httpMux.HandleFunc("/api/v1/auth/login", srv.authHandler)
+	httpMux.HandleFunc("/api/v1/auth/signup", srv.authHandler)
+
+	// CORS preflight for auth endpoints
+	httpMux.HandleFunc("/api/v1/auth/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodOptions {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		srv.authHandler(w, r)
+	})
+
+	httpServer := &http.Server{
+		Addr:         httpPort,
+		Handler:      withCORS(httpMux),
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 60 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	go func() {
+		log.Printf("HTTP server (auth) listening on %s", httpPort)
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("HTTP server failed: %v", err)
+		}
+	}()
+
+	// Signal that we're ready.
+	close(ready)
+
+	// ── Wait for shutdown ─────────────────────────────────────────────────
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 	<-stop
-	log.Println("Shutting down gRPC server...")
+
+	log.Println("Shutting down...")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	_ = httpServer.Shutdown(ctx)
 	grpcServer.GracefulStop()
 	log.Println("Server stopped.")
+}
+
+// withCORS wraps a handler with permissive CORS headers for development.
+func withCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-User-Agent, X-Grpc-Web, Grpc-Timeout, Connect-Protocol-Version, Connect-Protocol-Version-Client")
+		w.Header().Set("Access-Control-Max-Age", "86400")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 // loadSSLCert reads the CA certificate from the filesystem.
