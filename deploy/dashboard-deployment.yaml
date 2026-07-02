@@ -18,6 +18,8 @@ spec:
         app: euroscale
         component: dashboard
     spec:
+      imagePullSecrets:
+        - name: ghcr-pull
       containers:
         - name: dashboard
           image: ghcr.io/spscreations/euroscale-dashboard:latest
