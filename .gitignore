@@ -1,0 +1,7 @@
+# Credentials — never commit
+credentials/
+
+# Terraform
+**/.terraform/
+*.tfstate*
+.terraform.lock.hcl
