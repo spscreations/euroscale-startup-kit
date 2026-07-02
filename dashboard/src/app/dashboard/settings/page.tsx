@@ -50,8 +50,7 @@ function getInitials(name: string | undefined): string {
 
 function timeAgo(date: Date | null): string {
   if (!date) return "Never";
-  const now = Date.now();
-  const diff = now - date.getTime();
+  const diff = Date.now() - date.getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return "Just now";
   if (mins < 60) return `${mins}m ago`;
@@ -59,41 +58,10 @@ function timeAgo(date: Date | null): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   if (days < 30) return `${days}d ago`;
-  const months = Math.floor(days / 30);
-  return `${months}mo ago`;
+  return `${Math.floor(days / 30)}mo ago`;
 }
 
-// ── Notification toggles ─────────────────────────────────────────────────────
-
-interface Toggle {
-  id: string;
-  label: string;
-  description: string;
-  enabled: boolean;
-}
-
-const defaultToggles: Toggle[] = [
-  {
-    id: "backup",
-    label: "Backup notifications",
-    description: "Get notified when database backups complete or fail.",
-    enabled: true,
-  },
-  {
-    id: "billing",
-    label: "Billing alerts",
-    description: "Receive alerts about upcoming invoices and payment issues.",
-    enabled: true,
-  },
-  {
-    id: "updates",
-    label: "Product updates",
-    description: "Stay informed about new features and improvements.",
-    enabled: true,
-  },
-];
-
-// ── Mock API key data ────────────────────────────────────────────────────────
+// ── Mock API keys ────────────────────────────────────────────────────────────
 
 const mockKeys: ApiKey[] = [
   {
@@ -114,14 +82,40 @@ const mockKeys: ApiKey[] = [
   },
 ];
 
+// ── Notification toggles ─────────────────────────────────────────────────────
+
+interface Toggle {
+  id: string;
+  label: string;
+  description: string;
+}
+
+const toggles: Toggle[] = [
+  {
+    id: "backup",
+    label: "Backup notifications",
+    description: "Get notified when database backups complete or fail.",
+  },
+  {
+    id: "billing",
+    label: "Billing alerts",
+    description: "Receive alerts about upcoming invoices and payment issues.",
+  },
+  {
+    id: "updates",
+    label: "Product updates",
+    description: "Stay informed about new features and improvements.",
+  },
+];
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
   const { session } = useAuth();
 
-  // Profile
-  const [editLoading, setEditLoading] = useState(false);
+  // ── Profile ───────────────────────────────────────────────────────
 
+  const [editLoading, setEditLoading] = useState(false);
   const handleEditProfile = useCallback(() => {
     setEditLoading(true);
     setTimeout(() => {
@@ -130,7 +124,8 @@ export default function SettingsPage() {
     }, 300);
   }, []);
 
-  // API Keys
+  // ── API Keys ──────────────────────────────────────────────────────
+
   const [apiKeys, setApiKeys] = useState<ApiKey[]>(mockKeys);
   const [showGenerate, setShowGenerate] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
@@ -141,16 +136,13 @@ export default function SettingsPage() {
     (e: React.FormEvent) => {
       e.preventDefault();
       if (!newKeyName.trim()) return;
-
       setGenerating(true);
-      // Simulate generation delay
       setTimeout(() => {
         const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
         let suffix = "";
-        for (let i = 0; i < 32; i++) {
+        for (let i = 0; i < 32; i++)
           suffix += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        const newKey: ApiKey = {
+        const key: ApiKey = {
           id: crypto.randomUUID?.() ?? String(Date.now()),
           name: newKeyName.trim(),
           key: `sk_eusc_${suffix}`,
@@ -158,11 +150,11 @@ export default function SettingsPage() {
           lastUsed: null,
           revealed: true,
         };
-        setApiKeys((prev) => [newKey, ...prev]);
+        setApiKeys((prev) => [key, ...prev]);
         setNewKeyName("");
         setShowGenerate(false);
         setGenerating(false);
-        toast.success(`API key "${newKey.name}" created`);
+        toast.success(`API key "${key.name}" created`);
       }, 800);
     },
     [newKeyName],
@@ -172,84 +164,67 @@ export default function SettingsPage() {
     (keyId: string) => {
       const key = apiKeys.find((k) => k.id === keyId);
       if (!key) return;
-
       if (
         !window.confirm(
-          `Are you sure you want to revoke the API key "${key.name}"?\n\nThis action cannot be undone. Any services using this key will immediately lose access.`,
+          `Revoke "${key.name}"?\n\nThis cannot be undone. Any services using this key will lose access immediately.`,
         )
       )
         return;
-
       setRevokingId(keyId);
       setTimeout(() => {
         setApiKeys((prev) => prev.filter((k) => k.id !== keyId));
         setRevokingId(null);
-        toast.success(`API key "${key.name}" revoked`);
+        toast.success(`"${key.name}" revoked`);
       }, 400);
     },
     [apiKeys],
   );
 
-  const handleCopyKey = useCallback(
-    (key: string) => {
-      navigator.clipboard
-        .writeText(key)
-        .then(() => toast.success("API key copied to clipboard"))
-        .catch(() => toast.error("Failed to copy to clipboard"));
-    },
-    [],
-  );
+  const handleCopyKey = useCallback((key: string) => {
+    navigator.clipboard
+      .writeText(key)
+      .then(() => toast.success("API key copied to clipboard"))
+      .catch(() => toast.error("Failed to copy"));
+  }, []);
 
   const handleToggleReveal = useCallback((keyId: string) => {
     setApiKeys((prev) =>
-      prev.map((k) =>
-        k.id === keyId ? { ...k, revealed: !k.revealed } : k,
-      ),
+      prev.map((k) => (k.id === keyId ? { ...k, revealed: !k.revealed } : k)),
     );
   }, []);
 
-  // Notifications
-  const [toggles, setToggles] = useState<Toggle[]>(defaultToggles);
+  // ── Notifications ─────────────────────────────────────────────────
+
+  const [enabledToggles, setEnabledToggles] = useState<Set<string>>(
+    () => new Set(toggles.map((t) => t.id)),
+  );
 
   const handleToggle = useCallback(
-    (toggleId: string) => {
-      setToggles((prev) => {
-        const updated = prev.map((t) =>
-          t.id === toggleId ? { ...t, enabled: !t.enabled } : t,
-        );
-        const toggled = updated.find((t) => t.id === toggleId);
-        if (toggled) {
-          toast(
-            `${toggled.label} ${toggled.enabled ? "enabled" : "disabled"}`,
-            {
-              icon: toggled.enabled ? "🔔" : "🔕",
-            },
-          );
-        }
-        return updated;
+    (id: string) => {
+      setEnabledToggles((prev) => {
+        const next = new Set(prev);
+        const enabled = !prev.has(id);
+        if (enabled) next.add(id);
+        else next.delete(id);
+        const t = toggles.find((t) => t.id === id);
+        if (t) toast(`${t.label} ${enabled ? "enabled" : "disabled"}`, { icon: enabled ? "🔔" : "🔕" });
+        return next;
       });
     },
     [],
   );
 
-  // Danger zone
-  const [deleteLoading, setDeleteLoading] = useState(false);
+  // ── Danger zone ───────────────────────────────────────────────────
 
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const handleDeleteAccount = useCallback(() => {
     if (
       !window.confirm(
-        "Are you absolutely sure you want to delete your account?\n\nThis action is irreversible. All your databases, API keys, and data will be permanently deleted within 30 days.",
+        "Delete your account?\n\nThis is irreversible. All databases, API keys, and data will be permanently deleted within 30 days.",
       )
     )
       return;
-
-    if (
-      !window.confirm(
-        "Final confirmation: type DELETE to confirm account deletion.",
-      )
-    )
-      return;
-
+    if (!window.confirm("Final confirmation: type DELETE to confirm.")) return;
     setDeleteLoading(true);
     setTimeout(() => {
       setDeleteLoading(false);
@@ -257,13 +232,12 @@ export default function SettingsPage() {
     }, 1000);
   }, []);
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────
 
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fade">
-        {/* ── Page header ──────────────────────────────────────────────── */}
-
+        {/* Page header */}
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
             <span className="gradient-text">Settings</span>
@@ -273,14 +247,12 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        {/* ── Profile Section ──────────────────────────────────────────── */}
+        {/* ── 1. Profile ─────────────────────────────────────────── */}
 
         <section className="glass-card p-6 space-y-5">
           <div className="flex items-center gap-1.5">
             <User size={18} className="text-purple-400" />
-            <h2 className="text-lg font-semibold text-text-primary">
-              Profile
-            </h2>
+            <h2 className="text-lg font-semibold text-text-primary">Profile</h2>
           </div>
 
           <div className="flex items-center gap-4">
@@ -306,24 +278,18 @@ export default function SettingsPage() {
                 "disabled:opacity-50 disabled:cursor-not-allowed",
               )}
             >
-              {editLoading ? (
-                <Loader2 size={15} className="animate-spin" />
-              ) : (
-                "Edit"
-              )}
+              {editLoading ? <Loader2 size={15} className="animate-spin" /> : "Edit"}
             </button>
           </div>
         </section>
 
-        {/* ── API Keys Section ─────────────────────────────────────────── */}
+        {/* ── 2. API Keys ────────────────────────────────────────── */}
 
         <section className="glass-card p-6 space-y-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Key size={18} className="text-purple-400" />
-              <h2 className="text-lg font-semibold text-text-primary">
-                API Keys
-              </h2>
+              <h2 className="text-lg font-semibold text-text-primary">API Keys</h2>
             </div>
             <button
               onClick={() => setShowGenerate(true)}
@@ -339,16 +305,12 @@ export default function SettingsPage() {
             </button>
           </div>
 
-          {/* Empty state */}
-          {apiKeys.length === 0 && (
+          {apiKeys.length === 0 ? (
             <div className="text-center py-8 space-y-3">
-              <Shield
-                size={36}
-                className="mx-auto text-text-muted"
-              />
+              <Shield size={36} className="mx-auto text-text-muted" />
               <p className="text-sm text-text-muted">No API keys yet</p>
               <p className="text-xs text-text-muted/70">
-                Generate an API key to access the EuroScale API programmatically.
+                Generate an API key to access EuroScale programmatically.
               </p>
               <button
                 onClick={() => setShowGenerate(true)}
@@ -362,10 +324,7 @@ export default function SettingsPage() {
                 Create your first key
               </button>
             </div>
-          )}
-
-          {/* Key list */}
-          {apiKeys.length > 0 && (
+          ) : (
             <div className="space-y-3">
               {apiKeys.map((key) => (
                 <div
@@ -378,7 +337,6 @@ export default function SettingsPage() {
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1 space-y-2">
-                      {/* Name + masked key */}
                       <div>
                         <p className="text-sm font-semibold text-text-primary flex items-center gap-2">
                           {key.name}
@@ -394,34 +352,21 @@ export default function SettingsPage() {
                           </code>
                           <button
                             onClick={() => handleCopyKey(key.key)}
-                            className={cn(
-                              "shrink-0 p-1 rounded text-text-muted hover:text-purple-400 hover:bg-purple-500/10",
-                              "transition-all duration-150",
-                            )}
+                            className="shrink-0 p-1 rounded text-text-muted hover:text-purple-400 hover:bg-purple-500/10 transition-all duration-150"
                             title="Copy to clipboard"
                           >
                             <Copy size={13} />
                           </button>
                           <button
                             onClick={() => handleToggleReveal(key.id)}
-                            className={cn(
-                              "shrink-0 p-1 rounded text-text-muted hover:text-purple-400 hover:bg-purple-500/10",
-                              "transition-all duration-150",
-                            )}
-                            title={
-                              key.revealed ? "Hide key" : "Reveal full key"
-                            }
+                            className="shrink-0 p-1 rounded text-text-muted hover:text-purple-400 hover:bg-purple-500/10 transition-all duration-150"
+                            title={key.revealed ? "Hide key" : "Reveal full key"}
                           >
-                            {key.revealed ? (
-                              <EyeOff size={13} />
-                            ) : (
-                              <Eye size={13} />
-                            )}
+                            {key.revealed ? <EyeOff size={13} /> : <Eye size={13} />}
                           </button>
                         </div>
                       </div>
 
-                      {/* Metadata row */}
                       <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-text-muted">
                         <span className="inline-flex items-center gap-1">
                           <CalendarDays size={12} />
@@ -434,7 +379,6 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
-                    {/* Revoke button */}
                     <button
                       onClick={() => handleRevokeKey(key.id)}
                       disabled={revokingId === key.id}
@@ -448,13 +392,11 @@ export default function SettingsPage() {
                     >
                       {revokingId === key.id ? (
                         <>
-                          <Loader2 size={12} className="animate-spin" />
-                          Revoking…
+                          <Loader2 size={12} className="animate-spin" /> Revoking…
                         </>
                       ) : (
                         <>
-                          <Trash2 size={12} />
-                          Revoke
+                          <Trash2 size={12} /> Revoke
                         </>
                       )}
                     </button>
@@ -465,66 +407,56 @@ export default function SettingsPage() {
           )}
         </section>
 
-        {/* ── Notifications Section ─────────────────────────────────────── */}
+        {/* ── 3. Notifications ────────────────────────────────────── */}
 
         <section className="glass-card p-6 space-y-5">
           <div className="flex items-center gap-1.5">
             <Bell size={18} className="text-purple-400" />
-            <h2 className="text-lg font-semibold text-text-primary">
-              Notifications
-            </h2>
+            <h2 className="text-lg font-semibold text-text-primary">Notifications</h2>
           </div>
 
           <div className="space-y-4">
-            {toggles.map((toggle) => (
-              <div
-                key={toggle.id}
-                className="flex items-center justify-between gap-4 py-2"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-text-primary">
-                    {toggle.label}
-                  </p>
-                  <p className="text-xs text-text-muted mt-0.5">
-                    {toggle.description}
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleToggle(toggle.id)}
-                  role="switch"
-                  aria-checked={toggle.enabled}
-                  className={cn(
-                    "relative inline-flex h-6 w-11 shrink-0 rounded-full transition-all duration-200",
-                    "focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:ring-offset-2 focus:ring-offset-navy-900",
-                    toggle.enabled ? "bg-purple-500" : "bg-navy-600",
-                  )}
-                >
-                  <span
+            {toggles.map((toggle) => {
+              const on = enabledToggles.has(toggle.id);
+              return (
+                <div key={toggle.id} className="flex items-center justify-between gap-4 py-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-text-primary">{toggle.label}</p>
+                    <p className="text-xs text-text-muted mt-0.5">{toggle.description}</p>
+                  </div>
+                  <button
+                    onClick={() => handleToggle(toggle.id)}
+                    role="switch"
+                    aria-checked={on}
                     className={cn(
-                      "inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200",
-                      toggle.enabled ? "translate-x-[22px]" : "translate-x-[2px]",
-                      "mt-px",
+                      "relative inline-flex h-6 w-11 shrink-0 rounded-full transition-all duration-200",
+                      "focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:ring-offset-2 focus:ring-offset-navy-900",
+                      on ? "bg-purple-500" : "bg-navy-600",
                     )}
-                  />
-                </button>
-              </div>
-            ))}
+                  >
+                    <span
+                      className={cn(
+                        "inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 mt-px",
+                        on ? "translate-x-[22px]" : "translate-x-[2px]",
+                      )}
+                    />
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </section>
 
-        {/* ── Danger Zone ───────────────────────────────────────────────── */}
+        {/* ── 4. Danger Zone ──────────────────────────────────────── */}
 
         <section className="glass-card p-6 space-y-5 border-red-400/20 hover:border-red-400/30">
           <div className="flex items-center gap-1.5">
             <Trash2 size={18} className="text-red-400" />
-            <h2 className="text-lg font-semibold text-red-400">
-              Danger Zone
-            </h2>
+            <h2 className="text-lg font-semibold text-red-400">Danger Zone</h2>
           </div>
 
           <p className="text-sm text-text-muted">
-            Once you delete your account, there is no going back. Please be
-            certain.
+            Once you delete your account, there is no going back. Please be certain.
           </p>
 
           <button
@@ -540,35 +472,28 @@ export default function SettingsPage() {
           >
             {deleteLoading ? (
               <>
-                <Loader2 size={15} className="animate-spin" />
-                Deleting…
+                <Loader2 size={15} className="animate-spin" /> Deleting…
               </>
             ) : (
               <>
-                <Trash2 size={15} />
-                Delete Account
+                <Trash2 size={15} /> Delete Account
               </>
             )}
           </button>
         </section>
       </div>
 
-      {/* ── Generate Key Modal ──────────────────────────────────────────── */}
+      {/* ── Generate Key Modal ────────────────────────────────────── */}
 
       {showGenerate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
           <div
             className="absolute inset-0 bg-navy-900/70 backdrop-blur-sm"
             onClick={() => !generating && setShowGenerate(false)}
           />
-
-          {/* Modal */}
           <div className="relative w-full max-w-md glass-card rounded-xl p-6 md:p-8 animate-slide-up shadow-2xl">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-text-primary">
-                Generate API Key
-              </h2>
+              <h2 className="text-lg font-semibold text-text-primary">Generate API Key</h2>
               <button
                 onClick={() => setShowGenerate(false)}
                 disabled={generating}
@@ -581,10 +506,7 @@ export default function SettingsPage() {
 
             <form onSubmit={handleGenerateKey} className="space-y-5">
               <div>
-                <label
-                  htmlFor="key-name"
-                  className="block text-sm font-medium text-text-secondary mb-1.5"
-                >
+                <label htmlFor="key-name" className="block text-sm font-medium text-text-secondary mb-1.5">
                   Key name
                 </label>
                 <input
@@ -623,13 +545,11 @@ export default function SettingsPage() {
               >
                 {generating ? (
                   <>
-                    <Loader2 size={16} className="animate-spin" />
-                    Generating…
+                    <Loader2 size={16} className="animate-spin" /> Generating…
                   </>
                 ) : (
                   <>
-                    <Plus size={16} />
-                    Generate key
+                    <Plus size={16} /> Generate key
                   </>
                 )}
               </button>
