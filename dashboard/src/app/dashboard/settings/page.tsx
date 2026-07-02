@@ -1,562 +1,119 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import {
-  User,
-  Key,
-  Bell,
-  Trash2,
-  Plus,
-  Copy,
-  EyeOff,
-  Eye,
-  X,
-  Loader2,
-  Shield,
-  Server,
-  CalendarDays,
+  User, Bell, CreditCard, Shield, ChevronRight, Check,
+  Pencil, Key, X, Mail, Globe, Sparkles, BadgeCheck,
+  ArrowUpRight, ExternalLink, Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
+import ApiKeys from "@/components/ApiKeys";
 import toast from "react-hot-toast";
 
-// ── Types ────────────────────────────────────────────────────────────────────
+interface NPref { id: string; label: string; desc: string; en: boolean;
+  icon: React.ComponentType<{ size: number; className?: string }>; }
+interface BPlan { name: string; price: string; period: string;
+  status: "active" | "past_due" | "canceled";
+  features: string[]; usagePct: number; usageLbl: string; }
 
-interface ApiKey {
-  id: string;
-  name: string;
-  key: string;
-  created: Date;
-  lastUsed: Date | null;
-  revealed: boolean;
+function mkN(): NPref[] { return [
+  {id:"billing",label:"Billing alerts",desc:"Invoices, payment failures, and plan changes",en:true,icon:CreditCard},
+  {id:"usage",label:"Usage thresholds",desc:"When database storage or connections near limits",en:true,icon:Zap},
+  {id:"backups",label:"Backup notifications",desc:"Daily backup success or failure reports",en:true,icon:Shield},
+  {id:"security",label:"Security alerts",desc:"New login from unrecognized device or location",en:false,icon:Shield},
+  {id:"product",label:"Product updates",desc:"New features, maintenance windows, and changelog",en:false,icon:Sparkles},
+]; }
+
+function mkB(): BPlan { return {
+  name:"Scale", price:"9", period:"per month", status:"active",
+  features:["Up to 10 databases","5 GB storage per database","Daily automated backups","99.95% SLA","Priority email support","Team members (up to 5)"],
+  usagePct:45, usageLbl:"5 of 10 databases used",
+}; }
+
+function SC({icon:Icon,title,desc,children}:{icon:React.ComponentType<{size:number;className?:string}>;title:string;desc?:string;children:React.ReactNode}) {
+  return (<div className="glass-card animate-slide-up overflow-hidden"><div className="border-b border-glass-border px-6 py-4"><div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-500/15"><Icon size={18} className="text-purple-400"/></div><div><h2 className="text-base font-semibold text-text-primary">{title}</h2>{desc && <p className="text-xs text-text-muted">{desc}</p>}</div></div></div><div className="p-6">{children}</div></div>);
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function maskKey(key: string): string {
-  if (key.length <= 10) return key;
-  return `sk_${"*".repeat(key.length - 7)}${key.slice(-3)}`;
+function Tgl({en,on,id}:{en:boolean;on:(v:boolean)=>void;id:string}) {
+  return (<button id={id} role="switch" aria-checked={en} onClick={()=>on(!en)} className={cn("relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200",en?"bg-purple-500":"bg-navy-600")}><span className={cn("absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white transition-all duration-200",en?"translate-x-4":"translate-x-0")}/></button>);
 }
-
-function getInitials(name: string | undefined): string {
-  if (!name) return "?";
-  return name
-    .split(" ")
-    .map((p) => p.charAt(0))
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
-
-function timeAgo(date: Date | null): string {
-  if (!date) return "Never";
-  const diff = Date.now() - date.getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  return `${Math.floor(days / 30)}mo ago`;
-}
-
-// ── Mock API keys ────────────────────────────────────────────────────────────
-
-const mockKeys: ApiKey[] = [
-  {
-    id: "1",
-    name: "Production",
-    key: "sk_prod_8a7b3c2d1e4f5a6b7c8d9e0f1a2b3c4d",
-    created: new Date("2026-06-15"),
-    lastUsed: new Date(),
-    revealed: false,
-  },
-  {
-    id: "2",
-    name: "Staging",
-    key: "sk_stag_2b4d6f8h0j1l3n5p7r9t1v3x5z7a9c",
-    created: new Date("2026-06-20"),
-    lastUsed: new Date(Date.now() - 3600000),
-    revealed: false,
-  },
-];
-
-// ── Notification toggles ─────────────────────────────────────────────────────
-
-interface Toggle {
-  id: string;
-  label: string;
-  description: string;
-}
-
-const toggles: Toggle[] = [
-  {
-    id: "backup",
-    label: "Backup notifications",
-    description: "Get notified when database backups complete or fail.",
-  },
-  {
-    id: "billing",
-    label: "Billing alerts",
-    description: "Receive alerts about upcoming invoices and payment issues.",
-  },
-  {
-    id: "updates",
-    label: "Product updates",
-    description: "Stay informed about new features and improvements.",
-  },
-];
-
-// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
   const { session } = useAuth();
-
-  // ── Profile ───────────────────────────────────────────────────────
-
-  const [editLoading, setEditLoading] = useState(false);
-  const handleEditProfile = useCallback(() => {
-    setEditLoading(true);
-    setTimeout(() => {
-      setEditLoading(false);
-      toast("Profile editing coming soon", { icon: "🚧" });
-    }, 300);
-  }, []);
-
-  // ── API Keys ──────────────────────────────────────────────────────
-
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>(mockKeys);
-  const [showGenerate, setShowGenerate] = useState(false);
-  const [newKeyName, setNewKeyName] = useState("");
-  const [generating, setGenerating] = useState(false);
-  const [revokingId, setRevokingId] = useState<string | null>(null);
-
-  const handleGenerateKey = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!newKeyName.trim()) return;
-      setGenerating(true);
-      setTimeout(() => {
-        const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-        let suffix = "";
-        for (let i = 0; i < 32; i++)
-          suffix += chars.charAt(Math.floor(Math.random() * chars.length));
-        const key: ApiKey = {
-          id: crypto.randomUUID?.() ?? String(Date.now()),
-          name: newKeyName.trim(),
-          key: `sk_eusc_${suffix}`,
-          created: new Date(),
-          lastUsed: null,
-          revealed: true,
-        };
-        setApiKeys((prev) => [key, ...prev]);
-        setNewKeyName("");
-        setShowGenerate(false);
-        setGenerating(false);
-        toast.success(`API key "${key.name}" created`);
-      }, 800);
-    },
-    [newKeyName],
-  );
-
-  const handleRevokeKey = useCallback(
-    (keyId: string) => {
-      const key = apiKeys.find((k) => k.id === keyId);
-      if (!key) return;
-      if (
-        !window.confirm(
-          `Revoke "${key.name}"?\n\nThis cannot be undone. Any services using this key will lose access immediately.`,
-        )
-      )
-        return;
-      setRevokingId(keyId);
-      setTimeout(() => {
-        setApiKeys((prev) => prev.filter((k) => k.id !== keyId));
-        setRevokingId(null);
-        toast.success(`"${key.name}" revoked`);
-      }, 400);
-    },
-    [apiKeys],
-  );
-
-  const handleCopyKey = useCallback((key: string) => {
-    navigator.clipboard
-      .writeText(key)
-      .then(() => toast.success("API key copied to clipboard"))
-      .catch(() => toast.error("Failed to copy"));
-  }, []);
-
-  const handleToggleReveal = useCallback((keyId: string) => {
-    setApiKeys((prev) =>
-      prev.map((k) => (k.id === keyId ? { ...k, revealed: !k.revealed } : k)),
-    );
-  }, []);
-
-  // ── Notifications ─────────────────────────────────────────────────
-
-  const [enabledToggles, setEnabledToggles] = useState<Set<string>>(
-    () => new Set(toggles.map((t) => t.id)),
-  );
-
-  const handleToggle = useCallback(
-    (id: string) => {
-      setEnabledToggles((prev) => {
-        const next = new Set(prev);
-        const enabled = !prev.has(id);
-        if (enabled) next.add(id);
-        else next.delete(id);
-        const t = toggles.find((t) => t.id === id);
-        if (t) toast(`${t.label} ${enabled ? "enabled" : "disabled"}`, { icon: enabled ? "🔔" : "🔕" });
-        return next;
-      });
-    },
-    [],
-  );
-
-  // ── Danger zone ───────────────────────────────────────────────────
-
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const handleDeleteAccount = useCallback(() => {
-    if (
-      !window.confirm(
-        "Delete your account?\n\nThis is irreversible. All databases, API keys, and data will be permanently deleted within 30 days.",
-      )
-    )
-      return;
-    if (!window.confirm("Final confirmation: type DELETE to confirm.")) return;
-    setDeleteLoading(true);
-    setTimeout(() => {
-      setDeleteLoading(false);
-      toast.error("Account deletion is not yet implemented.");
-    }, 1000);
-  }, []);
-
-  // ── Render ────────────────────────────────────────────────────────
-
+  const [en, setEn] = useState(false);
+  const [nm, setNm] = useState(session?.name ?? "User");
+  const [sv, setSv] = useState(false);
+  const [p, setP] = useState(mkN);
+  const h = useCallback(async () => { if (!nm.trim()) return; setSv(true); await new Promise(r => setTimeout(r, 600)); setSv(false); setEn(false); toast.success("Profile name updated"); }, [nm]);
+  const tg = useCallback((id: string) => { setP(pr => pr.map(x => x.id === id ? { ...x, en: !x.en } : x)); toast.success("Notification preference updated"); }, []);
+  const b = mkB();
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fade">
-        {/* Page header */}
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            <span className="gradient-text">Settings</span>
-          </h1>
-          <p className="mt-1 text-sm text-text-muted">
-            Manage your profile, API keys, and account preferences.
-          </p>
-        </div>
-
-        {/* ── 1. Profile ─────────────────────────────────────────── */}
-
-        <section className="glass-card p-6 space-y-5">
-          <div className="flex items-center gap-1.5">
-            <User size={18} className="text-purple-400" />
-            <h2 className="text-lg font-semibold text-text-primary">Profile</h2>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-cyan-400 flex items-center justify-center text-xl font-bold text-white shrink-0 shadow-lg shadow-purple-500/20">
-              {getInitials(session?.name)}
-            </div>
-            <div className="min-w-0 flex-1 space-y-1">
-              <p className="text-lg font-semibold text-text-primary truncate">
-                {session?.name ?? "User"}
-              </p>
-              <p className="text-sm text-text-muted truncate">
-                {session?.email ?? "—"}
-              </p>
-            </div>
-            <button
-              onClick={handleEditProfile}
-              disabled={editLoading}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium",
-                "border border-glass-border text-text-secondary",
-                "hover:text-purple-300 hover:border-purple-500/30 hover:bg-purple-500/10",
-                "transition-all duration-200",
-                "disabled:opacity-50 disabled:cursor-not-allowed",
-              )}
-            >
-              {editLoading ? <Loader2 size={15} className="animate-spin" /> : "Edit"}
-            </button>
-          </div>
-        </section>
-
-        {/* ── 2. API Keys ────────────────────────────────────────── */}
-
-        <section className="glass-card p-6 space-y-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Key size={18} className="text-purple-400" />
-              <h2 className="text-lg font-semibold text-text-primary">API Keys</h2>
-            </div>
-            <button
-              onClick={() => setShowGenerate(true)}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-semibold text-white",
-                "bg-gradient-to-r from-purple-500 to-purple-400",
-                "hover:from-purple-400 hover:to-purple-300",
-                "transition-all duration-150 shadow-lg shadow-purple-500/20",
-              )}
-            >
-              <Plus size={15} />
-              Generate New Key
-            </button>
-          </div>
-
-          {apiKeys.length === 0 ? (
-            <div className="text-center py-8 space-y-3">
-              <Shield size={36} className="mx-auto text-text-muted" />
-              <p className="text-sm text-text-muted">No API keys yet</p>
-              <p className="text-xs text-text-muted/70">
-                Generate an API key to access EuroScale programmatically.
-              </p>
-              <button
-                onClick={() => setShowGenerate(true)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium",
-                  "text-purple-400 hover:text-purple-300 hover:bg-purple-500/10",
-                  "transition-all duration-150",
-                )}
-              >
-                <Plus size={15} />
-                Create your first key
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {apiKeys.map((key) => (
-                <div
-                  key={key.id}
-                  className={cn(
-                    "rounded-lg border border-glass-border bg-navy-800/50 p-4",
-                    "transition-all duration-200",
-                    revokingId === key.id && "opacity-50",
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1 space-y-2">
-                      <div>
-                        <p className="text-sm font-semibold text-text-primary flex items-center gap-2">
-                          {key.name}
-                          {key.lastUsed === null && (
-                            <span className="inline-flex items-center rounded-full bg-gold-400/10 px-2 py-0.5 text-[10px] font-medium text-gold-400">
-                              New
-                            </span>
-                          )}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <code className="text-xs font-mono text-text-muted bg-navy-700 rounded px-2 py-0.5">
-                            {key.revealed ? key.key : maskKey(key.key)}
-                          </code>
-                          <button
-                            onClick={() => handleCopyKey(key.key)}
-                            className="shrink-0 p-1 rounded text-text-muted hover:text-purple-400 hover:bg-purple-500/10 transition-all duration-150"
-                            title="Copy to clipboard"
-                          >
-                            <Copy size={13} />
-                          </button>
-                          <button
-                            onClick={() => handleToggleReveal(key.id)}
-                            className="shrink-0 p-1 rounded text-text-muted hover:text-purple-400 hover:bg-purple-500/10 transition-all duration-150"
-                            title={key.revealed ? "Hide key" : "Reveal full key"}
-                          >
-                            {key.revealed ? <EyeOff size={13} /> : <Eye size={13} />}
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-text-muted">
-                        <span className="inline-flex items-center gap-1">
-                          <CalendarDays size={12} />
-                          Created {key.created.toLocaleDateString()}
-                        </span>
-                        <span className="inline-flex items-center gap-1">
-                          <Server size={12} />
-                          Last used {timeAgo(key.lastUsed)}
-                        </span>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => handleRevokeKey(key.id)}
-                      disabled={revokingId === key.id}
-                      className={cn(
-                        "shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium",
-                        "text-red-400 border border-red-400/20",
-                        "hover:bg-red-500/10 hover:border-red-400/40 hover:text-red-300",
-                        "transition-all duration-150",
-                        "disabled:opacity-50 disabled:cursor-not-allowed",
-                      )}
-                    >
-                      {revokingId === key.id ? (
-                        <>
-                          <Loader2 size={12} className="animate-spin" /> Revoking…
-                        </>
-                      ) : (
-                        <>
-                          <Trash2 size={12} /> Revoke
-                        </>
-                      )}
-                    </button>
-                  </div>
+    <div className="mx-auto w-full max-w-2xl space-y-6 px-6 py-8">
+      <div className="mb-2"><h1 className="text-xl font-bold text-text-primary">Settings</h1><p className="mt-1 text-sm text-text-muted">Manage your account, API keys, and billing</p></div>
+      
+      <SC icon={User} title="Profile">
+        <div className="flex items-start gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-cyan-400 text-lg font-bold text-white">{session?.name?.charAt(0)?.toUpperCase() ?? nm.charAt(0).toUpperCase() ?? "?"}</div>
+          <div className="flex-1 min-w-0">
+            <div className="mb-3">
+              <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-text-muted">Name</label>
+              {en ? (
+                <div className="flex items-center gap-2">
+                  <input type="text" value={nm} onChange={e => setNm(e.target.value)} className="flex-1 rounded-lg border border-glass-border bg-navy-700/50 px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/50 outline-none transition-colors focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20" autoFocus onKeyDown={e => e.key === "Enter" && h()} />
+                  <button onClick={h} disabled={sv || !nm.trim()} className={cn("rounded-lg p-2 transition-colors", sv || !nm.trim() ? "text-text-muted cursor-not-allowed" : "text-green-400 hover:bg-green-500/10")}>{sv ? <span className="block h-4 w-4 animate-spin rounded-full border-2 border-green-400/30 border-t-green-400" /> : <Check size={16} />}</button>
+                  <button onClick={() => { setEn(false); setNm(session?.name ?? "User"); }} className="rounded-lg p-2 text-text-muted transition-colors hover:bg-navy-700 hover:text-text-primary"><X size={16} /></button>
                 </div>
-              ))}
+              ) : (
+                <div className="flex items-center gap-2"><span className="text-sm font-medium text-text-primary">{session?.name ?? nm}</span><button onClick={() => setEn(true)} className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-navy-700 hover:text-purple-400" title="Edit name"><Pencil size={14} /></button></div>
+              )}
             </div>
-          )}
-        </section>
-
-        {/* ── 3. Notifications ────────────────────────────────────── */}
-
-        <section className="glass-card p-6 space-y-5">
-          <div className="flex items-center gap-1.5">
-            <Bell size={18} className="text-purple-400" />
-            <h2 className="text-lg font-semibold text-text-primary">Notifications</h2>
-          </div>
-
-          <div className="space-y-4">
-            {toggles.map((toggle) => {
-              const on = enabledToggles.has(toggle.id);
-              return (
-                <div key={toggle.id} className="flex items-center justify-between gap-4 py-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-text-primary">{toggle.label}</p>
-                    <p className="text-xs text-text-muted mt-0.5">{toggle.description}</p>
-                  </div>
-                  <button
-                    onClick={() => handleToggle(toggle.id)}
-                    role="switch"
-                    aria-checked={on}
-                    className={cn(
-                      "relative inline-flex h-6 w-11 shrink-0 rounded-full transition-all duration-200",
-                      "focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:ring-offset-2 focus:ring-offset-navy-900",
-                      on ? "bg-purple-500" : "bg-navy-600",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 mt-px",
-                        on ? "translate-x-[22px]" : "translate-x-[2px]",
-                      )}
-                    />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* ── 4. Danger Zone ──────────────────────────────────────── */}
-
-        <section className="glass-card p-6 space-y-5 border-red-400/20 hover:border-red-400/30">
-          <div className="flex items-center gap-1.5">
-            <Trash2 size={18} className="text-red-400" />
-            <h2 className="text-lg font-semibold text-red-400">Danger Zone</h2>
-          </div>
-
-          <p className="text-sm text-text-muted">
-            Once you delete your account, there is no going back. Please be certain.
-          </p>
-
-          <button
-            onClick={handleDeleteAccount}
-            disabled={deleteLoading}
-            className={cn(
-              "inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold",
-              "bg-red-500/10 text-red-400 border border-red-400/20",
-              "hover:bg-red-500/20 hover:border-red-400/40 hover:text-red-300",
-              "transition-all duration-200",
-              "disabled:opacity-50 disabled:cursor-not-allowed",
-            )}
-          >
-            {deleteLoading ? (
-              <>
-                <Loader2 size={15} className="animate-spin" /> Deleting…
-              </>
-            ) : (
-              <>
-                <Trash2 size={15} /> Delete Account
-              </>
-            )}
-          </button>
-        </section>
-      </div>
-
-      {/* ── Generate Key Modal ────────────────────────────────────── */}
-
-      {showGenerate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-navy-900/70 backdrop-blur-sm"
-            onClick={() => !generating && setShowGenerate(false)}
-          />
-          <div className="relative w-full max-w-md glass-card rounded-xl p-6 md:p-8 animate-slide-up shadow-2xl">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-text-primary">Generate API Key</h2>
-              <button
-                onClick={() => setShowGenerate(false)}
-                disabled={generating}
-                className="text-text-muted hover:text-text-primary transition-colors"
-                aria-label="Close dialog"
-              >
-                <X size={20} />
-              </button>
+            <div>
+              <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-text-muted">Email</label>
+              <div className="flex items-center gap-2"><span className="text-sm text-text-secondary">{session?.email ?? "user@example.com"}</span><BadgeCheck size={14} className="text-green-400" /></div>
             </div>
-
-            <form onSubmit={handleGenerateKey} className="space-y-5">
-              <div>
-                <label htmlFor="key-name" className="block text-sm font-medium text-text-secondary mb-1.5">
-                  Key name
-                </label>
-                <input
-                  id="key-name"
-                  type="text"
-                  value={newKeyName}
-                  onChange={(e) => setNewKeyName(e.target.value)}
-                  placeholder="Production key"
-                  required
-                  disabled={generating}
-                  autoFocus
-                  className={cn(
-                    "w-full rounded-lg bg-navy-800 border border-glass-border",
-                    "px-4 py-2.5 text-sm text-text-primary",
-                    "placeholder:text-text-muted",
-                    "focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50",
-                    "transition-all duration-200",
-                    "disabled:opacity-50 disabled:cursor-not-allowed",
-                  )}
-                />
-                <p className="mt-1.5 text-xs text-text-muted">
-                  Give your key a descriptive name to identify its purpose.
-                </p>
-              </div>
-
-              <button
-                type="submit"
-                disabled={!newKeyName.trim() || generating}
-                className={cn(
-                  "w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white",
-                  "bg-gradient-to-r from-purple-500 to-purple-400",
-                  "hover:from-purple-400 hover:to-purple-300",
-                  "transition-all duration-150 shadow-lg shadow-purple-500/20",
-                  "disabled:opacity-50 disabled:cursor-not-allowed",
-                )}
-              >
-                {generating ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" /> Generating…
-                  </>
-                ) : (
-                  <>
-                    <Plus size={16} /> Generate key
-                  </>
-                )}
-              </button>
-            </form>
           </div>
         </div>
-      )}
+        <div className="mt-4 grid grid-cols-2 gap-3 rounded-lg bg-navy-800/40 p-3">
+          <div><p className="text-xs font-medium uppercase tracking-wider text-text-muted">Member since</p><p className="mt-0.5 text-sm text-text-secondary">June 2026</p></div>
+          <div><p className="text-xs font-medium uppercase tracking-wider text-text-muted">Account ID</p><p className="mt-0.5 font-mono text-xs text-text-muted">{session?.id ? "usr_" + session.id.slice(0, 8) : "usr_abc12345"}</p></div>
+        </div>
+      </SC>
+
+      <SC icon={Key} title="API Keys" desc="Manage programmatic access to the EuroScale API"><ApiKeys /></SC>
+
+      <SC icon={Bell} title="Notifications" desc="Choose what you get notified about">
+        <div className="space-y-1">
+          {p.map(x => (
+            <div key={x.id} className="flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors hover:bg-navy-800/40">
+              <div className="flex items-center gap-3 min-w-0"><div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-navy-700 text-text-muted"><x.icon size={15} /></div><div className="min-w-0"><p className="text-sm font-medium text-text-primary">{x.label}</p><p className="text-xs text-text-muted truncate">{x.desc}</p></div></div>
+              <Tgl en={x.en} on={() => tg(x.id)} id={"pref-" + x.id} />
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 rounded-lg border border-dashed border-glass-border p-4 text-center"><Mail size={20} className="mx-auto mb-2 text-text-muted/60" /><p className="text-sm text-text-muted">Notifications are sent to {session?.email ?? "your account email"}</p><p className="mt-1 text-xs text-text-muted/60">You can manage email frequency in notification settings</p></div>
+      </SC>
+
+      <SC icon={CreditCard} title="Billing" desc="Your current plan and usage">
+        <div className="mb-6">
+          <div className="flex items-start justify-between">
+            <div><div className="flex items-center gap-2"><h3 className="text-lg font-bold gradient-text">{b.name}</h3><span className="rounded-full bg-green-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-green-400">Active</span></div><p className="mt-1 text-sm text-text-muted">{b.price} <span className="text-xs">{b.period}</span></p></div>
+            <button className="flex items-center gap-1 rounded-lg border border-glass-border px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:border-purple-500/30 hover:text-purple-400">Change Plan<ChevronRight size={14} /></button>
+          </div>
+        </div>
+        <div className="mb-6">
+          <div className="mb-1.5 flex items-center justify-between text-xs"><span className="text-text-muted">{b.usageLbl}</span><span className="text-text-secondary font-medium">{b.usagePct}%</span></div>
+          <div className="h-2 overflow-hidden rounded-full bg-navy-700"><div className="h-full rounded-full bg-gradient-to-r from-purple-500 to-cyan-400 transition-all duration-500" style={{ width: b.usagePct + "%" }} /></div>
+        </div>
+        <div className="mb-6 grid grid-cols-1 gap-2 sm:grid-cols-2">{b.features.map(f => (<div key={f} className="flex items-center gap-2 text-sm text-text-secondary"><Check size={14} className="text-green-400 shrink-0" />{f}</div>))}</div>
+        <div className="flex flex-wrap gap-3 border-t border-glass-border pt-4">
+          <button className="flex items-center gap-2 rounded-lg border border-glass-border px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:border-purple-500/30 hover:text-purple-400"><CreditCard size={15} />Payment Methods<ExternalLink size={13} /></button>
+          <button className="flex items-center gap-2 rounded-lg border border-glass-border px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:border-purple-500/30 hover:text-purple-400"><ArrowUpRight size={15} />View Invoices</button>
+          <button className="flex items-center gap-2 rounded-lg border border-glass-border px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:border-purple-500/30 hover:text-purple-400"><Globe size={15} />Manage Tax Info</button>
+        </div>
+      </SC>
+
+      <p className="text-center text-xs text-text-muted/50">EuroScale &mdash; European Database Platform &middot; Version 0.1.0</p>
     </div>
   );
 }

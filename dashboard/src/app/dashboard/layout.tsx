@@ -8,7 +8,6 @@ import {
   Plus,
   Settings,
   LogOut,
-  ChevronLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";

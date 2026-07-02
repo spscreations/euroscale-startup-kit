@@ -22,6 +22,14 @@ EuroScale is a fully-managed PaaS for MySQL (via Vitess) running on European clo
 | 8 | Off-Site | rclone sync CronJob + restore-test CronJob with retention policy | ✅ Complete |
 | 9 | CI/CD | GitHub Actions — Docker build, push to GHCR, kubectl deploy | ✅ Complete |
 | 10 | Verification | Smoke test script + documentation | ✅ Complete |
+| | **Phase 2 — Customer Dashboard** | | |
+| P2-1 | Next.js 16 Project | Tailwind v4, React 19, TS 6, dark navy theme | ✅ Complete |
+| P2-2 | API Client Layer | React Query hooks, auth context, gRPC-web types | ✅ Complete |
+| P2-3 | Auth Pages | Login, signup, AuthGuard component | ✅ Complete |
+| P2-4 | Database Dashboard | DB list, stats cards, sidebar nav | ✅ Complete |
+| P2-5 | Create Database | Form with credentials display (shown once) | ✅ Complete |
+| P2-6 | Database Detail | Connection info, stats, rotate/delete | ✅ Complete |
+| P2-7 | Settings | Profile, API keys, notifications, danger zone | ✅ Complete |
 
 ---
 
@@ -65,7 +73,22 @@ EuroScale is a fully-managed PaaS for MySQL (via Vitess) running on European clo
 
 ```
 euroscale_startup_kit/
-├── api/                          # gRPC provisioning API (Go)
+├── dashboard/                   # Customer dashboard (Next.js 16)
+│   ├── src/app/
+│   │   ├── layout.tsx          # Root layout (dark theme + providers)
+│   │   ├── login/page.tsx      # Login page
+│   │   ├── signup/page.tsx     # Signup page
+│   │   ├── dashboard/
+│   │   │   ├── layout.tsx      # Dashboard layout (sidebar nav)
+│   │   │   ├── page.tsx        # DB list dashboard
+│   │   │   ├── create/page.tsx # Create DB flow
+│   │   │   ├── [id]/page.tsx   # DB detail page
+│   │   │   └── settings/page.tsx # Settings + API keys
+│   │   └── globals.css         # Tailwind v4 design system
+│   ├── src/components/         # React components
+│   ├── src/hooks/              # React Query hooks
+│   ├── src/lib/                # API client, auth, utils
+│   └── package.json            # Next.js 16, React 19, Tailwind v4
 │   ├── cmd/server/main.go       # Server entrypoint + gRPC handlers
 │   ├── internal/
 │   │   ├── auth/auth.go         # API key auth interceptor
@@ -187,12 +210,13 @@ export EUROSCALE_API_KEY=$(kubectl get secret euroscale-api-key -n euroscale -o 
 
 ## Component Versions
 
-| Component | Version |
-|---|---|
-| Vitess | v20.0.0 |
+|| Component | Version |
+|:---|---:|
+| Vitess | v24.0.1 |
 | Vitess Operator | planetscale/vitess-operator |
-| K3s | v1.30.2+k3s2 |
-| Go (API) | 1.22+ |
+| K3s | v1.34.5+k3s1 |
+| Go (API) | 1.26 |
+| Dashboard | Next.js 16.2, React 19.2.7, Tailwind v4 |
 | Prometheus Stack | kube-prometheus-stack (Helm) |
 | cert-manager | latest |
 | MinIO | latest (via Helm) |
