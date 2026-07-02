@@ -88,40 +88,11 @@ jobs:
       #     subject-digest: ${{ steps.build.outputs.digest }}
       #     push-to-registry: true
 
-      # ── Deploy to Kubernetes ────────────────────────────────────────────
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v4
-
-      - name: Configure kubeconfig
+      - name: Output image digest
         run: |
-          mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
-          chmod 600 $HOME/.kube/config
-
-      - name: Apply Kubernetes manifests
-        run: |
-          # Always apply the latest manifests so ConfigMap/PDB/service changes propagate.
-          kubectl apply -f deploy/api-service.yaml --namespace ${{ env.NAMESPACE }}
-          kubectl apply -f deploy/api-pdb.yaml --namespace ${{ env.NAMESPACE }}
-
-      - name: Deploy to Kubernetes
-        run: |
-          kubectl set image deployment/${{ env.DEPLOYMENT }} \
-            ${{ env.CONTAINER }}=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }} \
-            --namespace ${{ env.NAMESPACE }}
-
-      - name: Verify rollout status
-        run: |
-          kubectl rollout status deployment/${{ env.DEPLOYMENT }} \
-            --namespace ${{ env.NAMESPACE }} \
-            --timeout=300s
-
-      # ── Post-deploy smoke check ─────────────────────────────────────────
-      - name: Post-deploy smoke test
-        run: |
-          echo "Waiting for pod to become ready..."
-          kubectl wait --for=condition=Ready pod \
-            -l app=euroscale,component=api \
-            -n ${{ env.NAMESPACE }} \
-            --timeout=120s
-          echo "Rollout complete: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}"
+          echo "## Image pushed to GHCR" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tags | \`${{ steps.meta.outputs.tags }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Digest | \`${{ steps.build.outputs.digest }}\` |" >> $GITHUB_STEP_SUMMARY

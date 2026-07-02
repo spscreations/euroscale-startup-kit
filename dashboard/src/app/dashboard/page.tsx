@@ -7,10 +7,11 @@ import {
   RefreshCw,
   Loader2,
   AlertTriangle,
-  DatabaseIcon,
+  Database,
   X,
   Server,
   MapPin,
+  WifiOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AuthGuard from "@/components/AuthGuard";
@@ -41,7 +42,6 @@ function DashboardContent() {
   const totalDatabases = data?.total ?? databases.length;
   const readyCount = databases.filter((db) => db.status === "ready").length;
 
-  // Delete handler with confirmation
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleDelete = useCallback(
@@ -81,7 +81,7 @@ function DashboardContent() {
     [router],
   );
 
-  // Create database dialog
+  // Create dialog
   const [showCreate, setShowCreate] = useState(false);
   const [newDbName, setNewDbName] = useState("");
   const [newDbRegion, setNewDbRegion] = useState("nuremberg");
@@ -115,88 +115,77 @@ function DashboardContent() {
   );
 
   return (
-    <div className="min-h-screen bg-navy-900">
-      {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-glass-border bg-navy-900/80 backdrop-blur-xl">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold tracking-tight">
-                <span className="gradient-text">EuroScale</span>
-              </h1>
-              <span className="hidden sm:inline-flex items-center rounded-full bg-navy-700 px-3 py-0.5 text-xs font-medium text-text-muted">
-                Dashboard
-              </span>
-            </div>
+    <div className="flex-1 flex flex-col min-h-0">
+      {/* Top bar */}
+      <header className="sticky top-0 z-20 border-b border-border-subtle bg-bg-primary/95 backdrop-blur-sm">
+        <div className="flex h-12 items-center justify-between px-6">
+          <div>
+            <h1 className="text-sm font-semibold text-text-primary">
+              Databases
+            </h1>
+          </div>
 
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => refetch()}
-                disabled={isLoading}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium",
-                  "text-text-secondary hover:text-text-primary hover:bg-navy-700",
-                  "transition-all duration-150 border border-glass-border",
-                  isLoading && "opacity-50 cursor-not-allowed",
-                )}
-                aria-label="Refresh databases"
-              >
-                <RefreshCw
-                  size={15}
-                  className={cn(isLoading && "animate-spin")}
-                />
-                <span className="hidden sm:inline">Refresh</span>
-              </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => refetch()}
+              disabled={isLoading}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium",
+                "text-text-secondary hover:text-text-primary hover:bg-surface-2",
+                "transition-colors border border-border-subtle",
+                isLoading && "opacity-50 cursor-not-allowed",
+              )}
+              aria-label="Refresh databases"
+            >
+              <RefreshCw
+                size={13}
+                className={cn(isLoading && "animate-spin")}
+              />
+              Refresh
+            </button>
 
-              <button
-                onClick={() => setShowCreate(true)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white",
-                  "bg-gradient-to-r from-purple-500 to-purple-400",
-                  "hover:from-purple-400 hover:to-purple-300",
-                  "transition-all duration-150 shadow-lg shadow-purple-500/20",
-                )}
-              >
-                <Plus size={16} />
-                <span className="hidden sm:inline">New Database</span>
-                <span className="sm:hidden">New</span>
-              </button>
-            </div>
+            <button
+              onClick={() => setShowCreate(true)}
+              className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-white bg-accent hover:bg-accent-hover active:bg-accent-pressed transition-colors"
+            >
+              <Plus size={14} />
+              New database
+            </button>
           </div>
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fade">
-        {/* Stats cards */}
+      {/* Content */}
+      <main className="flex-1 overflow-auto px-6 py-6 space-y-6">
+        {/* Stats */}
         <StatsCards
           totalDatabases={totalDatabases}
           activeConnections={readyCount}
-          storageUsed={databases.length > 0 ? `${databases.length * 256} MB` : "—"}
+          storageUsed={
+            databases.length > 0 ? `${databases.length * 256} MB` : "—"
+          }
           isLoading={isLoading}
         />
 
         {/* Error state */}
         {isError && (
-          <div className="glass-card rounded-xl p-8 text-center space-y-3 animate-fade">
-            <AlertTriangle
-              size={32}
-              className="mx-auto text-gold-400"
-            />
-            <p className="text-text-secondary text-sm">
-              {error instanceof Error
-                ? error.message
-                : "Failed to load databases. Please try again."}
-            </p>
+          <div className="rounded-lg border border-error-subtle bg-surface-1 p-8 text-center space-y-3 animate-fade-in">
+            <WifiOff size={28} className="mx-auto text-error-text" />
+            <div>
+              <p className="text-sm font-medium text-text-primary">
+                Could not load databases
+              </p>
+              <p className="text-xs text-text-muted mt-1">
+                {error instanceof Error
+                  ? error.message
+                  : "Failed to load databases. The API may be unreachable."}
+              </p>
+            </div>
             <button
               onClick={() => refetch()}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium",
-                "text-purple-400 hover:text-purple-300 hover:bg-purple-500/10",
-                "transition-all duration-150",
-              )}
+              className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-accent-text hover:text-accent-hover hover:bg-accent-subtle transition-colors"
             >
-              <RefreshCw size={15} />
+              <RefreshCw size={13} />
               Retry
             </button>
           </div>
@@ -204,24 +193,23 @@ function DashboardContent() {
 
         {/* Loading state */}
         {isLoading && !isError && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="glass-card rounded-xl p-5 animate-pulse space-y-3"
+                className="rounded-lg border border-border-subtle bg-surface-1 p-4 animate-pulse space-y-3"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-navy-600" />
+                  <div className="skeleton w-8 h-8 rounded-md" />
                   <div className="space-y-2 flex-1">
-                    <div className="h-4 w-32 rounded bg-navy-600" />
-                    <div className="h-3 w-20 rounded bg-navy-600" />
+                    <div className="skeleton h-3.5 w-28" />
+                    <div className="skeleton h-2.5 w-16" />
                   </div>
                 </div>
-                <div className="h-3 w-48 rounded bg-navy-600" />
-                <div className="h-px bg-navy-600" />
-                <div className="flex justify-between">
-                  <div className="h-3 w-16 rounded bg-navy-600" />
-                  <div className="h-3 w-24 rounded bg-navy-600" />
+                <div className="skeleton h-2.5 w-40" />
+                <div className="border-t border-border-subtle pt-3 flex justify-between">
+                  <div className="skeleton h-2.5 w-14" />
+                  <div className="skeleton h-2.5 w-20" />
                 </div>
               </div>
             ))}
@@ -230,31 +218,22 @@ function DashboardContent() {
 
         {/* Empty state */}
         {!isLoading && !isError && databases.length === 0 && (
-          <div className="glass-card rounded-xl p-12 text-center space-y-4 animate-slide-up">
-            <DatabaseIcon
-              size={48}
-              className="mx-auto text-text-muted"
-            />
+          <div className="rounded-lg border border-border-subtle bg-surface-1 py-12 px-6 text-center space-y-3 animate-fade-in">
+            <Database size={36} className="mx-auto text-text-disabled" />
             <div>
-              <h2 className="text-lg font-semibold text-text-primary">
+              <h2 className="text-sm font-semibold text-text-primary">
                 No databases yet
               </h2>
-              <p className="text-sm text-text-muted mt-1 max-w-md mx-auto">
-                Create your first database to get started with
-                Vitess-powered MySQL on sovereign EU
-                infrastructure.
+              <p className="text-xs text-text-muted mt-1 max-w-sm mx-auto">
+                Create your first database to get started with Vitess-powered
+                MySQL on sovereign EU infrastructure.
               </p>
             </div>
             <button
               onClick={() => setShowCreate(true)}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-lg px-5 py-2.5 text-sm font-semibold text-white",
-                "bg-gradient-to-r from-purple-500 to-purple-400",
-                "hover:from-purple-400 hover:to-purple-300",
-                "transition-all duration-150 shadow-lg shadow-purple-500/20",
-              )}
+              className="inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-semibold text-white bg-accent hover:bg-accent-hover active:bg-accent-pressed transition-colors"
             >
-              <Plus size={16} />
+              <Plus size={14} />
               Create your first database
             </button>
           </div>
@@ -262,16 +241,16 @@ function DashboardContent() {
 
         {/* Database list */}
         {!isLoading && !isError && databases.length > 0 && (
-          <section className="space-y-4">
+          <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-text-primary">
-                Databases
+              <h2 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
+                All databases
               </h2>
-              <span className="text-xs text-text-muted font-mono">
+              <span className="text-[11px] text-text-muted font-mono">
                 {totalDatabases} total
               </span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {databases.map((db) => (
                 <DatabaseCard
                   key={db.databaseId}
@@ -289,17 +268,15 @@ function DashboardContent() {
       {/* Create Database Dialog */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-navy-900/70 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/60"
             onClick={() => !createMutation.isPending && setShowCreate(false)}
           />
 
-          {/* Dialog */}
-          <div className="relative w-full max-w-md glass-card rounded-xl p-6 md:p-8 animate-slide-up shadow-2xl">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-text-primary">
-                New Database
+          <div className="relative w-full max-w-sm rounded-xl border border-border-subtle bg-surface-1 p-5 shadow-2xl animate-slide-up">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-text-primary">
+                New database
               </h2>
               <button
                 onClick={() => setShowCreate(false)}
@@ -307,15 +284,15 @@ function DashboardContent() {
                 className="text-text-muted hover:text-text-primary transition-colors"
                 aria-label="Close dialog"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleCreate} className="space-y-5">
+            <form onSubmit={handleCreate} className="space-y-4">
               <div>
                 <label
                   htmlFor="db-name"
-                  className="block text-sm font-medium text-text-secondary mb-1.5"
+                  className="block text-xs font-medium text-text-secondary mb-1.5"
                 >
                   Database name
                 </label>
@@ -328,28 +305,27 @@ function DashboardContent() {
                   required
                   disabled={createMutation.isPending}
                   className={cn(
-                    "w-full rounded-lg bg-navy-800 border border-glass-border",
-                    "px-4 py-2.5 text-sm text-text-primary",
-                    "placeholder:text-text-muted",
-                    "focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50",
-                    "transition-all duration-200",
+                    "w-full rounded-lg bg-surface-2 border border-border-subtle",
+                    "px-3 py-2 text-sm text-text-primary",
+                    "placeholder:text-text-disabled",
+                    "focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent",
+                    "transition-colors",
                     "disabled:opacity-50 disabled:cursor-not-allowed",
                   )}
                 />
-                <p className="mt-1.5 text-xs text-text-muted">
-                  Must be a valid MySQL identifier. Lowercase letters,
-                  numbers, and hyphens only.
+                <p className="mt-1 text-[11px] text-text-muted">
+                  Lowercase letters, numbers, and hyphens only.
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                <label className="block text-xs font-medium text-text-secondary mb-1.5">
                   Region
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   {[
-                    { value: "nuremberg", label: "Nuremberg, EU" },
-                    { value: "helsinki", label: "Helsinki, FI" },
+                    { value: "nuremberg", label: "Nuremberg" },
+                    { value: "helsinki", label: "Helsinki" },
                   ].map((r) => (
                     <button
                       key={r.value}
@@ -357,14 +333,15 @@ function DashboardContent() {
                       onClick={() => setNewDbRegion(r.value)}
                       disabled={createMutation.isPending}
                       className={cn(
-                        "flex items-center gap-2 rounded-lg border px-4 py-3 text-sm transition-all duration-150",
+                        "flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-colors",
                         newDbRegion === r.value
-                          ? "border-purple-500/50 bg-purple-500/10 text-purple-300"
-                          : "border-glass-border bg-navy-800 text-text-secondary hover:border-purple-500/30 hover:text-text-primary",
-                        createMutation.isPending && "cursor-not-allowed opacity-50",
+                          ? "border-accent bg-accent-subtle text-accent-text"
+                          : "border-border-subtle bg-surface-2 text-text-secondary hover:border-border-default hover:text-text-primary",
+                        createMutation.isPending &&
+                          "cursor-not-allowed opacity-50",
                       )}
                     >
-                      <MapPin size={15} className="shrink-0" />
+                      <MapPin size={13} className="shrink-0" />
                       {r.label}
                     </button>
                   ))}
@@ -375,21 +352,20 @@ function DashboardContent() {
                 type="submit"
                 disabled={!newDbName.trim() || createMutation.isPending}
                 className={cn(
-                  "w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white",
-                  "bg-gradient-to-r from-purple-500 to-purple-400",
-                  "hover:from-purple-400 hover:to-purple-300",
-                  "transition-all duration-150 shadow-lg shadow-purple-500/20",
+                  "w-full flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-white",
+                  "bg-accent hover:bg-accent-hover active:bg-accent-pressed",
+                  "transition-colors",
                   "disabled:opacity-50 disabled:cursor-not-allowed",
                 )}
               >
                 {createMutation.isPending ? (
                   <>
-                    <Loader2 size={16} className="animate-spin" />
+                    <Loader2 size={15} className="animate-spin" />
                     Creating…
                   </>
                 ) : (
                   <>
-                    <Server size={16} />
+                    <Server size={15} />
                     Create database
                   </>
                 )}

@@ -8,13 +8,14 @@ import {
   Plus,
   Settings,
   LogOut,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 
 const navItems = [
-  { href: "/dashboard", label: "Databases", icon: Database },
-  { href: "/dashboard/create", label: "New Database", icon: Plus },
+  { href: "/dashboard", label: "Databases", icon: Database, exact: true },
+  { href: "/dashboard/create", label: "New database", icon: Plus },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ] as const;
 
@@ -28,76 +29,74 @@ export default function DashboardLayout({
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-navy-900 flex">
+      <div className="min-h-screen bg-bg-primary flex">
         {/* Sidebar */}
-        <aside className="w-64 shrink-0 border-r border-purple-500/10 bg-navy-800/50 flex flex-col">
+        <aside className="w-56 shrink-0 border-r border-border-subtle bg-surface-1 flex flex-col">
           {/* Logo */}
-          <div className="h-16 flex items-center gap-3 px-6 border-b border-purple-500/10">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-cyan-400 flex items-center justify-center text-xs font-bold text-white">
+          <div className="h-14 flex items-center gap-2.5 px-4 border-b border-border-subtle">
+            <div className="w-7 h-7 rounded-md bg-accent flex items-center justify-center text-xs font-bold text-white shrink-0">
               E
             </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-100 leading-tight">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-text-primary leading-tight truncate">
                 EuroScale
-              </p>
-              <p className="text-[10px] text-slate-500 tracking-wider uppercase leading-tight">
-                Dashboard
               </p>
             </div>
           </div>
 
           {/* Nav */}
-          <nav className="flex-1 px-3 py-4 space-y-1">
+          <nav className="flex-1 px-2 py-3 space-y-0.5">
             {navItems.map((item) => {
-              const isActive =
-                item.href === "/dashboard"
-                  ? pathname === "/dashboard"
-                  : pathname.startsWith(item.href);
+              const isActive = item.href === "/dashboard"
+                ? pathname === item.href
+                : pathname.startsWith(item.href);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                    "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-purple-500/15 text-purple-300 border border-purple-500/20"
-                      : "text-slate-400 hover:text-slate-200 hover:bg-navy-700/50 border border-transparent"
+                      ? "bg-accent-subtle text-accent-text"
+                      : "text-text-secondary hover:text-text-primary hover:bg-surface-2",
                   )}
                 >
-                  <item.icon size={18} />
+                  <item.icon size={16} />
                   {item.label}
                 </Link>
               );
             })}
           </nav>
 
-          {/* User / Logout */}
-          <div className="px-3 py-4 border-t border-purple-500/10">
-            <div className="flex items-center gap-3 px-3 py-2 mb-2">
-              <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center text-sm font-semibold text-purple-300">
+          {/* User footer */}
+          <div className="px-2 py-3 border-t border-border-subtle">
+            <div className="flex items-center gap-2.5 px-2.5 py-1.5 mb-1.5">
+              <div className="w-7 h-7 rounded-full bg-accent-subtle flex items-center justify-center text-xs font-semibold text-accent-text shrink-0">
                 {session?.name?.charAt(0)?.toUpperCase() ?? "?"}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-200 truncate">
+                <p className="text-sm font-medium text-text-primary truncate leading-tight">
                   {session?.name ?? "User"}
                 </p>
-                <p className="text-xs text-slate-500 truncate">
+                <p className="text-xs text-text-muted truncate leading-tight">
                   {session?.email ?? ""}
                 </p>
               </div>
             </div>
             <button
               onClick={logout}
-              className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-red-300 hover:bg-red-500/10 transition-all duration-200 border border-transparent"
+              className="flex w-full items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm font-medium text-text-muted hover:text-error-text hover:bg-error-subtle transition-colors"
             >
-              <LogOut size={18} />
+              <LogOut size={16} />
               Sign out
             </button>
           </div>
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 flex flex-col min-w-0">{children}</main>
+        <main className="flex-1 flex flex-col min-w-0 bg-bg-primary">
+          {children}
+        </main>
       </div>
     </AuthGuard>
   );

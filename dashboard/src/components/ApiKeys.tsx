@@ -23,15 +23,14 @@ import toast from "react-hot-toast";
 export interface ApiKey {
   id: string;
   name: string;
-  prefix: string; // First 8 chars of the key for identification
-  createdAt: string; // ISO date string
-  lastUsedAt?: string; // ISO date string
+  prefix: string;
+  createdAt: string;
+  lastUsedAt?: string;
   status: "active" | "revoked";
-  /** The full key — only shown once after creation */
   fullKey?: string;
 }
 
-// ── Mock data (will be replaced with real API data) ────────────────────────
+// ── Mock data ───────────────────────────────────────────────────────────────
 
 function mockApiKeys(): ApiKey[] {
   return [
@@ -81,13 +80,19 @@ function CreateKeyModal({ open, onClose, onCreated }: CreateKeyModalProps) {
     if (!name.trim()) return;
     setCreating(true);
 
-    // Simulate API call
     await new Promise((r) => setTimeout(r, 800));
 
     const newKey: ApiKey = {
       id: `ak_${Date.now().toString(36)}`,
       name: name.trim(),
-      prefix: "esk_" + name.trim().toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 4) + "_",
+      prefix:
+        "esk_" +
+        name
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "_")
+          .slice(0, 4) +
+        "_",
       createdAt: new Date().toISOString(),
       status: "active",
       fullKey: `esk_${crypto.randomUUID().replace(/-/g, "").slice(0, 40)}`,
@@ -123,22 +128,19 @@ function CreateKeyModal({ open, onClose, onCreated }: CreateKeyModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-navy-900/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60"
         onClick={handleClose}
       />
-
-      {/* Modal */}
-      <div className="relative w-full max-w-lg animate-slide-up">
-        <div className="glass-card border-purple-500/20 p-6">
-          <div className="mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-500/15">
-                <Key size={18} className="text-purple-400" />
+      <div className="relative w-full max-w-md animate-slide-up">
+        <div className="rounded-xl border border-border-subtle bg-surface-1 p-5 shadow-2xl">
+          <div className="mb-5 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent-subtle">
+                <Key size={16} className="text-accent-text" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-text-primary">
+                <h3 className="text-sm font-semibold text-text-primary">
                   {createdKey ? "API Key Created" : "Create API Key"}
                 </h3>
                 <p className="text-xs text-text-muted">
@@ -150,9 +152,9 @@ function CreateKeyModal({ open, onClose, onCreated }: CreateKeyModalProps) {
             </div>
             <button
               onClick={handleClose}
-              className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-navy-700 hover:text-text-primary"
+              className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-surface-2 hover:text-text-primary"
             >
-              <X size={18} />
+              <X size={16} />
             </button>
           </div>
 
@@ -171,29 +173,33 @@ function CreateKeyModal({ open, onClose, onCreated }: CreateKeyModalProps) {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Production API, CI/CD Pipeline"
-                  className="w-full rounded-lg border border-glass-border bg-navy-700/50 px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted/50 outline-none transition-colors focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20"
+                  className="w-full rounded-lg border border-border-subtle bg-surface-2 px-3 py-2 text-sm text-text-primary placeholder:text-text-disabled outline-none transition-colors focus:border-accent focus:ring-1 focus:ring-accent"
                   autoFocus
                   onKeyDown={(e) => e.key === "Enter" && handleCreate()}
                 />
               </div>
 
-              <div className="mb-6 space-y-2 rounded-lg bg-navy-800/50 p-3">
-                <p className="text-xs font-medium text-text-muted">Permissions</p>
+              <div className="mb-5 space-y-2 rounded-lg bg-surface-2 border border-border-subtle p-3">
+                <p className="text-xs font-medium text-text-muted">
+                  Permissions
+                </p>
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     defaultChecked
                     disabled
-                    className="rounded border-glass-border bg-navy-700 text-purple-500 outline-none focus:ring-purple-500/20"
+                    className="rounded border-border-default bg-surface-2 accent-accent"
                   />
-                  <span className="text-sm text-text-secondary">Full access (read & write)</span>
+                  <span className="text-xs text-text-secondary">
+                    Full access (read & write)
+                  </span>
                 </label>
               </div>
 
-              <div className="flex justify-end gap-3">
+              <div className="flex justify-end gap-2.5">
                 <button
                   onClick={handleClose}
-                  className="rounded-lg border border-glass-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:border-purple-500/30 hover:text-text-primary"
+                  className="rounded-lg border border-border-subtle px-3.5 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-border-default hover:text-text-primary"
                 >
                   Cancel
                 </button>
@@ -201,20 +207,20 @@ function CreateKeyModal({ open, onClose, onCreated }: CreateKeyModalProps) {
                   onClick={handleCreate}
                   disabled={!name.trim() || creating}
                   className={cn(
-                    "flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all",
+                    "flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-medium transition-colors",
                     name.trim() && !creating
-                      ? "bg-purple-500 text-white hover:bg-purple-400"
-                      : "bg-navy-600 text-text-muted cursor-not-allowed"
+                      ? "bg-accent text-white hover:bg-accent-hover"
+                      : "bg-surface-3 text-text-disabled cursor-not-allowed",
                   )}
                 >
                   {creating ? (
                     <>
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                       Creating...
                     </>
                   ) : (
                     <>
-                      <Plus size={16} />
+                      <Plus size={14} />
                       Create Key
                     </>
                   )}
@@ -223,13 +229,13 @@ function CreateKeyModal({ open, onClose, onCreated }: CreateKeyModalProps) {
             </>
           ) : (
             <>
-              {/* Key revealed once */}
-              <div className="mb-4 rounded-lg border border-gold-400/30 bg-gold-500/10 p-3">
-                <p className="mb-1 text-xs font-medium text-gold-400">
+              <div className="mb-4 rounded-lg border border-warning-subtle bg-warning-subtle p-3">
+                <p className="mb-1 text-xs font-medium text-warning-text">
                   ⚠️ Save this key — shown once only
                 </p>
-                <p className="text-xs text-text-muted">
-                  You won't be able to see the full key again. Store it securely.
+                <p className="text-[11px] text-text-muted">
+                  You won&apos;t be able to see the full key again. Store it
+                  securely.
                 </p>
               </div>
 
@@ -238,26 +244,30 @@ function CreateKeyModal({ open, onClose, onCreated }: CreateKeyModalProps) {
                   API Key
                 </label>
                 <div className="relative">
-                  <div className="flex items-center gap-0">
+                  <div className="flex">
                     <input
                       type={showKey ? "text" : "password"}
                       value={createdKey.fullKey}
                       readOnly
-                      className="w-full rounded-l-lg border border-glass-border bg-navy-700/50 px-3 py-2.5 font-mono text-sm text-cyan-300 outline-none"
+                      className="w-full rounded-l-lg border border-border-subtle bg-surface-2 px-3 py-2 font-mono text-xs text-accent-text outline-none"
                     />
                     <button
                       onClick={() => setShowKey(!showKey)}
-                      className="border-b border-t border-glass-border bg-navy-700/50 px-2.5 py-2.5 text-text-muted transition-colors hover:text-text-primary"
+                      className="border-y border-border-subtle bg-surface-2 px-2.5 py-2 text-text-muted transition-colors hover:text-text-primary"
                       title={showKey ? "Hide key" : "Show key"}
                     >
-                      {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                      {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
                     <button
                       onClick={handleCopy}
-                      className="rounded-r-lg border border-glass-border bg-navy-700/50 px-2.5 py-2.5 text-text-muted transition-colors hover:text-purple-400"
+                      className="rounded-r-lg border border-border-subtle bg-surface-2 px-2.5 py-2 text-text-muted transition-colors hover:text-accent-text"
                       title="Copy to clipboard"
                     >
-                      {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} />}
+                      {copied ? (
+                        <Check size={14} className="text-success" />
+                      ) : (
+                        <Copy size={14} />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -266,7 +276,7 @@ function CreateKeyModal({ open, onClose, onCreated }: CreateKeyModalProps) {
               <div className="flex justify-end">
                 <button
                   onClick={handleClose}
-                  className="rounded-lg bg-purple-500 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-purple-400"
+                  className="rounded-lg bg-accent px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-accent-hover"
                 >
                   Done
                 </button>
@@ -281,42 +291,50 @@ function CreateKeyModal({ open, onClose, onCreated }: CreateKeyModalProps) {
 
 // ── Revoke Confirm Dialog ──────────────────────────────────────────────────
 
-interface RevokeConfirmProps {
+function RevokeConfirm({
+  open,
+  keyName,
+  onConfirm,
+  onCancel,
+  revoking,
+}: {
   open: boolean;
   keyName: string;
   onConfirm: () => void;
   onCancel: () => void;
   revoking: boolean;
-}
-
-function RevokeConfirm({ open, keyName, onConfirm, onCancel, revoking }: RevokeConfirmProps) {
+}) {
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-navy-900/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60"
         onClick={onCancel}
       />
       <div className="relative w-full max-w-sm animate-slide-up">
-        <div className="glass-card border-red-500/20 p-6">
+        <div className="rounded-xl border border-error-subtle bg-surface-1 p-5 shadow-2xl">
           <div className="mb-4 flex items-start gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-500/15">
-              <Trash2 size={18} className="text-red-400" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-error-subtle">
+              <Trash2 size={16} className="text-error-text" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-text-primary">Revoke API Key</h3>
-              <p className="mt-1 text-sm text-text-muted">
+              <h3 className="text-sm font-semibold text-text-primary">
+                Revoke API Key
+              </h3>
+              <p className="mt-1 text-xs text-text-muted">
                 Are you sure you want to revoke{" "}
-                <span className="font-medium text-text-secondary">"{keyName}"</span>?
-                Any services using this key will immediately lose access.
+                <span className="font-medium text-text-secondary">
+                  &ldquo;{keyName}&rdquo;
+                </span>
+                ? Any services using this key will immediately lose access.
               </p>
             </div>
           </div>
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-2.5">
             <button
               onClick={onCancel}
-              className="rounded-lg border border-glass-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:border-purple-500/30 hover:text-text-primary"
+              className="rounded-lg border border-border-subtle px-3.5 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-border-default hover:text-text-primary"
             >
               Cancel
             </button>
@@ -324,20 +342,20 @@ function RevokeConfirm({ open, keyName, onConfirm, onCancel, revoking }: RevokeC
               onClick={onConfirm}
               disabled={revoking}
               className={cn(
-                "flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-all",
+                "flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-medium text-white transition-colors",
                 revoking
-                  ? "bg-navy-600 text-text-muted cursor-not-allowed"
-                  : "bg-red-500 hover:bg-red-400"
+                  ? "bg-surface-3 text-text-disabled cursor-not-allowed"
+                  : "bg-error hover:bg-error/90",
               )}
             >
               {revoking ? (
                 <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                   Revoking...
                 </>
               ) : (
                 <>
-                  <Trash2 size={16} />
+                  <Trash2 size={14} />
                   Revoke Key
                 </>
               )}
@@ -352,23 +370,24 @@ function RevokeConfirm({ open, keyName, onConfirm, onCancel, revoking }: RevokeC
 // ── Main ApiKeys Component ─────────────────────────────────────────────────
 
 interface ApiKeysProps {
-  /** Optionally inject keys from parent (e.g. from a real API) */
   initialKeys?: ApiKey[];
 }
 
 export default function ApiKeys({ initialKeys }: ApiKeysProps) {
-  const [keys, setKeys] = useState<ApiKey[]>(() => initialKeys ?? mockApiKeys());
+  const [keys, setKeys] = useState<ApiKey[]>(
+    () => initialKeys ?? mockApiKeys(),
+  );
   const [showCreate, setShowCreate] = useState(false);
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [hidingRevoked, setHidingRevoked] = useState(true);
 
   const activeKeys = useMemo(
     () => keys.filter((k) => k.status === "active"),
-    [keys]
+    [keys],
   );
   const revokedKeys = useMemo(
     () => keys.filter((k) => k.status === "revoked"),
-    [keys]
+    [keys],
   );
 
   const handleCreated = useCallback((newKey: ApiKey) => {
@@ -377,10 +396,11 @@ export default function ApiKeys({ initialKeys }: ApiKeysProps) {
 
   const handleRevoke = useCallback(async () => {
     if (!revokingId) return;
-    // Simulate API call
     await new Promise((r) => setTimeout(r, 600));
     setKeys((prev) =>
-      prev.map((k) => (k.id === revokingId ? { ...k, status: "revoked" as const } : k))
+      prev.map((k) =>
+        k.id === revokingId ? { ...k, status: "revoked" as const } : k,
+      ),
     );
     setRevokingId(null);
     toast.success("API key revoked");
@@ -391,35 +411,38 @@ export default function ApiKeys({ initialKeys }: ApiKeysProps) {
   return (
     <div>
       {/* Header */}
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between">
         <div>
           <p className="text-xs font-medium uppercase tracking-wider text-text-muted">
             Active Keys
           </p>
-          <p className="text-sm text-text-secondary">
+          <p className="text-[11px] text-text-disabled">
             {activeKeys.length} key{activeKeys.length !== 1 ? "s" : ""} active
           </p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 rounded-lg bg-purple-500 px-3 py-2 text-sm font-medium text-white transition-all hover:bg-purple-400"
+          className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-accent-hover"
         >
-          <Plus size={16} />
+          <Plus size={14} />
           Create Key
         </button>
       </div>
 
-      {/* Key List */}
-      {keys.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-glass-border py-10 text-center">
-          <Key size={32} className="mx-auto mb-3 text-text-muted/50" />
-          <p className="text-sm text-text-muted">No API keys yet</p>
-          <p className="mt-1 text-xs text-text-muted/60">
+      {/* Empty state */}
+      {keys.length === 0 && (
+        <div className="rounded-lg border border-dashed border-border-subtle py-8 text-center">
+          <Key size={28} className="mx-auto mb-2 text-text-disabled" />
+          <p className="text-xs text-text-muted">No API keys yet</p>
+          <p className="mt-1 text-[11px] text-text-disabled">
             Create a key to access the EuroScale API programmatically
           </p>
         </div>
-      ) : (
-        <div className="space-y-2">
+      )}
+
+      {/* Key List */}
+      {keys.length > 0 && (
+        <div className="space-y-1.5">
           {activeKeys.map((key) => (
             <ApiKeyRow
               key={key.id}
@@ -430,19 +453,19 @@ export default function ApiKeys({ initialKeys }: ApiKeysProps) {
 
           {/* Revoked keys toggle */}
           {revokedKeys.length > 0 && (
-            <div className="pt-2">
+            <div className="pt-1.5">
               <button
                 onClick={() => setHidingRevoked(!hidingRevoked)}
-                className="flex items-center gap-2 text-xs font-medium text-text-muted transition-colors hover:text-text-secondary"
+                className="flex items-center gap-1.5 text-[11px] font-medium text-text-muted transition-colors hover:text-text-secondary"
               >
-                <Shield size={14} />
+                <Shield size={12} />
                 {hidingRevoked
                   ? `Show ${revokedKeys.length} revoked key${revokedKeys.length !== 1 ? "s" : ""}`
                   : "Hide revoked keys"}
               </button>
 
               {!hidingRevoked && (
-                <div className="mt-2 space-y-2">
+                <div className="mt-1.5 space-y-1.5">
                   {revokedKeys.map((key) => (
                     <ApiKeyRow
                       key={key.id}
@@ -501,65 +524,72 @@ function ApiKeyRow({
   return (
     <div
       className={cn(
-        "flex items-center justify-between rounded-lg px-4 py-3 transition-all",
+        "flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors",
         isRevoked
-          ? "bg-navy-800/30 opacity-60"
-          : "bg-navy-800/50 hover:bg-navy-800/70"
+          ? "bg-surface-2/50 opacity-60"
+          : "bg-surface-2 hover:bg-surface-3",
       )}
     >
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center gap-2.5 min-w-0">
         <div
           className={cn(
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-            isRevoked ? "bg-navy-600 text-text-muted" : "bg-purple-500/15 text-purple-400"
+            "flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
+            isRevoked
+              ? "bg-surface-3 text-text-disabled"
+              : "bg-accent-subtle text-accent-text",
           )}
         >
-          <Key size={15} />
+          <Key size={13} />
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-text-primary truncate">
+            <p className="text-xs font-medium text-text-primary truncate">
               {apiKey.name}
             </p>
             {isRevoked && (
-              <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-red-400">
+              <span className="rounded-full bg-error-subtle px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-error-text">
                 Revoked
               </span>
             )}
           </div>
-          <div className="mt-0.5 flex items-center gap-3 text-xs text-text-muted">
-            <span className="font-mono text-purple-300/60">
-              {apiKey.prefix}{"*".repeat(32)}
+          <div className="mt-0.5 flex items-center gap-2 text-[11px] text-text-muted">
+            <span className="font-mono text-text-disabled">
+              {apiKey.prefix}
+              {"*".repeat(32)}
             </span>
             <span className="flex items-center gap-1">
-              <Calendar size={11} />
+              <Calendar size={10} />
               {formatDate(apiKey.createdAt)}
             </span>
             {apiKey.lastUsedAt && (
               <span className="flex items-center gap-1">
-                <Clock size={11} />
-                Last used {formatDate(apiKey.lastUsedAt)}
+                <Clock size={10} />
+                {formatDate(apiKey.lastUsedAt)}
               </span>
             )}
           </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex items-center gap-0.5 shrink-0">
         <button
           onClick={handleCopy}
-          className="rounded-lg p-2 text-text-muted transition-colors hover:bg-navy-700 hover:text-purple-400"
+          className="rounded p-1.5 text-text-muted transition-colors hover:text-accent-text hover:bg-surface-3"
           title="Copy key prefix"
         >
-          {copied ? <Check size={15} className="text-green-400" /> : <Copy size={15} />}
+          {copied ? (
+            <Check size={13} className="text-success" />
+          ) : (
+            <Copy size={13} />
+          )}
         </button>
         {!isRevoked && onRevoke && (
           <button
             onClick={onRevoke}
-            className="rounded-lg p-2 text-text-muted transition-colors hover:bg-red-500/10 hover:text-red-400"
+            className="rounded p-1.5 text-text-muted transition-colors hover:text-error-text hover:bg-error-subtle"
             title="Revoke key"
           >
-            <Trash2 size={15} />
+            <Trash2 size={13} />
           </button>
         )}
       </div>

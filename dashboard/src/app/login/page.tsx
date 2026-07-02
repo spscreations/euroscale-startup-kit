@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 
@@ -19,79 +19,162 @@ export default function LoginPage() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
-    if (!email.trim() || !password.trim()) { setError("Please enter your email and password."); return; }
+    if (!email.trim() || !password.trim()) {
+      setError("Please enter your email and password.");
+      return;
+    }
     setLoading(true);
     try {
       await login(email, password);
       router.push("/dashboard");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
-    } finally { setLoading(false); }
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 bg-navy-900">
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-purple-500/5 blur-[120px]" />
-        <div className="absolute bottom-1/4 left-1/3 w-[400px] h-[400px] rounded-full bg-cyan-400/5 blur-[100px]" />
-      </div>
-      <div className="relative w-full max-w-md animate-slide-up">
+    <main className="min-h-screen flex items-center justify-center px-4 bg-bg-primary">
+      <div className="w-full max-w-sm animate-fade-in">
+        {/* Brand */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-            <span className="gradient-text">EuroScale</span>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">
+            EuroScale
           </h1>
-          <p className="text-sm text-slate-400 mt-2 font-medium tracking-wide uppercase">Customer Dashboard</p>
+          <p className="text-sm text-text-muted mt-1">
+            Sign in to your account
+          </p>
         </div>
-        <div className="glass-card p-8 md:p-10 animate-fade">
-          <h2 className="text-xl font-semibold text-slate-100 mb-1">Welcome back</h2>
-          <p className="text-sm text-slate-400 mb-6">Sign in to manage your databases</p>
+
+        {/* Card */}
+        <div className="rounded-xl border border-border-subtle bg-surface-1 p-6">
+          {/* Error */}
           {error && (
-            <div className="mb-5 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300 animate-fade" role="alert">{error}</div>
+            <div
+              className="mb-5 rounded-lg border border-error-subtle bg-error-subtle px-3 py-2.5 text-sm text-error-text flex items-start gap-2"
+              role="alert"
+            >
+              <AlertCircle size={15} className="shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
           )}
-          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+            {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1.5">Email address</label>
+              <label
+                htmlFor="email"
+                className="block text-xs font-medium text-text-secondary mb-1.5"
+              >
+                Email address
+              </label>
               <div className="relative">
-                <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
-                <input id="email" type="email" autoComplete="email" placeholder="you@company.com" value={email}
-                  onChange={(e) => setEmail(e.target.value)} disabled={loading}
-                  className={cn("w-full rounded-lg bg-navy-800 border border-purple-500/20 pl-10 pr-4 py-2.5",
-                    "text-sm text-slate-100 placeholder:text-slate-600",
-                    "focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50",
-                    "transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed")} />
+                <Mail
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled pointer-events-none"
+                />
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading}
+                  className={cn(
+                    "w-full rounded-lg bg-surface-2 border border-border-subtle pl-9 pr-4 py-2",
+                    "text-sm text-text-primary placeholder:text-text-disabled",
+                    "focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent",
+                    "transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                  )}
+                />
               </div>
             </div>
+
+            {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-1.5">Password</label>
+              <label
+                htmlFor="password"
+                className="block text-xs font-medium text-text-secondary mb-1.5"
+              >
+                Password
+              </label>
               <div className="relative">
-                <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
-                <input id="password" type={showPassword ? "text" : "password"} autoComplete="current-password"
-                  placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading}
-                  className={cn("w-full rounded-lg bg-navy-800 border border-purple-500/20 pl-10 pr-10 py-2.5",
-                    "text-sm text-slate-100 placeholder:text-slate-600",
-                    "focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50",
-                    "transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed")} />
-                <button type="button" onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-                  tabIndex={-1} aria-label={showPassword ? "Hide password" : "Show password"}>
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                <Lock
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled pointer-events-none"
+                />
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
+                  className={cn(
+                    "w-full rounded-lg bg-surface-2 border border-border-subtle pl-9 pr-9 py-2",
+                    "text-sm text-text-primary placeholder:text-text-disabled",
+                    "focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent",
+                    "transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                  )}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
+                  tabIndex={-1}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
-            <button type="submit" disabled={loading}
-              className={cn("w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white",
-                "bg-gradient-to-r from-purple-500 to-purple-400 hover:from-purple-400 hover:to-purple-300",
-                "focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all duration-200 shadow-lg shadow-purple-500/20",
-                "disabled:opacity-60 disabled:cursor-not-allowed")}>
-              {loading ? (<><Loader2 size={18} className="animate-spin" />Signing in…</>) : (<>Sign in<ArrowRight size={18} /></>)}
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={loading}
+              className={cn(
+                "w-full flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-white",
+                "bg-accent hover:bg-accent-hover active:bg-accent-pressed",
+                "focus:outline-none transition-colors",
+                "disabled:opacity-50 disabled:cursor-not-allowed",
+              )}
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Signing in…
+                </>
+              ) : (
+                <>
+                  Sign in
+                  <ArrowRight size={16} />
+                </>
+              )}
             </button>
           </form>
-          <p className="mt-6 text-center text-sm text-slate-500">
+
+          <p className="mt-5 text-center text-sm text-text-muted">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-purple-400 hover:text-purple-300 underline underline-offset-4 transition-colors font-medium">Create one</Link>
+            <Link
+              href="/signup"
+              className="text-accent-text hover:text-accent-hover underline underline-offset-4 transition-colors font-medium"
+            >
+              Create one
+            </Link>
           </p>
         </div>
-        <p className="text-center text-xs text-slate-600 mt-6">EU sovereign infrastructure &bull; GDPR by architecture</p>
+
+        <p className="text-center text-xs text-text-disabled mt-6">
+          EU sovereign infrastructure · GDPR by architecture
+        </p>
       </div>
     </main>
   );

@@ -1,39 +1,51 @@
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8">
-      <div className="glass-card max-w-2xl w-full p-10 text-center space-y-6 animate-slide-up">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight">
-            <span className="gradient-text">EuroScale</span>
+    <main className="flex min-h-screen flex-col items-center justify-center px-6">
+      <div className="max-w-lg w-full text-center space-y-8 animate-fade-in">
+        {/* Brand */}
+        <div className="space-y-3">
+          <h1 className="text-3xl font-bold tracking-tight text-text-primary">
+            EuroScale
           </h1>
-          <p className="text-text-secondary text-lg">
-            AI-Powered Smart Scale-Up Platform
+          <p className="text-base text-text-secondary leading-relaxed max-w-sm mx-auto">
+            Sovereign EU database infrastructure — managed Vitess clusters on
+            European soil.
           </p>
         </div>
 
-        <div className="flex items-center justify-center gap-2 text-sm text-text-muted">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-400" />
+        {/* Status indicator */}
+        <div className="inline-flex items-center gap-2 rounded-full border border-border-subtle bg-surface-1 px-3 py-1.5">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-success" />
           </span>
-          Dashboard is live
+          <span className="text-xs text-text-muted">Dashboard is live</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4">
-          {[
-            { label: "Databases", icon: "🗄️" },
-            { label: "Analytics", icon: "📊" },
-            { label: "Settings", icon: "⚙️" },
-          ].map((item) => (
-            <div
-              key={item.label}
-              className="shimmer rounded-lg px-4 py-6 text-center text-text-secondary"
-            >
-              <span className="text-2xl">{item.icon}</span>
-              <p className="mt-2 text-sm font-medium">{item.label}</p>
-            </div>
-          ))}
+        {/* CTAs */}
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white hover:bg-accent-hover active:bg-accent-pressed transition-colors"
+          >
+            Sign in
+            <ArrowRight size={15} />
+          </Link>
+          <Link
+            href="/signup"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border-default bg-surface-1 px-5 py-2.5 text-sm font-medium text-text-secondary hover:text-text-primary hover:border-border-hover transition-colors"
+          >
+            Create account
+          </Link>
         </div>
+
+        {/* Footer */}
+        <p className="text-xs text-text-disabled pt-2">
+          EU sovereign infrastructure · GDPR by architecture
+        </p>
       </div>
     </main>
   );

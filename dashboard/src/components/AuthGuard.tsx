@@ -21,24 +21,39 @@ export default function AuthGuard({
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    const isPublic = publicPaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
-    if (isPublic) { setChecking(false); return; }
-    if (!isAuthenticated()) { router.replace(loginPath); return; }
+    const isPublic = publicPaths.some(
+      (p) => pathname === p || pathname.startsWith(p + "/"),
+    );
+    if (isPublic) {
+      setChecking(false);
+      return;
+    }
+    if (!isAuthenticated()) {
+      router.replace(loginPath);
+      return;
+    }
     setChecking(false);
   }, [pathname, router, loginPath, publicPaths]);
 
   if (checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-navy-900">
-        <div className="text-center space-y-4 animate-fade">
-          <Loader2 size={32} className="animate-spin text-purple-400 mx-auto" />
-          <p className="text-sm text-slate-500 font-medium tracking-wide">Checking authentication…</p>
+      <div className="min-h-screen flex items-center justify-center bg-bg-primary">
+        <div className="text-center space-y-3 animate-fade-in">
+          <Loader2
+            size={24}
+            className="animate-spin text-accent mx-auto"
+          />
+          <p className="text-sm text-text-muted font-medium">
+            Checking authentication…
+          </p>
         </div>
       </div>
     );
   }
 
-  const isPublic = publicPaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  const isPublic = publicPaths.some(
+    (p) => pathname === p || pathname.startsWith(p + "/"),
+  );
   if (isPublic) return <>{children}</>;
 
   return <>{children}</>;

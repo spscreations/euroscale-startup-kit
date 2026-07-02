@@ -33,14 +33,19 @@ export function Providers({ children }: { children: React.ReactNode }) {
             position="top-right"
             toastOptions={{
               style: {
-                background: "#0f162e",
-                color: "#e2e8f0",
-                border: "1px solid rgba(109,93,253,0.15)",
-                borderRadius: "10px",
-                fontSize: "14px",
+                background: "#141414",
+                color: "#fafafa",
+                border: "1px solid #262626",
+                borderRadius: "8px",
+                fontSize: "13px",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
               },
-              success: { iconTheme: { primary: "#34d399", secondary: "#0f162e" } },
-              error: { iconTheme: { primary: "#ef4444", secondary: "#0f162e" } },
+              success: {
+                iconTheme: { primary: "#10b981", secondary: "#141414" },
+              },
+              error: {
+                iconTheme: { primary: "#ef4444", secondary: "#141414" },
+              },
             }}
           />
         </AuthProvider>

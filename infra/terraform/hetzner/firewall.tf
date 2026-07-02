@@ -31,10 +31,12 @@ resource "hcloud_firewall" "euroscale" {
   }
 
   # Internal node-to-node (Flannel VXLAN)
+  # VXLAN uses the node's public IP as the tunnel source, so source_ips must
+  # cover the actual Hetzner public IPs — not the pod network (10.x).
   rule {
     direction  = "in"
     protocol   = "udp"
-    source_ips = ["10.0.0.0/8"]
+    source_ips = ["0.0.0.0/0", "::/0"]
     port       = "8472"
   }
 

@@ -34,23 +34,29 @@ spec:
       # Daily full backup at 2:00 AM UTC
       - name: full-backup
         schedule: "0 2 * * *"
-        backupMethod: vtctldclient
         strategies:
           - name: full-keyspace-main
             scope: Keyspace
             keyspace: main
         successfulJobsHistoryLimit: 7
         failedJobsHistoryLimit: 3
+        resources:
+          requests:
+            cpu: 50m
+            memory: 32Mi
       # Incremental backup every 15 minutes (PITR)
       - name: incremental-backup
         schedule: "*/15 * * * *"
-        backupMethod: vtctldclient
         strategies:
           - name: incr-keyspace-main
             scope: Keyspace
             keyspace: main
         successfulJobsHistoryLimit: 96
         failedJobsHistoryLimit: 10
+        resources:
+          requests:
+            cpu: 50m
+            memory: 32Mi
 
   # ── Global Lockserver (etcd, auto-deployed) ──────────────────
   globalLockserver:
@@ -92,6 +98,8 @@ spec:
       limits:
         cpu: 200m
         memory: 128Mi
+    apiAddresses:
+      - https://euroscale-vtadmin.euroscale:15000
 
   # ── Cells (failure domains) ──────────────────────────────────
   cells:
@@ -130,6 +138,9 @@ spec:
         - equal:
             parts: 1
             shardTemplate:
+              databaseInitScriptSecret:
+                name: vitess-init-sql
+                key: init.sql
               tabletPools:
                 # ── Nuremberg: Primary-eligible tablets (2) ────
                 - cell: nuremberg

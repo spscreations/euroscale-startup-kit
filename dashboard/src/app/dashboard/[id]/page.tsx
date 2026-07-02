@@ -20,6 +20,7 @@ import {
   Clock,
   Shield,
   ShieldAlert,
+  WifiOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/utils";
@@ -46,28 +47,50 @@ function useCopyToClipboard() {
   return { copied, copy };
 }
 
-/** Derive a display-usable status from the raw status string. */
 function statusBadge(status: string) {
   const normalized = status.toLowerCase();
   switch (normalized) {
     case "ready":
-      return { label: "Ready", className: "bg-green-400/10 text-green-400 border-green-400/30" };
+      return {
+        label: "Ready",
+        className: "bg-success-subtle text-success-text",
+      };
     case "creating":
-      return { label: "Creating", className: "bg-gold-400/10 text-gold-400 border-gold-400/30" };
+      return {
+        label: "Creating",
+        className: "bg-warning-subtle text-warning-text",
+      };
     case "deleting":
-      return { label: "Deleting", className: "bg-red-400/10 text-red-400 border-red-400/30" };
+      return {
+        label: "Deleting",
+        className: "bg-error-subtle text-error-text",
+      };
     case "deleted":
-      return { label: "Deleted", className: "bg-slate-500/10 text-slate-500 border-slate-500/30" };
+      return {
+        label: "Deleted",
+        className: "bg-surface-3 text-text-disabled",
+      };
     case "error":
-      return { label: "Error", className: "bg-red-400/10 text-red-400 border-red-400/30" };
+      return {
+        label: "Error",
+        className: "bg-error-subtle text-error-text",
+      };
     default:
-      return { label: status, className: "bg-slate-500/10 text-slate-400 border-slate-500/30" };
+      return {
+        label: status,
+        className: "bg-surface-3 text-text-disabled",
+      };
   }
 }
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
-function CopyButton({ value, label, copied, onCopy }: {
+function CopyButton({
+  value,
+  label,
+  copied,
+  onCopy,
+}: {
   value: string;
   label: string;
   copied: string | null;
@@ -79,18 +102,26 @@ function CopyButton({ value, label, copied, onCopy }: {
       type="button"
       onClick={() => onCopy(value, label)}
       className={cn(
-        "ml-2 shrink-0 p-1 rounded-md transition-all duration-200",
-        "hover:bg-purple-500/10",
-        isActive && "text-green-400"
+        "ml-1.5 shrink-0 p-1 rounded transition-colors",
+        "hover:bg-accent-subtle hover:text-accent-text",
+        isActive && "text-success",
       )}
       aria-label={`Copy ${label}`}
     >
-      {isActive ? <CopyCheck size={14} /> : <Copy size={14} />}
+      {isActive ? <CopyCheck size={13} /> : <Copy size={13} />}
     </button>
   );
 }
 
-function FieldRow({ label, value, mono = false, copyLabel, copied, onCopy, children }: {
+function FieldRow({
+  label,
+  value,
+  mono = false,
+  copyLabel,
+  copied,
+  onCopy,
+  children,
+}: {
   label: string;
   value: string;
   mono?: boolean;
@@ -100,64 +131,92 @@ function FieldRow({ label, value, mono = false, copyLabel, copied, onCopy, child
   children?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between py-2 border-b border-navy-600/50 last:border-b-0">
-      <span className="text-xs font-medium text-text-muted uppercase tracking-wider min-w-[90px]">
+    <div className="flex items-center justify-between py-2 border-b border-border-subtle last:border-b-0">
+      <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider min-w-[80px]">
         {label}
       </span>
       <div className="flex items-center ml-2 overflow-hidden">
-        <span className={cn(
-          "text-sm text-text-primary truncate max-w-[240px] sm:max-w-md",
-          mono && "font-mono text-xs"
-        )}>
+        <span
+          className={cn(
+            "text-sm text-text-primary truncate max-w-[220px] sm:max-w-md",
+            mono && "font-mono text-xs",
+          )}
+        >
           {value}
         </span>
-        <CopyButton value={value} label={copyLabel} copied={copied} onCopy={onCopy} />
+        <CopyButton
+          value={value}
+          label={copyLabel}
+          copied={copied}
+          onCopy={onCopy}
+        />
         {children}
       </div>
     </div>
   );
 }
 
-function ConnectionStringRow({ host, port, username, copied, onCopy }: {
+function ConnectionStringRow({
+  host,
+  port,
+  username,
+  copied,
+  onCopy,
+}: {
   host: string;
   port: number;
   username: string;
   copied: string | null;
   onCopy: (text: string, label: string) => void;
 }) {
-  const connStr = `mysql://${username}:<password>@${host}:${port}`;
+  const connStr = `mysql://${username}:***@${host}:${port}`;
   return (
-    <div className="mt-3 p-3 rounded-lg bg-navy-800 border border-navy-600/50">
+    <div className="mt-2.5 p-3 rounded-lg bg-surface-2 border border-border-subtle">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-medium text-text-muted uppercase tracking-wider">
+        <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider">
           Connection String
         </span>
-        <CopyButton value={connStr} label="Connection String" copied={copied} onCopy={onCopy} />
+        <CopyButton
+          value={connStr}
+          label="Connection String"
+          copied={copied}
+          onCopy={onCopy}
+        />
       </div>
-      <code className="text-[11px] sm:text-xs text-purple-300 break-all block font-mono">
+      <code className="text-[11px] text-accent-text break-all block font-mono">
         {connStr}
       </code>
     </div>
   );
 }
 
-function ProgressBar({ value, max, color = "bg-purple-500" }: {
+function ProgressBar({
+  value,
+  max,
+}: {
   value: number;
   max: number;
-  color?: string;
 }) {
   const pct = Math.min(100, Math.round((value / max) * 100));
   return (
-    <div className="w-full h-1.5 rounded-full bg-navy-700 overflow-hidden">
+    <div className="w-full h-1.5 rounded-full bg-surface-3 overflow-hidden">
       <div
-        className={cn("h-full rounded-full transition-all duration-700 ease-out", color)}
+        className="h-full rounded-full bg-accent transition-all duration-700 ease-out"
         style={{ width: `${pct}%` }}
       />
     </div>
   );
 }
 
-function ConfirmDialog({ open, title, message, confirmLabel, variant = "danger", onConfirm, onCancel }: {
+function ConfirmDialog({
+  open,
+  title,
+  message,
+  confirmLabel,
+  variant = "danger",
+  onConfirm,
+  onCancel,
+}: {
   open: boolean;
   title: string;
   message: string;
@@ -168,21 +227,25 @@ function ConfirmDialog({ open, title, message, confirmLabel, variant = "danger",
 }) {
   if (!open) return null;
 
-  const colors = variant === "danger"
-    ? { btn: "bg-red-500 hover:bg-red-400", ring: "ring-red-500/50" }
-    : { btn: "bg-gold-500 hover:bg-gold-400", ring: "ring-gold-500/50" };
+  const colors =
+    variant === "danger"
+      ? { btn: "bg-error hover:bg-error/90" }
+      : { btn: "bg-warning hover:bg-warning/90 text-black" };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade">
-      <div className="absolute inset-0 bg-navy-900/80 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative glass-card w-full max-w-sm p-6 space-y-4 animate-slide-up">
-        <h3 className="text-lg font-semibold text-text-primary">{title}</h3>
-        <p className="text-sm text-text-secondary">{message}</p>
-        <div className="flex gap-3 pt-2">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+      <div
+        className="absolute inset-0 bg-black/60"
+        onClick={onCancel}
+      />
+      <div className="relative w-full max-w-sm rounded-xl border border-border-subtle bg-surface-1 p-5 space-y-4 animate-slide-up shadow-2xl">
+        <h3 className="text-sm font-semibold text-text-primary">{title}</h3>
+        <p className="text-xs text-text-secondary">{message}</p>
+        <div className="flex gap-2.5 pt-1">
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 rounded-lg border border-navy-600 px-4 py-2 text-sm font-medium text-text-secondary hover:bg-navy-700 transition-colors"
+            className="flex-1 rounded-lg border border-border-subtle px-3 py-2 text-xs font-medium text-text-secondary hover:bg-surface-2 transition-colors"
           >
             Cancel
           </button>
@@ -190,8 +253,8 @@ function ConfirmDialog({ open, title, message, confirmLabel, variant = "danger",
             type="button"
             onClick={onConfirm}
             className={cn(
-              "flex-1 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors focus:outline-none focus:ring-2",
-              colors.btn, colors.ring
+              "flex-1 rounded-lg px-3 py-2 text-xs font-semibold text-white transition-colors",
+              colors.btn,
             )}
           >
             {confirmLabel}
@@ -202,7 +265,13 @@ function ConfirmDialog({ open, title, message, confirmLabel, variant = "danger",
   );
 }
 
-function DeleteConfirmDialog({ open, databaseName, loading, onConfirm, onCancel }: {
+function DeleteConfirmDialog({
+  open,
+  databaseName,
+  loading,
+  onConfirm,
+  onCancel,
+}: {
   open: boolean;
   databaseName: string;
   loading: boolean;
@@ -221,26 +290,42 @@ function DeleteConfirmDialog({ open, databaseName, loading, onConfirm, onCancel 
   const match = typed === databaseName;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade">
-      <div className="absolute inset-0 bg-navy-900/80 backdrop-blur-sm" onClick={onCancel} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+      <div
+        className="absolute inset-0 bg-black/60"
+        onClick={onCancel}
+      />
       <form
         onSubmit={handleSubmit}
-        className="relative glass-card w-full max-w-md p-6 space-y-4 animate-slide-up border-red-500/30"
+        className="relative w-full max-w-md rounded-xl border border-error-subtle bg-surface-1 p-5 space-y-4 animate-slide-up shadow-2xl"
       >
         <div className="flex items-start gap-3">
-          <ShieldAlert size={24} className="text-red-400 shrink-0 mt-0.5" />
+          <ShieldAlert
+            size={22}
+            className="text-error-text shrink-0 mt-0.5"
+          />
           <div>
-            <h3 className="text-lg font-semibold text-text-primary">Delete Database</h3>
-            <p className="text-sm text-text-secondary mt-1">
-              This action is <strong className="text-red-400">irreversible</strong>. All data and
-              credentials will be permanently deleted.
+            <h3 className="text-sm font-semibold text-text-primary">
+              Delete Database
+            </h3>
+            <p className="text-xs text-text-muted mt-1">
+              This action is{" "}
+              <strong className="text-error-text">irreversible</strong>. All
+              data and credentials will be permanently deleted.
             </p>
           </div>
         </div>
 
         <div>
-          <label htmlFor="confirm-name" className="block text-xs font-medium text-text-muted mb-1.5 uppercase tracking-wider">
-            Type <code className="text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">{databaseName}</code> to confirm
+          <label
+            htmlFor="confirm-name"
+            className="block text-[11px] font-medium text-text-muted mb-1.5 uppercase tracking-wider"
+          >
+            Type{" "}
+            <code className="text-error-text bg-error-subtle px-1.5 py-0.5 rounded text-[11px]">
+              {databaseName}
+            </code>{" "}
+            to confirm
           </label>
           <input
             id="confirm-name"
@@ -250,20 +335,22 @@ function DeleteConfirmDialog({ open, databaseName, loading, onConfirm, onCancel 
             onChange={(e) => setTyped(e.target.value)}
             disabled={loading}
             className={cn(
-              "w-full rounded-lg bg-navy-800 border px-3 py-2 text-sm text-text-primary placeholder:text-slate-600",
-              "focus:outline-none focus:ring-2 transition-all duration-200",
-              match ? "border-green-400/40 focus:ring-green-400/30" : "border-red-500/30 focus:ring-red-500/30"
+              "w-full rounded-lg bg-surface-2 border px-3 py-2 text-sm text-text-primary placeholder:text-text-disabled",
+              "focus:outline-none focus:ring-1 transition-colors",
+              match
+                ? "border-success focus:ring-success"
+                : "border-error-subtle focus:ring-error",
             )}
             placeholder={databaseName}
           />
         </div>
 
-        <div className="flex gap-3 pt-2">
+        <div className="flex gap-2.5 pt-1">
           <button
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="flex-1 rounded-lg border border-navy-600 px-4 py-2 text-sm font-medium text-text-secondary hover:bg-navy-700 transition-colors disabled:opacity-50"
+            className="flex-1 rounded-lg border border-border-subtle px-3 py-2 text-xs font-medium text-text-secondary hover:bg-surface-2 transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
@@ -271,15 +358,16 @@ function DeleteConfirmDialog({ open, databaseName, loading, onConfirm, onCancel 
             type="submit"
             disabled={!match || loading}
             className={cn(
-              "flex-1 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors",
-              "focus:outline-none focus:ring-2 focus:ring-red-500/50",
-              match && !loading ? "bg-red-500 hover:bg-red-400" : "bg-red-500/50 cursor-not-allowed",
-              "disabled:opacity-50"
+              "flex-1 rounded-lg px-3 py-2 text-xs font-semibold text-white transition-colors",
+              match && !loading
+                ? "bg-error hover:bg-error/90"
+                : "bg-error/50 cursor-not-allowed",
+              "disabled:opacity-50",
             )}
           >
             {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <Loader2 size={16} className="animate-spin" /> Deleting…
+              <span className="flex items-center justify-center gap-1.5">
+                <Loader2 size={14} className="animate-spin" /> Deleting…
               </span>
             ) : (
               "Delete Database"
@@ -295,26 +383,26 @@ function DeleteConfirmDialog({ open, databaseName, loading, onConfirm, onCancel 
 
 function DetailSkeleton() {
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6 animate-fade">
-      {/* Header skeleton */}
-      <div className="flex items-center gap-4">
-        <div className="shimmer h-8 w-8 rounded-lg" />
-        <div className="shimmer h-8 w-48 rounded-lg" />
-        <div className="shimmer h-6 w-16 rounded-full" />
-        <div className="shimmer h-6 w-20 rounded-full" />
-      </div>
-
-      {/* Cards skeleton */}
-      {[1, 2, 3, 4].map((i) => (
-        <div key={i} className="glass-card p-6 space-y-4">
-          <div className="shimmer h-5 w-40 rounded" />
-          <div className="space-y-3">
-            <div className="shimmer h-4 w-full rounded" />
-            <div className="shimmer h-4 w-3/4 rounded" />
-            <div className="shimmer h-4 w-1/2 rounded" />
-          </div>
+    <div className="flex-1 overflow-auto">
+      <div className="max-w-3xl mx-auto px-6 py-6 space-y-4 animate-fade-in">
+        <div className="flex items-center gap-3">
+          <div className="skeleton h-7 w-7 rounded-lg" />
+          <div className="skeleton h-6 w-40 rounded" />
+          <div className="skeleton h-5 w-16 rounded-full" />
         </div>
-      ))}
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="rounded-xl border border-border-subtle bg-surface-1 p-5 space-y-3"
+          >
+            <div className="skeleton h-4 w-28 rounded" />
+            <div className="space-y-2">
+              <div className="skeleton h-3 w-full rounded" />
+              <div className="skeleton h-3 w-3/4 rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -336,7 +424,6 @@ export default function DatabaseDetailPage() {
   const [showRotateConfirm, setShowRotateConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  // Rotated credentials (returned ONCE after rotation)
   const [rotatedCreds, setRotatedCreds] = useState<{
     password: string;
     sslCaPem: string;
@@ -344,61 +431,38 @@ export default function DatabaseDetailPage() {
   } | null>(null);
 
   // ── Loading ──────────────────────────────────────────────────────────────────
-
   if (isLoading) return <DetailSkeleton />;
 
-  // ── Not found ────────────────────────────────────────────────────────────────
-
-  if (!data?.database) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-navy-900">
-        <div className="glass-card max-w-sm w-full p-8 text-center space-y-4 animate-slide-up">
-          <Database size={48} className="text-slate-600 mx-auto" />
-          <div>
-            <h2 className="text-xl font-semibold text-text-primary">Database Not Found</h2>
-            <p className="text-sm text-text-muted mt-1">
-              The database you&apos;re looking for doesn&apos;t exist or you don&apos;t have access.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => router.push("/dashboard")}
-            className="inline-flex items-center gap-2 rounded-lg bg-purple-500/20 border border-purple-500/30 px-4 py-2 text-sm font-medium text-purple-300 hover:bg-purple-500/30 transition-colors"
-          >
-            <ArrowLeft size={16} /> Back to Dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   // ── Error ────────────────────────────────────────────────────────────────────
-
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-navy-900">
-        <div className="glass-card max-w-sm w-full p-8 text-center space-y-4 animate-slide-up border-red-500/30">
-          <AlertTriangle size={48} className="text-red-400 mx-auto" />
+      <div className="flex-1 flex items-center justify-center p-4 bg-bg-primary">
+        <div className="max-w-sm w-full rounded-xl border border-error-subtle bg-surface-1 p-6 text-center space-y-3 animate-fade-in">
+          <WifiOff size={32} className="text-error-text mx-auto" />
           <div>
-            <h2 className="text-xl font-semibold text-text-primary">Something went wrong</h2>
-            <p className="text-sm text-text-muted mt-1">
-              {error instanceof Error ? error.message : "An unexpected error occurred."}
+            <h2 className="text-sm font-semibold text-text-primary">
+              Something went wrong
+            </h2>
+            <p className="text-xs text-text-muted mt-1">
+              {error instanceof Error
+                ? error.message
+                : "An unexpected error occurred."}
             </p>
           </div>
-          <div className="flex gap-3 justify-center pt-2">
+          <div className="flex gap-2.5 justify-center pt-1">
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="rounded-lg bg-purple-500/20 border border-purple-500/30 px-4 py-2 text-sm font-medium text-purple-300 hover:bg-purple-500/30 transition-colors"
+              className="rounded-lg bg-accent-subtle px-3.5 py-2 text-xs font-medium text-accent-text hover:bg-accent/20 transition-colors"
             >
               Retry
             </button>
             <button
               type="button"
               onClick={() => router.push("/dashboard")}
-              className="rounded-lg border border-navy-600 px-4 py-2 text-sm font-medium text-text-secondary hover:bg-navy-700 transition-colors"
+              className="rounded-lg border border-border-subtle px-3.5 py-2 text-xs font-medium text-text-secondary hover:bg-surface-2 transition-colors"
             >
-              <ArrowLeft size={16} className="inline mr-1" /> Dashboard
+              <ArrowLeft size={13} className="inline mr-1" /> Dashboard
             </button>
           </div>
         </div>
@@ -406,12 +470,37 @@ export default function DatabaseDetailPage() {
     );
   }
 
-  // ── Data ─────────────────────────────────────────────────────────────────────
+  // ── Not found ────────────────────────────────────────────────────────────────
+  if (!data?.database) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-4 bg-bg-primary">
+        <div className="max-w-sm w-full rounded-xl border border-border-subtle bg-surface-1 p-6 text-center space-y-3 animate-fade-in">
+          <Database size={36} className="text-text-disabled mx-auto" />
+          <div>
+            <h2 className="text-sm font-semibold text-text-primary">
+              Database Not Found
+            </h2>
+            <p className="text-xs text-text-muted mt-1">
+              The database you&apos;re looking for doesn&apos;t exist or you
+              don&apos;t have access.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard")}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-accent-subtle px-3.5 py-2 text-xs font-medium text-accent-text hover:bg-accent/20 transition-colors"
+          >
+            <ArrowLeft size={14} /> Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
+  // ── Data ─────────────────────────────────────────────────────────────────────
   const db = data.database!;
   const badge = statusBadge(db.status);
 
-  // Placeholder stats (API doesn't expose usage stats yet)
   const stats = {
     storageUsedMB: 142,
     storageLimitMB: 500,
@@ -422,14 +511,15 @@ export default function DatabaseDetailPage() {
   };
 
   // ── Actions ─────────────────────────────────────────────────────────────────
-
   async function handleDelete() {
     try {
       await deleteMutation.mutateAsync({ databaseId: id });
       toast.success("Database deleted successfully");
       router.push("/dashboard");
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Failed to delete database");
+      toast.error(
+        e instanceof Error ? e.message : "Failed to delete database",
+      );
     }
     setShowDeleteConfirm(false);
   }
@@ -444,57 +534,65 @@ export default function DatabaseDetailPage() {
       });
       toast.success("Credentials rotated successfully");
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Failed to rotate credentials");
+      toast.error(
+        e instanceof Error ? e.message : "Failed to rotate credentials",
+      );
     }
     setShowRotateConfirm(false);
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
-
   return (
-    <div className="min-h-screen bg-navy-900">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6 animate-slide-up">
-        {/* ── Header ──────────────────────────────────────────────────────── */}
-        <div className="flex flex-wrap items-center gap-3">
+    <div className="flex-1 overflow-auto bg-bg-primary">
+      <div className="max-w-3xl mx-auto px-6 py-6 space-y-4 animate-fade-in">
+        {/* Header */}
+        <div className="flex flex-wrap items-center gap-2.5">
           <button
             type="button"
             onClick={() => router.push("/dashboard")}
-            className="p-2 rounded-lg border border-navy-600 text-text-secondary hover:text-text-primary hover:border-purple-500/30 hover:bg-navy-700 transition-colors"
+            className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors"
             aria-label="Back to dashboard"
           >
-            <ArrowLeft size={20} />
+            <ArrowLeft size={18} />
           </button>
-          <h1 className="text-2xl sm:text-3xl font-bold text-text-primary truncate">
+          <h1 className="text-xl font-bold text-text-primary truncate">
             {db.name}
           </h1>
-          <span className={cn(
-            "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider",
-            badge.className
-          )}>
-            {badge.label === "Ready" && <span className="w-1.5 h-1.5 rounded-full bg-green-400" />}
-            {badge.label === "Creating" && <Loader2 size={12} className="animate-spin" />}
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
+              badge.className,
+            )}
+          >
+            {badge.label === "Ready" && (
+              <span className="w-1.5 h-1.5 rounded-full bg-success" />
+            )}
+            {badge.label === "Creating" && (
+              <Loader2 size={11} className="animate-spin" />
+            )}
             {badge.label}
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2.5 py-0.5 text-xs font-semibold text-cyan-400 uppercase tracking-wider">
+          <span className="inline-flex items-center gap-1 rounded-full bg-accent-subtle text-accent-text px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
             {db.engine}
           </span>
         </div>
 
-        {/* Region & created info */}
-        <p className="text-sm text-text-muted -mt-4">
-          <span className="inline-flex items-center gap-1">
-            {db.region} &bull; Created {formatDate(db.createdAt)}
-          </span>
+        <p className="text-xs text-text-muted -mt-3">
+          {db.region} · Created {formatDate(db.createdAt)}
         </p>
 
-        {/* ── Connection Info ──────────────────────────────────────────────── */}
-        <section className="glass-card p-6 space-y-4">
-          <div className="flex items-center gap-2">
-            <Database size={18} className="text-purple-400" />
-            <h2 className="text-lg font-semibold text-text-primary">Connection Info</h2>
+        {/* Connection Info */}
+        <section className="rounded-xl border border-border-subtle bg-surface-1 overflow-hidden">
+          <div className="border-b border-border-subtle px-5 py-3.5">
+            <div className="flex items-center gap-2">
+              <Database size={16} className="text-accent-text" />
+              <h2 className="text-sm font-semibold text-text-primary">
+                Connection Info
+              </h2>
+            </div>
           </div>
 
-          <div className="space-y-1">
+          <div className="p-5 space-y-1">
             <FieldRow
               label="Host"
               value={db.host ?? "—"}
@@ -518,249 +616,83 @@ export default function DatabaseDetailPage() {
               copied={copied}
               onCopy={copy}
             />
+            <FieldRow
+              label="Database ID"
+              value={db.databaseId}
+              mono
+              copyLabel="Database ID"
+              copied={copied}
+              onCopy={copy}
+            />
 
             {/* Password */}
-            <div className="flex items-center justify-between py-2 border-b border-navy-600/50 last:border-b-0">
-              <span className="text-xs font-medium text-text-muted uppercase tracking-wider min-w-[90px]">
+            <div className="flex items-center justify-between py-2 border-b border-border-subtle last:border-b-0">
+              <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider min-w-[80px]">
                 Password
               </span>
               <div className="flex items-center ml-2 overflow-hidden">
-                {(!rotatedCreds && db.status === "ready") ? (
-                  <span className="text-sm text-text-muted italic">Not available — shown only once</span>
+                {!rotatedCreds && db.status === "ready" ? (
+                  <span className="text-xs text-text-disabled italic">
+                    Not available — shown only once
+                  </span>
                 ) : rotatedCreds ? (
                   <>
-                    <span className="text-sm text-text-primary truncate max-w-[200px] sm:max-w-sm font-mono text-xs">
-                      {showPassword ? rotatedCreds.password : "••••••••••••••••••••••••••••••••"}
+                    <span className="text-xs text-text-primary truncate max-w-[180px] sm:max-w-sm font-mono">
+                      {showPassword
+                        ? rotatedCreds.password
+                        : "••••••••••••••••••••"}
                     </span>
                     <button
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
-                      className="ml-2 shrink-0 p-1 rounded-md hover:bg-purple-500/10 transition-colors text-text-muted hover:text-text-primary"
-                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      className="ml-1.5 shrink-0 p-1 rounded hover:bg-accent-subtle transition-colors text-text-muted hover:text-text-primary"
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
                     >
-                      {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                      {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
                     </button>
-                    <CopyButton value={rotatedCreds.password} label="Password" copied={copied} onCopy={copy} />
+                    <CopyButton
+                      value={rotatedCreds.password}
+                      label="Password"
+                      copied={copied}
+                      onCopy={copy}
+                    />
                   </>
                 ) : (
-                  <span className="text-sm text-text-muted italic">—</span>
+                  <span className="text-xs text-text-disabled italic">—</span>
                 )}
               </div>
             </div>
 
             {/* SSL CA */}
-            <div className="flex items-center justify-between py-2 border-b border-navy-600/50 last:border-b-0">
-              <span className="text-xs font-medium text-text-muted uppercase tracking-wider min-w-[90px]">
+            <div className="flex items-center justify-between py-2 border-b border-border-subtle last:border-b-0">
+              <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider min-w-[80px]">
                 SSL CA
               </span>
               <div className="flex items-center ml-2 overflow-hidden">
                 {rotatedCreds?.sslCaPem ? (
                   <>
-                    <span className="text-sm text-text-primary truncate max-w-[200px] sm:max-w-sm font-mono text-[10px]">
+                    <span className="text-xs text-text-primary truncate max-w-[180px] sm:max-w-sm font-mono">
                       {rotatedCreds.sslCaPem.slice(0, 30)}…
                     </span>
-                    <CopyButton value={rotatedCreds.sslCaPem} label="SSL CA" copied={copied} onCopy={copy} />
+                    <CopyButton
+                      value={rotatedCreds.sslCaPem}
+                      label="SSL CA"
+                      copied={copied}
+                      onCopy={copy}
+                    />
                   </>
                 ) : db.status === "ready" ? (
-                  <span className="text-sm text-text-muted italic">Not available — shown only once</span>
+                  <span className="text-xs text-text-disabled italic">
+                    Not available — shown only once
+                  </span>
                 ) : (
-                  <span className="text-sm text-text-muted italic">—</span>
+                  <span className="text-xs text-text-disabled italic">—</span>
                 )}
               </div>
             </div>
 
-            <div className="flex items-center justify-between py-2 last:border-b-0">
-              <span className="text-xs font-medium text-text-muted uppercase tracking-wider min-w-[90px]">
-                Database ID
-              </span>
-              <div className="flex items-center ml-2 overflow-hidden">
-                <span className="text-xs text-text-muted font-mono truncate max-w-[200px] sm:max-w-sm">
-                  {db.databaseId}
-                </span>
-                <CopyButton value={db.databaseId} label="Database ID" copied={copied} onCopy={copy} />
-              </div>
-            </div>
-          </div>
-
-          <ConnectionStringRow
-            host={db.host ?? "localhost"}
-            port={db.port ?? 3306}
-            username={db.username ?? "unknown"}
-            copied={copied}
-            onCopy={copy}
-          />
-
-          {/* Password warning */}
-          <div className="flex items-start gap-2 p-3 rounded-lg bg-gold-400/5 border border-gold-400/15">
-            <AlertTriangle size={14} className="text-gold-400 shrink-0 mt-0.5" />
-            <p className="text-xs text-gold-300/80">
-              Credentials are shown <strong>only once</strong> after creation or rotation.
-              Store them securely — they cannot be retrieved later.
-            </p>
-          </div>
-        </section>
-
-        {/* ── Usage Stats ──────────────────────────────────────────────────── */}
-        <section className="glass-card p-6 space-y-4">
-          <div className="flex items-center gap-2">
-            <Activity size={18} className="text-cyan-400" />
-            <h2 className="text-lg font-semibold text-text-primary">Usage Stats</h2>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-3">
-            {/* Storage */}
-            <div className="p-4 rounded-lg bg-navy-800/50 border border-navy-600/30 space-y-2">
-              <div className="flex items-center gap-2">
-                <HardDrive size={14} className="text-purple-400" />
-                <span className="text-xs font-medium text-text-muted uppercase tracking-wider">Storage</span>
-              </div>
-              <p className="text-lg font-semibold text-text-primary">
-                {stats.storageUsedMB} <span className="text-sm text-text-muted font-normal">/ {stats.storageLimitMB} MB</span>
-              </p>
-              <ProgressBar value={stats.storageUsedMB} max={stats.storageLimitMB} color="bg-purple-500" />
-            </div>
-
-            {/* Connections */}
-            <div className="p-4 rounded-lg bg-navy-800/50 border border-navy-600/30 space-y-2">
-              <div className="flex items-center gap-2">
-                <Zap size={14} className="text-cyan-400" />
-                <span className="text-xs font-medium text-text-muted uppercase tracking-wider">Connections</span>
-              </div>
-              <p className="text-lg font-semibold text-text-primary">
-                {stats.activeConnections} <span className="text-sm text-text-muted font-normal">/ {stats.maxConnections} active</span>
-              </p>
-              <ProgressBar value={stats.activeConnections} max={stats.maxConnections} color="bg-cyan-400" />
-            </div>
-
-            {/* Queries */}
-            <div className="p-4 rounded-lg bg-navy-800/50 border border-navy-600/30 space-y-2">
-              <div className="flex items-center gap-2">
-                <Activity size={14} className="text-green-400" />
-                <span className="text-xs font-medium text-text-muted uppercase tracking-wider">Queries</span>
-              </div>
-              <p className="text-lg font-semibold text-text-primary">
-                {stats.queriesLastHour.toLocaleString()} <span className="text-sm text-text-muted font-normal">/ hour</span>
-              </p>
-              <ProgressBar value={stats.queriesLastHour} max={stats.queriesLimit} color="bg-green-400" />
-            </div>
-          </div>
-        </section>
-
-        {/* ── Backups ──────────────────────────────────────────────────────── */}
-        <section className="glass-card p-6 space-y-4">
-          <div className="flex items-center gap-2">
-            <Shield size={18} className="text-green-400" />
-            <h2 className="text-lg font-semibold text-text-primary">Backups</h2>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="p-4 rounded-lg bg-navy-800/50 border border-navy-600/30 space-y-1.5">
-              <span className="text-xs font-medium text-text-muted uppercase tracking-wider">Last Backup</span>
-              <p className="text-sm text-text-primary flex items-center gap-2">
-                <Clock size={14} className="text-text-muted" />
-                <span className="text-text-secondary">Backups not yet configured</span>
-              </p>
-            </div>
-            <div className="p-4 rounded-lg bg-navy-800/50 border border-navy-600/30 space-y-1.5">
-              <span className="text-xs font-medium text-text-muted uppercase tracking-wider">Next Scheduled</span>
-              <p className="text-sm text-text-primary flex items-center gap-2">
-                <Clock size={14} className="text-text-muted" />
-                <span className="text-text-secondary">Not scheduled</span>
-              </p>
-            </div>
-          </div>
-
-          <p className="text-xs text-text-muted">
-            Automated backups are coming soon. See{" "}
-            <a
-              href="https://docs.euroscale.io/backups"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-purple-400 hover:text-purple-300 underline underline-offset-4 transition-colors"
-            >
-              backup documentation
-            </a>{" "}
-            for manual backup procedures.
-          </p>
-        </section>
-
-        {/* ── Danger Zone ──────────────────────────────────────────────────── */}
-        <section className="glass-card p-6 space-y-4 border-red-500/20">
-          <div className="flex items-center gap-2">
-            <AlertTriangle size={18} className="text-red-400" />
-            <h2 className="text-lg font-semibold text-red-300">Danger Zone</h2>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Rotate Credentials */}
-            <button
-              type="button"
-              onClick={() => setShowRotateConfirm(true)}
-              disabled={rotateMutation.isPending}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors",
-                "border-gold-400/30 text-gold-400 bg-gold-400/5 hover:bg-gold-400/10",
-                "disabled:opacity-50 disabled:cursor-not-allowed"
-              )}
-            >
-              {rotateMutation.isPending ? (
-                <><Loader2 size={16} className="animate-spin" /> Rotating…</>
-              ) : (
-                <><RefreshCw size={16} /> Rotate Credentials</>
-              )}
-            </button>
-
-            {/* Delete Database */}
-            <button
-              type="button"
-              onClick={() => setShowDeleteConfirm(true)}
-              disabled={deleteMutation.isPending}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors",
-                "border-red-500/30 text-red-400 bg-red-500/5 hover:bg-red-500/10",
-                "disabled:opacity-50 disabled:cursor-not-allowed"
-              )}
-            >
-              {deleteMutation.isPending ? (
-                <><Loader2 size={16} className="animate-spin" /> Deleting…</>
-              ) : (
-                <><Trash2 size={16} /> Delete Database</>
-              )}
-            </button>
-          </div>
-        </section>
-
-        {/* ── Rotated Credentials Banner ──────────────────────────────────────── */}
-        {rotatedCreds && (
-          <div className="glass-card p-6 space-y-3 border-green-400/30 animate-slide-up">
-            <div className="flex items-center gap-2">
-              <Shield size={18} className="text-green-400" />
-              <h2 className="text-lg font-semibold text-green-300">New Credentials</h2>
-            </div>
-            <p className="text-xs text-text-muted">
-              These credentials were just rotated. Save them now — they will not be shown again.
-            </p>
-            <div className="p-3 rounded-lg bg-navy-800 border border-navy-600/50 space-y-1">
-              <FieldRow label="Username" value={db.username ?? "—"} mono copyLabel="Username" copied={copied} onCopy={copy} />
-              <div className="flex items-center justify-between py-2 border-b border-navy-600/50 last:border-b-0">
-                <span className="text-xs font-medium text-text-muted uppercase tracking-wider min-w-[90px]">Password</span>
-                <div className="flex items-center ml-2 overflow-hidden">
-                  <span className="text-sm text-text-primary truncate max-w-[200px] sm:max-w-sm font-mono text-xs">
-                    {showPassword ? rotatedCreds.password : "••••••••••••••••••••••••••••••••"}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="ml-2 shrink-0 p-1 rounded-md hover:bg-purple-500/10 transition-colors text-text-muted hover:text-text-primary"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                  </button>
-                  <CopyButton value={rotatedCreds.password} label="Password" copied={copied} onCopy={copy} />
-                </div>
-              </div>
-              <FieldRow label="SSL CA" value={`${rotatedCreds.sslCaPem.slice(0, 40)}…`} mono copyLabel="SSL CA" copied={copied} onCopy={copy} />
-            </div>
             <ConnectionStringRow
               host={db.host ?? "localhost"}
               port={db.port ?? 3306}
@@ -768,11 +700,271 @@ export default function DatabaseDetailPage() {
               copied={copied}
               onCopy={copy}
             />
+
+            {/* Credentials warning */}
+            <div className="flex items-start gap-2 mt-3 p-2.5 rounded-lg bg-warning-subtle border border-warning-subtle">
+              <AlertTriangle
+                size={13}
+                className="text-warning-text shrink-0 mt-0.5"
+              />
+              <p className="text-xs text-text-muted">
+                Credentials are shown <strong>only once</strong> after creation
+                or rotation. Store them securely — they cannot be retrieved
+                later.
+              </p>
+            </div>
           </div>
+        </section>
+
+        {/* Usage Stats */}
+        <section className="rounded-xl border border-border-subtle bg-surface-1 overflow-hidden">
+          <div className="border-b border-border-subtle px-5 py-3.5">
+            <div className="flex items-center gap-2">
+              <Activity size={16} className="text-text-muted" />
+              <h2 className="text-sm font-semibold text-text-primary">
+                Usage Stats
+              </h2>
+            </div>
+          </div>
+
+          <div className="grid gap-3 p-5 sm:grid-cols-3">
+            <div className="p-3.5 rounded-lg bg-surface-2 border border-border-subtle space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <HardDrive size={13} className="text-accent-text" />
+                <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider">
+                  Storage
+                </span>
+              </div>
+              <p className="text-base font-semibold text-text-primary">
+                {stats.storageUsedMB}{" "}
+                <span className="text-xs text-text-muted font-normal">
+                  / {stats.storageLimitMB} MB
+                </span>
+              </p>
+              <ProgressBar value={stats.storageUsedMB} max={stats.storageLimitMB} />
+            </div>
+
+            <div className="p-3.5 rounded-lg bg-surface-2 border border-border-subtle space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <Zap size={13} className="text-accent-text" />
+                <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider">
+                  Connections
+                </span>
+              </div>
+              <p className="text-base font-semibold text-text-primary">
+                {stats.activeConnections}{" "}
+                <span className="text-xs text-text-muted font-normal">
+                  / {stats.maxConnections} active
+                </span>
+              </p>
+              <ProgressBar
+                value={stats.activeConnections}
+                max={stats.maxConnections}
+              />
+            </div>
+
+            <div className="p-3.5 rounded-lg bg-surface-2 border border-border-subtle space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <Activity size={13} className="text-accent-text" />
+                <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider">
+                  Queries
+                </span>
+              </div>
+              <p className="text-base font-semibold text-text-primary">
+                {stats.queriesLastHour.toLocaleString()}{" "}
+                <span className="text-xs text-text-muted font-normal">
+                  / hour
+                </span>
+              </p>
+              <ProgressBar
+                value={stats.queriesLastHour}
+                max={stats.queriesLimit}
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Backups */}
+        <section className="rounded-xl border border-border-subtle bg-surface-1 overflow-hidden">
+          <div className="border-b border-border-subtle px-5 py-3.5">
+            <div className="flex items-center gap-2">
+              <Shield size={16} className="text-success" />
+              <h2 className="text-sm font-semibold text-text-primary">
+                Backups
+              </h2>
+            </div>
+          </div>
+
+          <div className="grid gap-3 p-5 sm:grid-cols-2">
+            <div className="p-3.5 rounded-lg bg-surface-2 border border-border-subtle space-y-1">
+              <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider">
+                Last Backup
+              </span>
+              <p className="text-xs text-text-primary flex items-center gap-1.5">
+                <Clock size={12} className="text-text-muted" />
+                <span className="text-text-muted">
+                  Backups not yet configured
+                </span>
+              </p>
+            </div>
+            <div className="p-3.5 rounded-lg bg-surface-2 border border-border-subtle space-y-1">
+              <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider">
+                Next Scheduled
+              </span>
+              <p className="text-xs text-text-primary flex items-center gap-1.5">
+                <Clock size={12} className="text-text-muted" />
+                <span className="text-text-muted">Not scheduled</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="px-5 pb-4">
+            <p className="text-[11px] text-text-muted">
+              Automated backups are coming soon. See{" "}
+              <a
+                href="https://docs.euroscale.io/backups"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent-text hover:underline underline-offset-4 transition-colors"
+              >
+                backup documentation
+              </a>{" "}
+              for manual backup procedures.
+            </p>
+          </div>
+        </section>
+
+        {/* Danger Zone */}
+        <section className="rounded-xl border border-error-subtle bg-surface-1 overflow-hidden">
+          <div className="border-b border-border-subtle px-5 py-3.5">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={16} className="text-error-text" />
+              <h2 className="text-sm font-semibold text-error-text">
+                Danger Zone
+              </h2>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2.5 p-5">
+            <button
+              type="button"
+              onClick={() => setShowRotateConfirm(true)}
+              disabled={rotateMutation.isPending}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-medium transition-colors",
+                "border-warning-subtle text-warning-text bg-warning-subtle/50 hover:bg-warning-subtle",
+                "disabled:opacity-50 disabled:cursor-not-allowed",
+              )}
+            >
+              {rotateMutation.isPending ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" /> Rotating…
+                </>
+              ) : (
+                <>
+                  <RefreshCw size={14} /> Rotate Credentials
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={deleteMutation.isPending}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-medium transition-colors",
+                "border-error-subtle text-error-text bg-error-subtle/50 hover:bg-error-subtle",
+                "disabled:opacity-50 disabled:cursor-not-allowed",
+              )}
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" /> Deleting…
+                </>
+              ) : (
+                <>
+                  <Trash2 size={14} /> Delete Database
+                </>
+              )}
+            </button>
+          </div>
+        </section>
+
+        {/* Rotated Credentials Banner */}
+        {rotatedCreds && (
+          <section className="rounded-xl border border-success-subtle bg-surface-1 animate-slide-up overflow-hidden">
+            <div className="border-b border-border-subtle px-5 py-3.5">
+              <div className="flex items-center gap-2">
+                <Shield size={16} className="text-success" />
+                <h2 className="text-sm font-semibold text-success-text">
+                  New Credentials
+                </h2>
+              </div>
+            </div>
+            <div className="p-5 space-y-2">
+              <p className="text-xs text-text-muted">
+                These credentials were just rotated. Save them now — they will
+                not be shown again.
+              </p>
+              <div className="p-3 rounded-lg bg-surface-2 border border-border-subtle space-y-1">
+                <FieldRow
+                  label="Username"
+                  value={db.username ?? "—"}
+                  mono
+                  copyLabel="Username"
+                  copied={copied}
+                  onCopy={copy}
+                />
+                <div className="flex items-center justify-between py-2 border-b border-border-subtle last:border-b-0">
+                  <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider min-w-[80px]">
+                    Password
+                  </span>
+                  <div className="flex items-center ml-2 overflow-hidden">
+                    <span className="text-xs text-text-primary truncate max-w-[180px] sm:max-w-sm font-mono">
+                      {showPassword
+                        ? rotatedCreds.password
+                        : "••••••••••••••••••••"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="ml-1.5 shrink-0 p-1 rounded hover:bg-accent-subtle transition-colors text-text-muted hover:text-text-primary"
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                    >
+                      {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+                    </button>
+                    <CopyButton
+                      value={rotatedCreds.password}
+                      label="Password"
+                      copied={copied}
+                      onCopy={copy}
+                    />
+                  </div>
+                </div>
+                <FieldRow
+                  label="SSL CA"
+                  value={`${rotatedCreds.sslCaPem.slice(0, 40)}…`}
+                  mono
+                  copyLabel="SSL CA"
+                  copied={copied}
+                  onCopy={copy}
+                />
+              </div>
+              <ConnectionStringRow
+                host={db.host ?? "localhost"}
+                port={db.port ?? 3306}
+                username={db.username ?? "unknown"}
+                copied={copied}
+                onCopy={copy}
+              />
+            </div>
+          </section>
         )}
       </div>
 
-      {/* ── Dialogs ────────────────────────────────────────────────────────── */}
+      {/* Dialogs */}
       <ConfirmDialog
         open={showRotateConfirm}
         title="Rotate Credentials"

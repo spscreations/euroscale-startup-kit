@@ -25,7 +25,6 @@ type Region = "nuremberg" | "helsinki";
 interface EngineOption {
   value: Engine;
   label: string;
-  icon: string;
   description: string;
   badge: string;
 }
@@ -44,14 +43,12 @@ const ENGINES: EngineOption[] = [
   {
     value: "mysql",
     label: "MySQL 8.0",
-    icon: "🐬",
     description: "Vitess-compatible, auto-scaling",
     badge: "Recommended",
   },
   {
     value: "postgres",
     label: "PostgreSQL 16",
-    icon: "🐘",
     description: "Coming soon — enter early access list",
     badge: "Preview",
   },
@@ -104,7 +101,6 @@ function CredentialCard({
   const [showFullString, setShowFullString] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-select connection string on mount
   useEffect(() => {
     inputRef.current?.select();
   }, []);
@@ -115,7 +111,6 @@ function CredentialCard({
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     } catch {
-      // Fallback for older browsers
       const textarea = document.createElement("textarea");
       textarea.value = text;
       document.body.appendChild(textarea);
@@ -128,90 +123,95 @@ function CredentialCard({
   }
 
   return (
-    <div className="animate-slide-up space-y-6">
+    <div className="animate-slide-up space-y-5">
       {/* Header */}
       <div className="text-center space-y-2">
-        <div className="mx-auto w-14 h-14 rounded-full bg-green-500/15 flex items-center justify-center">
-          <Check size={28} className="text-green-400" />
+        <div className="mx-auto w-12 h-12 rounded-full bg-success-subtle flex items-center justify-center">
+          <Check size={24} className="text-success-text" />
         </div>
-        <h2 className="text-xl font-semibold text-slate-100">
-          Database created successfully
+        <h2 className="text-lg font-semibold text-text-primary">
+          Database created
         </h2>
-        <p className="text-sm text-slate-400">
-          Your database <span className="font-mono text-purple-300">{response.databaseId.slice(0, 8)}…</span>{" "}
-          is provisioning in <strong>{REGIONS.find(r => r.value === response.region)?.label ?? response.region}</strong>.
+        <p className="text-sm text-text-muted">
+          Your database is provisioning in{" "}
+          <strong className="text-text-secondary">
+            {REGIONS.find((r) => r.value === response.region)?.label ??
+              response.region}
+          </strong>
+          .
         </p>
       </div>
 
       {/* ⚠️ ONCE-ONLY WARNING */}
-      <div className="rounded-xl border border-gold-400/20 bg-gold-400/5 p-4 space-y-2">
-        <div className="flex items-start gap-3">
+      <div className="rounded-lg border border-warning-subtle bg-warning-subtle p-3.5 space-y-1.5">
+        <div className="flex items-start gap-2.5">
           <AlertTriangle
-            size={20}
-            className="text-gold-400 shrink-0 mt-0.5"
+            size={18}
+            className="text-warning-text shrink-0 mt-0.5"
           />
           <div>
-            <p className="text-sm font-semibold text-gold-300">
+            <p className="text-xs font-semibold text-warning-text">
               Save these credentials — shown once only
             </p>
-            <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-              This is the only time you will see the password and full connection
-              string. Store them securely in a password manager or environment
-              variables. If you lose them, you can rotate credentials from the
-              database detail page.
+            <p className="text-[11px] text-text-muted mt-0.5 leading-relaxed">
+              This is the only time you will see the password. Store them
+              securely. You can rotate credentials from the database detail page
+              if needed.
             </p>
           </div>
         </div>
       </div>
 
       {/* Connection string */}
-      <div className="glass-card p-5 space-y-3">
-        <label className="block text-sm font-medium text-slate-300">
+      <div className="rounded-lg border border-border-subtle bg-surface-2 p-4 space-y-2">
+        <label className="block text-xs font-medium text-text-secondary">
           Connection string
         </label>
         <div className="relative">
           <input
             ref={inputRef}
             readOnly
-            value={showFullString ? response.connectionString : response.connectionString.replace(/\/\/[^@]+@/, "//••••••••:••••••••@")}
-            className="w-full rounded-lg bg-navy-900 border border-purple-500/20 px-4 py-3 text-xs font-mono text-slate-200 pr-20 focus:outline-none focus:ring-2 focus:ring-purple-500/50 select-all"
+            value={
+              showFullString
+                ? response.connectionString
+                : response.connectionString.replace(
+                    /\/\/[^@]+@/,
+                    "//••••••••:••••••••@",
+                  )
+            }
+            className="w-full rounded-md bg-bg-primary border border-border-subtle px-3 py-2 text-[11px] font-mono text-text-primary pr-16 focus:outline-none focus:border-accent select-all"
           />
-          <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex gap-1">
+          <div className="absolute right-1 top-1/2 -translate-y-1/2 flex gap-0.5">
             <button
               type="button"
               onClick={() => setShowFullString((v) => !v)}
-              className="p-2 rounded-md text-slate-500 hover:text-slate-200 hover:bg-navy-700 transition-colors"
+              className="p-1.5 rounded text-text-muted hover:text-text-primary hover:bg-surface-3 transition-colors"
               title={showFullString ? "Hide credentials" : "Show credentials"}
             >
-              {showFullString ? <EyeOff size={16} /> : <Eye size={16} />}
+              {showFullString ? <EyeOff size={14} /> : <Eye size={14} />}
             </button>
             <button
               type="button"
               onClick={() => copyToClipboard(response.connectionString)}
               className={cn(
-                "p-2 rounded-md transition-colors",
+                "p-1.5 rounded transition-colors",
                 copied
-                  ? "text-green-400 bg-green-500/10"
-                  : "text-slate-500 hover:text-slate-200 hover:bg-navy-700"
+                  ? "text-success bg-success-subtle"
+                  : "text-text-muted hover:text-text-primary hover:bg-surface-3",
               )}
               title="Copy connection string"
             >
-              {copied ? <Check size={16} /> : <Copy size={16} />}
+              {copied ? <Check size={14} /> : <Copy size={14} />}
             </button>
           </div>
         </div>
       </div>
 
       {/* Credentials detail grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <CredField label="Host" value={response.host} />
         <CredField label="Port" value={String(response.port)} />
-        <CredField
-          label="Username"
-          value={response.username}
-          mono
-          copyable
-        />
+        <CredField label="Username" value={response.username} mono copyable />
         <CredField
           label="Password"
           value={response.password}
@@ -235,26 +235,26 @@ function CredentialCard({
       </div>
 
       {/* SSL info */}
-      <div className="flex items-start gap-3 rounded-lg bg-navy-800/60 border border-purple-500/10 p-3">
-        <Shield size={18} className="text-cyan-400 shrink-0 mt-0.5" />
-        <p className="text-xs text-slate-400 leading-relaxed">
-          <span className="text-cyan-300 font-medium">TLS required.</span>{" "}
-          Connections are encrypted by default. Use the SSL CA certificate above
-          for certificate verification. Connect with:{" "}
-          <code className="text-purple-300 bg-navy-900 px-1 py-0.5 rounded text-[10px]">
-            mysql --ssl-ca=ca.pem -u {response.username} -p -h {response.host} -P {response.port}
+      <div className="flex items-start gap-2.5 rounded-lg bg-surface-2 border border-border-subtle p-3">
+        <Shield size={16} className="text-accent-text shrink-0 mt-0.5" />
+        <p className="text-[11px] text-text-muted leading-relaxed">
+          <span className="text-text-secondary font-medium">TLS required.</span>{" "}
+          Connections are encrypted by default. Connect with:{" "}
+          <code className="text-accent-text bg-surface-3 px-1 py-0.5 rounded text-[10px]">
+            mysql --ssl-ca=ca.pem -u {response.username} -p -h {response.host}{" "}
+            -P {response.port}
           </code>
         </p>
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-center gap-3 pt-2">
+      <div className="flex items-center justify-center pt-1">
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-slate-300 hover:text-slate-100 border border-purple-500/20 hover:border-purple-500/40 bg-navy-800/50 hover:bg-navy-700/50 transition-all duration-200"
+          className="flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-medium text-text-secondary hover:text-text-primary border border-border-subtle hover:border-border-default bg-surface-2 hover:bg-surface-3 transition-colors"
         >
-          <ChevronLeft size={16} />
+          <ChevronLeft size={14} />
           Create another
         </button>
       </div>
@@ -289,15 +289,15 @@ function CredField({
   }
 
   return (
-    <div className="glass-card p-3 space-y-1">
-      <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">
+    <div className="rounded-lg border border-border-subtle bg-surface-2 p-2.5 space-y-0.5">
+      <p className="text-[11px] text-text-muted font-medium uppercase tracking-wider">
         {label}
       </p>
       <div className="flex items-center justify-between gap-2">
         <p
           className={cn(
-            "text-sm truncate",
-            mono ? "font-mono text-slate-200" : "text-slate-300"
+            "text-xs truncate",
+            mono ? "font-mono text-text-primary" : "text-text-secondary",
           )}
         >
           {displayValue}
@@ -307,10 +307,10 @@ function CredField({
             <button
               type="button"
               onClick={() => setRevealed((v) => !v)}
-              className="p-1 rounded text-slate-500 hover:text-slate-200 transition-colors"
+              className="p-1 rounded text-text-muted hover:text-text-primary transition-colors"
               title={revealed ? "Hide" : "Show"}
             >
-              {revealed ? <EyeOff size={14} /> : <Eye size={14} />}
+              {revealed ? <EyeOff size={12} /> : <Eye size={12} />}
             </button>
           )}
           {copyable && (
@@ -320,12 +320,12 @@ function CredField({
               className={cn(
                 "p-1 rounded transition-colors",
                 copied
-                  ? "text-green-400"
-                  : "text-slate-500 hover:text-slate-200"
+                  ? "text-success"
+                  : "text-text-muted hover:text-text-primary",
               )}
               title="Copy"
             >
-              {copied ? <Check size={14} /> : <Copy size={14} />}
+              {copied ? <Check size={12} /> : <Copy size={12} />}
             </button>
           )}
         </div>
@@ -357,27 +357,24 @@ export default function CreateDBForm({
     e.preventDefault();
     setError("");
 
-    // Validate name
     if (!name.trim()) {
       setError("Please enter a database name.");
       return;
     }
     if (!isValidDBName(name.trim())) {
       setError(
-        "Name must start with a lowercase letter, contain only lowercase letters, numbers, and underscores, and be 3–63 characters."
+        "Name must start with a lowercase letter, contain only lowercase letters, numbers, and underscores, and be 3–63 characters.",
       );
       return;
     }
-
-    // Check auth
     if (!session?.id) {
       setError("You must be logged in to create a database.");
       return;
     }
-
-    // Postgres is preview — show message but still allow
     if (engine === "postgres") {
-      setError("PostgreSQL is in preview and not yet available for provisioning. Please select MySQL.");
+      setError(
+        "PostgreSQL is in preview and not yet available for provisioning. Please select MySQL.",
+      );
       return;
     }
 
@@ -400,7 +397,7 @@ export default function CreateDBForm({
   // ── Success state ───────────────────────────────────────────────────────
   if (result) {
     return (
-      <div className="max-w-2xl mx-auto py-8 px-6">
+      <div className="max-w-xl mx-auto py-8 px-6">
         <CredentialCard response={result} onBack={() => setResult(null)} />
       </div>
     );
@@ -408,20 +405,22 @@ export default function CreateDBForm({
 
   // ── Form state ──────────────────────────────────────────────────────────
   return (
-    <div className="max-w-2xl mx-auto py-8 px-6 animate-slide-up">
+    <div className="max-w-xl mx-auto py-8 px-6 animate-slide-up">
       {/* Page header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-100">Create database</h1>
-        <p className="text-sm text-slate-400 mt-1">
+      <div className="mb-6">
+        <h1 className="text-lg font-semibold text-text-primary">
+          Create database
+        </h1>
+        <p className="text-sm text-text-muted mt-1">
           Provision a new Vitess-managed database in your chosen region
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8" noValidate>
+      <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         {/* Error */}
         {error && (
           <div
-            className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300 animate-fade"
+            className="rounded-lg border border-error-subtle bg-error-subtle px-4 py-3 text-sm text-error-text animate-fade-in"
             role="alert"
           >
             {error}
@@ -429,17 +428,17 @@ export default function CreateDBForm({
         )}
 
         {/* Database name */}
-        <div className="glass-card p-5 space-y-3">
+        <div className="rounded-lg border border-border-subtle bg-surface-1 p-4 space-y-3">
           <label
             htmlFor="db-name"
-            className="block text-sm font-medium text-slate-300"
+            className="block text-sm font-medium text-text-primary"
           >
             Database name
           </label>
           <div className="relative">
             <Database
-              size={18}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled pointer-events-none"
             />
             <input
               id="db-name"
@@ -451,38 +450,40 @@ export default function CreateDBForm({
               onChange={(e) => setName(e.target.value)}
               disabled={isSubmitting}
               className={cn(
-                "w-full rounded-lg bg-navy-800 border pl-10 pr-4 py-2.5",
-                "text-sm text-slate-100 placeholder:text-slate-600 font-mono",
-                "focus:outline-none focus:ring-2 transition-all duration-200",
+                "w-full rounded-lg bg-surface-2 border pl-9 pr-10 py-2.5",
+                "text-sm text-text-primary placeholder:text-text-disabled font-mono",
+                "focus:outline-none focus:ring-1 transition-colors",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
                 nameError
-                  ? "border-red-500/50 focus:ring-red-500/50"
-                  : "border-purple-500/20 focus:ring-purple-500/50 focus:border-purple-500/50"
+                  ? "border-error focus:ring-error"
+                  : "border-border-subtle focus:border-accent focus:ring-accent",
               )}
             />
             {name && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
                 {nameError ? (
-                  <Check size={16} className="text-red-400" />
+                  <Check size={14} className="text-error" />
                 ) : (
-                  <Check size={16} className="text-green-400" />
+                  <Check size={14} className="text-success" />
                 )}
               </div>
             )}
           </div>
           {nameError && (
-            <p className="text-xs text-red-400">{nameError}</p>
+            <p className="text-xs text-error-text">{nameError}</p>
           )}
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-text-muted">
             3–63 lowercase letters, numbers, and underscores. Must start with a
             letter.
           </p>
         </div>
 
         {/* Engine selector */}
-        <div className="space-y-3">
-          <p className="text-sm font-medium text-slate-300">Database engine</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-2.5">
+          <p className="text-sm font-medium text-text-primary">
+            Database engine
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {ENGINES.map((e) => (
               <button
                 key={e.value}
@@ -490,79 +491,74 @@ export default function CreateDBForm({
                 disabled={e.value === "postgres"}
                 onClick={() => setEngine(e.value)}
                 className={cn(
-                  "glass-card p-4 text-left transition-all duration-200 cursor-pointer",
+                  "rounded-lg border p-3.5 text-left transition-colors cursor-pointer",
                   engine === e.value
-                    ? "border-purple-500/50 bg-purple-500/10 ring-1 ring-purple-500/30"
-                    : "hover:border-purple-500/20",
-                  e.value === "postgres" && "opacity-60 cursor-not-allowed"
+                    ? "border-accent bg-accent-subtle"
+                    : "border-border-subtle bg-surface-1 hover:border-border-default",
+                  e.value === "postgres" && "opacity-50 cursor-not-allowed",
                 )}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-2xl">{e.icon}</span>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-sm font-semibold text-text-primary">
+                    {e.label}
+                  </span>
                   <span
                     className={cn(
                       "text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full",
                       e.value === "mysql"
-                        ? "bg-green-500/10 text-green-400 border border-green-500/20"
-                        : "bg-gold-400/10 text-gold-400 border border-gold-400/20"
+                        ? "bg-success-subtle text-success-text border border-success-subtle"
+                        : "bg-warning-subtle text-warning-text border border-warning-subtle",
                     )}
                   >
                     {e.badge}
                   </span>
                 </div>
-                <p className="text-sm font-semibold text-slate-100">
-                  {e.label}
-                </p>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  {e.description}
-                </p>
+                <p className="text-xs text-text-muted">{e.description}</p>
               </button>
             ))}
           </div>
         </div>
 
         {/* Region selector */}
-        <div className="space-y-3">
-          <p className="text-sm font-medium text-slate-300">Region</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-2.5">
+          <p className="text-sm font-medium text-text-primary">Region</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {REGIONS.map((r) => (
               <button
                 key={r.value}
                 type="button"
                 onClick={() => setRegion(r.value)}
                 className={cn(
-                  "glass-card p-4 text-left transition-all duration-200 cursor-pointer",
+                  "rounded-lg border p-3.5 text-left transition-colors cursor-pointer",
                   region === r.value
-                    ? "border-purple-500/50 bg-purple-500/10 ring-1 ring-purple-500/30"
-                    : "hover:border-purple-500/20"
+                    ? "border-accent bg-accent-subtle"
+                    : "border-border-subtle bg-surface-1 hover:border-border-default",
                 )}
               >
                 <div className="flex items-center gap-3 mb-1">
-                  <span className="text-xl">{r.flag}</span>
+                  <span className="text-lg">{r.flag}</span>
                   <div>
-                    <p className="text-sm font-semibold text-slate-100">
+                    <p className="text-sm font-semibold text-text-primary">
                       {r.label}
                     </p>
-                    <p className="text-xs text-purple-400">{r.provider}</p>
+                    <p className="text-xs text-accent-text">{r.provider}</p>
                   </div>
                 </div>
-                <p className="text-xs text-slate-400 mt-1.5">
-                  {r.description}
-                </p>
+                <p className="text-xs text-text-muted mt-1">{r.description}</p>
               </button>
             ))}
           </div>
         </div>
 
         {/* Cost hint */}
-        <div className="rounded-lg bg-navy-800/60 border border-purple-500/10 p-4 space-y-1">
-          <p className="text-xs font-medium text-cyan-400 uppercase tracking-wider">
+        <div className="rounded-lg bg-surface-1 border border-border-subtle p-3.5 space-y-1">
+          <p className="text-xs font-medium text-accent-text uppercase tracking-wider">
             Estimated cost
           </p>
-          <p className="text-sm text-slate-300">
+          <p className="text-sm text-text-secondary">
             Free for the first 100 MB of storage.{" "}
-            <span className="text-purple-300">€0.10/GB/month</span> after that.
-            No hidden fees.
+            <span className="text-text-primary">€0.10/GB/month</span> after
+            that. No hidden fees.
           </p>
         </div>
 
@@ -572,21 +568,20 @@ export default function CreateDBForm({
             type="submit"
             disabled={isSubmitting}
             className={cn(
-              "flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold text-white",
-              "bg-gradient-to-r from-purple-500 to-purple-400 hover:from-purple-400 hover:to-purple-300",
-              "focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all duration-200",
-              "shadow-lg shadow-purple-500/20",
-              "disabled:opacity-60 disabled:cursor-not-allowed"
+              "flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white",
+              "bg-accent hover:bg-accent-hover active:bg-accent-pressed",
+              "focus:outline-none transition-colors",
+              "disabled:opacity-50 disabled:cursor-not-allowed",
             )}
           >
             {isSubmitting ? (
               <>
-                <Loader2 size={18} className="animate-spin" />
+                <Loader2 size={16} className="animate-spin" />
                 Provisioning…
               </>
             ) : (
               <>
-                <Database size={18} />
+                <Database size={16} />
                 Create database
               </>
             )}
