@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { apiClient, ApiError } from "@/lib/api";
+import { setTokenGetter, ApiError } from "@/lib/api";
 import { API_BASE_URL, SESSION_DURATION_MS } from "@/lib/constants";
 
 // ── Session shape ───────────────────────────────────────────────────────────
@@ -80,9 +80,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setHydrated(true);
   }, []);
 
-  // Wire token into apiClient whenever session changes
+  // Wire token into gRPC transport interceptor whenever session changes
   useEffect(() => {
-    apiClient.setTokenGetter(() => session?.token ?? null);
+    setTokenGetter(() => session?.token ?? null);
   }, [session]);
 
   const login = useCallback(async (email: string, password: string) => {

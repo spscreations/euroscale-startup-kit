@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { mockLogin, setAuth } from "@/lib/auth";
+import { useAuth } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -21,8 +22,7 @@ export default function LoginPage() {
     if (!email.trim() || !password.trim()) { setError("Please enter your email and password."); return; }
     setLoading(true);
     try {
-      const { token, user } = await mockLogin(email, password);
-      setAuth(token, user);
+      await login(email, password);
       router.push("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");

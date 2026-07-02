@@ -1,11 +1,10 @@
-@import "tailwindcss";
-
 /* ============================================
    EuroScale Design System — Tailwind CSS v4
    Dark navy theme with glass morphism
    ============================================ */
 
-@theme {
+/* Tailwind theme custom properties */
+:root, :host {
   --color-navy-900: #070b1a;
   --color-navy-800: #0b1124;
   --color-navy-700: #0f162e;
@@ -25,49 +24,97 @@
   --color-text-muted: #64748b;
   --font-family-inter: "Inter", system-ui, -apple-system, sans-serif;
   --background-image-gradient-brand: linear-gradient(135deg, #6d5dfd, #a99fff, #22d3ee);
-  --animate-shimmer: shimmer 2s ease-in-out infinite;
-  --animate-fade: fade 0.3s ease-in-out;
-  --animate-slide-up: slide-up 0.4s ease-out;
-  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-  @keyframes fade { 0% { opacity: 0; } 100% { opacity: 1; } }
-  @keyframes slide-up { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: translateY(0); } }
 }
 
-@layer base {
-  *, *::before, *::after { border-color: var(--color-glass-border); }
-  html { scroll-behavior: smooth; }
-  body {
-    background-color: var(--color-navy-900);
-    color: var(--color-text-primary);
-    font-family: var(--font-family-inter);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: var(--color-navy-900); }
-  ::-webkit-scrollbar-thumb { background: var(--color-navy-600); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--color-purple-500); }
-  * { scrollbar-width: thin; scrollbar-color: var(--color-navy-600) var(--color-navy-900); }
+*,
+*::before,
+*::after {
+  border-color: var(--color-glass-border);
 }
 
-@layer components {
-  .gradient-text {
-    background: var(--background-image-gradient-brand);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  .glass-card {
-    background: var(--color-glass-bg); border: 1px solid var(--color-glass-border);
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    border-radius: 12px; transition: all 300ms ease;
-  }
-  .glass-card:hover {
-    border-color: var(--color-glass-border-hover);
-    background: var(--color-glass-bg-hover);
-    box-shadow: 0 4px 24px rgba(109, 93, 253, 0.08);
-  }
-  .shimmer {
-    background: linear-gradient(90deg, var(--color-navy-700) 0%, var(--color-navy-600) 50%, var(--color-navy-700) 100%);
-    background-size: 200% 100%; animation: shimmer 2s ease-in-out infinite;
-  }
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-navy-900);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-inter);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-navy-900);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-navy-600);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-purple-500);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-navy-600) var(--color-navy-900);
+}
+
+/* Utility classes */
+.gradient-text {
+  background: var(--background-image-gradient-brand);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glass-card {
+  background: var(--color-glass-bg);
+  border: 1px solid var(--color-glass-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+  transition: all 300ms ease;
+}
+
+.glass-card:hover {
+  border-color: var(--color-glass-border-hover);
+  background: var(--color-glass-bg-hover);
+  box-shadow: 0 4px 24px rgba(109, 93, 253, 0.08);
+}
+
+.shimmer {
+  background: linear-gradient(90deg, var(--color-navy-700) 0%, var(--color-navy-600) 50%, var(--color-navy-700) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes fade {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes slide-up {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade {
+  animation: fade 0.3s ease-in-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out;
 }

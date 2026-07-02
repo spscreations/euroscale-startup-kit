@@ -1,13 +1,6 @@
-import { API_BASE_URL } from "@/lib/constants";
-import type {
-  CreateDatabaseRequest,
-  CreateDatabaseResponse,
-  DeleteDatabaseResponse,
-  ListDatabasesRequest,
-  ListDatabasesResponse,
-  GetDatabaseResponse,
-  RotateCredentialsResponse,
-} from "@/lib/proto/types";
+import type { Transport } from "@connectrpc/connect";
+import { createGrpcWebTransport } from "@connectrpc/connect-web";
+import { RPC_BASE_URL } from "@/lib/constants";
 
 // ── Error Types ─────────────────────────────────────────────────────────────
 
@@ -23,123 +16,49 @@ export class ApiError extends Error {
   }
 }
 
-// ── Token Getter ────────────────────────────────────────────────────────────
+// ── Auth Interceptor ────────────────────────────────────────────────────────
 
 type TokenGetter = () => string | null;
 
-// ── ApiClient ───────────────────────────────────────────────────────────────
+let tokenGetter: TokenGetter | null = null;
 
-export class ApiClient {
-  private baseUrl: string;
-  private getToken: TokenGetter | null = null;
-
-  constructor(baseUrl: string = API_BASE_URL) {
-    this.baseUrl = baseUrl.replace(/\/$/, ""); // strip trailing slash
-  }
-
-  /** Register a function that returns the current auth token. */
-  setTokenGetter(getToken: TokenGetter): void {
-    this.getToken = getToken;
-  }
-
-  // ── Core HTTP helpers ──────────────────────────────────────────────────
-
-  private async request<T>(
-    path: string,
-    options: RequestInit = {},
-  ): Promise<T> {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      ...((options.headers as Record<string, string>) ?? {}),
-    };
-
-    const token = this.getToken?.();
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
-    const res = await fetch(`${this.baseUrl}${path}`, {
-      ...options,
-      headers,
-    });
-
-    if (!res.ok) {
-      let message = `Request failed (HTTP ${res.status})`;
-      let code: string | undefined;
-      try {
-        const body = await res.json();
-        message = body.message ?? message;
-        code = body.code;
-      } catch {
-        // response body is not JSON — keep the default message
-      }
-      throw new ApiError(message, res.status, code);
-    }
-
-    return res.json() as Promise<T>;
-  }
-
-  private async get<T>(path: string): Promise<T> {
-    return this.request<T>(path, { method: "GET" });
-  }
-
-  private async post<T>(path: string, body?: unknown): Promise<T> {
-    return this.request<T>(path, {
-      method: "POST",
-      body: body != null ? JSON.stringify(body) : undefined,
-    });
-  }
-
-  private async del<T>(path: string): Promise<T> {
-    return this.request<T>(path, { method: "DELETE" });
-  }
-
-  // ── RPC Methods ────────────────────────────────────────────────────────
-
-  /** Provisions a new Vitess database with auto-generated credentials. */
-  async createDatabase(
-    req: CreateDatabaseRequest,
-  ): Promise<CreateDatabaseResponse> {
-    return this.post<CreateDatabaseResponse>("/api/v1/databases", req);
-  }
-
-  /** Lists all databases owned by the given user. */
-  async listDatabases(
-    req: ListDatabasesRequest,
-  ): Promise<ListDatabasesResponse> {
-    const params = new URLSearchParams({ user_id: req.user_id });
-    if (req.page_size != null) params.set("page_size", String(req.page_size));
-    if (req.page_token) params.set("page_token", req.page_token);
-    return this.get<ListDatabasesResponse>(
-      `/api/v1/databases?${params.toString()}`,
-    );
-  }
-
-  /** Gets metadata for a single database (no credentials). */
-  async getDatabase(databaseId: string): Promise<GetDatabaseResponse> {
-    return this.get<GetDatabaseResponse>(
-      `/api/v1/databases/${encodeURIComponent(databaseId)}`,
-    );
-  }
-
-  /** Drops a database and removes all associated credentials. */
-  async deleteDatabase(databaseId: string): Promise<DeleteDatabaseResponse> {
-    return this.del<DeleteDatabaseResponse>(
-      `/api/v1/databases/${encodeURIComponent(databaseId)}`,
-    );
-  }
-
-  /** Rotates credentials for an existing database. */
-  async rotateCredentials(
-    databaseId: string,
-  ): Promise<RotateCredentialsResponse> {
-    return this.post<RotateCredentialsResponse>(
-      `/api/v1/databases/${encodeURIComponent(databaseId)}/rotate-credentials`,
-    );
-  }
+/** Register a function that returns the current auth token. */
+export function setTokenGetter(getToken: TokenGetter): void {
+  tokenGetter = getToken;
 }
 
-// ── Singleton ───────────────────────────────────────────────────────────────
+// ── Transport ───────────────────────────────────────────────────────────────
 
-/** Shared ApiClient instance. Call `setTokenGetter` once auth is ready. */
-export const apiClient = new ApiClient();
+/**
+ * Creates a gRPC-web Transport configured for the EuroScale API.
+ *
+ * Auth tokens are injected via interceptor, so callers don't need to
+ * manage headers manually.
+ */
+export function createTransport(): Transport {
+  return createGrpcWebTransport({
+    baseUrl: RPC_BASE_URL,
+    interceptors: [
+      (next) => async (req) => {
+        const token = tokenGetter?.();
+        if (token) {
+          req.header.set("Authorization", `Bearer ${token}`);
+        }
+        return next(req);
+      },
+    ],
+  });
+}
+
+/**
+ * Shared transport singleton. Lazily constructed on first access.
+ * Use this when passing `transport` to connect-query hooks outside
+ * a `<TransportProvider>` tree, or call `createTransport()` directly.
+ */
+let sharedTransport: Transport | undefined;
+export function getTransport(): Transport {
+  if (!sharedTransport) {
+    sharedTransport = createTransport();
+  }
+  return sharedTransport;
+}

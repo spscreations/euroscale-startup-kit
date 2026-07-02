@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff, User, ArrowRight, Loader2, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { mockSignup, setAuth } from "@/lib/auth";
+import { useAuth } from "@/lib/auth";
 
 function getPasswordChecks(pw: string) {
   return { minLength: pw.length >= 8, hasUpper: /[A-Z]/.test(pw), hasNumber: /[0-9]/.test(pw) };
@@ -13,6 +13,7 @@ function getPasswordChecks(pw: string) {
 
 export default function SignupPage() {
   const router = useRouter();
+  const { signup } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,8 +36,7 @@ export default function SignupPage() {
     if (!agreedToTerms) { setError("You must agree to the Terms of Service and Privacy Policy."); return; }
     setLoading(true);
     try {
-      const { token, user } = await mockSignup(name, email, password);
-      setAuth(token, user);
+      await signup(name, email, password);
       router.push("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");

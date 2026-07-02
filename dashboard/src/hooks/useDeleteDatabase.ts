@@ -1,18 +1,17 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api";
-import type { DeleteDatabaseResponse } from "@/lib/proto/types";
+import { useMutation } from "@connectrpc/connect-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { deleteDatabase, listDatabases } from "@/lib/proto/euroscale/v1/database-DatabaseService_connectquery";
 
 /**
  * Drops a database and removes all associated credentials.
- * Accepts a `database_id` string and invalidates the databases list on success.
+ * The mutation input should be `{ databaseId: string }`.
  */
 export function useDeleteDatabase() {
   const queryClient = useQueryClient();
 
-  return useMutation<DeleteDatabaseResponse, Error, string>({
-    mutationFn: (databaseId) => apiClient.deleteDatabase(databaseId),
+  return useMutation(deleteDatabase, {
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["databases"] });
+      queryClient.invalidateQueries({ queryKey: [listDatabases] });
     },
   });
 }
