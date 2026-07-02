@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "EuroScale — AI-Powered Smart Scale-Up Platform Dashboard",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
