@@ -55,4 +55,12 @@ resource "hcloud_firewall" "euroscale" {
     source_ips = ["0.0.0.0/0"]
     port       = "443"
   }
+
+  # NodePort range for K8s services (dashboard, API, auth)
+  rule {
+    direction  = "in"
+    protocol   = "tcp"
+    source_ips = ["0.0.0.0/0"]
+    port       = "30080-30238"
+  }
 }

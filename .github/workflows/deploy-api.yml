@@ -160,7 +160,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
           build-args: |
-            NEXT_PUBLIC_API_BASE_URL=http://91.99.187.108:30151
-            NEXT_PUBLIC_RPC_BASE_URL=http://91.99.187.108:30151
+            NEXT_PUBLIC_API_BASE_URL=http://91.99.187.108:30081
+            NEXT_PUBLIC_RPC_BASE_URL=http://91.99.187.108:30081
           cache-from: type=gha
           cache-to: type=gha,mode=max
