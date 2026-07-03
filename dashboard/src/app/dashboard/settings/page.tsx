@@ -211,7 +211,7 @@ export default function SettingsPage() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="mb-3">
-                <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-text-muted">
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-text-muted">
                   Name
                 </label>
                 {editing ? (
@@ -257,7 +257,7 @@ export default function SettingsPage() {
                     </span>
                     <button
                       onClick={() => setEditing(true)}
-                      className="rounded-lg p-1 text-text-muted transition-colors hover:bg-surface-2 hover:text-accent-text"
+                      className="rounded-lg p-2 text-text-muted transition-colors hover:bg-surface-2 hover:text-accent-text min-w-[44px] min-h-[44px] flex items-center justify-center"
                       title="Edit name"
                     >
                       <Pencil size={13} />
@@ -266,7 +266,7 @@ export default function SettingsPage() {
                 )}
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-text-muted">
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-text-muted">
                   Email
                 </label>
                 <div className="flex items-center gap-1.5">
@@ -280,13 +280,13 @@ export default function SettingsPage() {
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-surface-2 p-3">
             <div>
-              <p className="text-[11px] font-medium uppercase tracking-wider text-text-muted">
+              <p className="text-xs font-medium uppercase tracking-wider text-text-muted">
                 Member since
               </p>
               <p className="mt-0.5 text-xs text-text-secondary">June 2026</p>
             </div>
             <div>
-              <p className="text-[11px] font-medium uppercase tracking-wider text-text-muted">
+              <p className="text-xs font-medium uppercase tracking-wider text-text-muted">
                 Account ID
               </p>
               <p className="mt-0.5 font-mono text-[11px] text-text-disabled">
@@ -327,7 +327,7 @@ export default function SettingsPage() {
                     <p className="text-xs font-medium text-text-primary">
                       {x.label}
                     </p>
-                    <p className="text-[11px] text-text-muted truncate">
+                    <p className="text-xs text-text-muted truncate">
                       {x.desc}
                     </p>
                   </div>
@@ -353,7 +353,7 @@ export default function SettingsPage() {
                   <h3 className="text-base font-semibold text-text-primary">
                     {plan.name}
                   </h3>
-                  <span className="rounded-full bg-success-subtle px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-success-text">
+                  <span className="rounded-full bg-success-subtle px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider text-success-text">
                     Active
                   </span>
                 </div>
@@ -362,7 +362,7 @@ export default function SettingsPage() {
                   <span className="text-xs">{plan.period}</span>
                 </p>
               </div>
-              <button className="flex items-center gap-1 rounded-lg border border-border-subtle px-3 py-1.5 text-[11px] font-medium text-text-secondary transition-colors hover:border-border-default hover:text-text-primary">
+              <button className="flex items-center gap-1 rounded-lg border border-border-subtle px-3 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-border-default hover:text-text-primary min-h-[44px]">
                 Change Plan
                 <ChevronRight size={13} />
               </button>
@@ -394,23 +394,23 @@ export default function SettingsPage() {
             ))}
           </div>
           <div className="flex flex-wrap gap-2 border-t border-border-subtle pt-3.5">
-            <button className="flex items-center gap-1.5 rounded-lg border border-border-subtle px-3 py-1.5 text-[11px] font-medium text-text-secondary transition-colors hover:border-border-default hover:text-text-primary">
+            <button className="flex items-center gap-1.5 rounded-lg border border-border-subtle px-3 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-border-default hover:text-text-primary min-h-[44px]">
               <CreditCard size={13} />
               Payment Methods
               <ExternalLink size={11} />
             </button>
-            <button className="flex items-center gap-1.5 rounded-lg border border-border-subtle px-3 py-1.5 text-[11px] font-medium text-text-secondary transition-colors hover:border-border-default hover:text-text-primary">
+            <button className="flex items-center gap-1.5 rounded-lg border border-border-subtle px-3 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-border-default hover:text-text-primary min-h-[44px]">
               <ArrowUpRight size={13} />
               View Invoices
             </button>
-            <button className="flex items-center gap-1.5 rounded-lg border border-border-subtle px-3 py-1.5 text-[11px] font-medium text-text-secondary transition-colors hover:border-border-default hover:text-text-primary">
+            <button className="flex items-center gap-1.5 rounded-lg border border-border-subtle px-3 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-border-default hover:text-text-primary min-h-[44px]">
               <Globe size={13} />
               Manage Tax Info
             </button>
           </div>
         </SectionCard>
 
-        <p className="text-center text-[11px] text-text-disabled pb-4">
+        <p className="text-center text-xs text-text-disabled pb-4">
           EuroScale — European Database Platform · Version 0.1.0
         </p>
       </div>

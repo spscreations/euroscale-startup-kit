@@ -142,7 +142,7 @@ function CredentialCard({
             <p className="text-xs font-semibold text-warning-text">
               Save these credentials — shown once only
             </p>
-            <p className="text-[11px] text-text-muted mt-0.5 leading-relaxed">
+            <p className="text-xs text-text-muted mt-0.5 leading-relaxed">
               This is the only time you will see the password. Store them
               securely. You can rotate credentials from the database detail page
               if needed.
@@ -168,7 +168,7 @@ function CredentialCard({
                     "//••••••••:••••••••@",
                   )
             }
-            className="w-full rounded-md bg-bg-primary border border-border-subtle px-3 py-2 text-[11px] font-mono text-text-primary pr-16 focus:outline-none focus:border-accent select-all"
+            className="w-full rounded-md bg-bg-primary border border-border-subtle px-3 py-2 text-xs font-mono text-text-primary pr-16 focus:outline-none focus:border-accent select-all"
           />
           <div className="absolute right-1 top-1/2 -translate-y-1/2 flex gap-0.5">
             <button
@@ -226,10 +226,10 @@ function CredentialCard({
       {/* SSL info */}
       <div className="flex items-start gap-2.5 rounded-lg bg-surface-2 border border-border-subtle p-3">
         <Shield size={16} className="text-accent-text shrink-0 mt-0.5" />
-        <p className="text-[11px] text-text-muted leading-relaxed">
+        <p className="text-xs text-text-muted leading-relaxed">
           <span className="text-text-secondary font-medium">TLS required.</span>{" "}
           Connections are encrypted by default. Connect with:{" "}
-          <code className="text-accent-text bg-surface-3 px-1 py-0.5 rounded text-[10px]">
+          <code className="text-accent-text bg-surface-3 px-1 py-0.5 rounded text-[11px]">
             mysql --ssl-ca=ca.pem -u {response.username} -p -h {response.host}{" "}
             -P {response.port}
           </code>
@@ -241,7 +241,7 @@ function CredentialCard({
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-medium text-text-secondary hover:text-text-primary border border-border-subtle hover:border-border-default bg-surface-2 hover:bg-surface-3 transition-colors"
+          className="flex items-center gap-1.5 rounded-md px-4 py-2.5 text-xs font-medium text-text-secondary hover:text-text-primary border border-border-subtle hover:border-border-default bg-surface-2 hover:bg-surface-3 transition-colors min-h-[44px]"
         >
           <ChevronLeft size={14} />
           Create another
@@ -279,7 +279,7 @@ function CredField({
 
   return (
     <div className="rounded-lg border border-border-subtle bg-surface-2 p-2.5 space-y-0.5">
-      <p className="text-[11px] text-text-muted font-medium uppercase tracking-wider">
+      <p className="text-xs text-text-muted font-medium uppercase tracking-wider">
         {label}
       </p>
       <div className="flex items-center justify-between gap-2">
@@ -296,10 +296,10 @@ function CredField({
             <button
               type="button"
               onClick={() => setRevealed((v) => !v)}
-              className="p-1 rounded text-text-muted hover:text-text-primary transition-colors"
+              className="p-1.5 rounded text-text-muted hover:text-text-primary transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               title={revealed ? "Hide" : "Show"}
             >
-              {revealed ? <EyeOff size={12} /> : <Eye size={12} />}
+              {revealed ? <EyeOff size={14} /> : <Eye size={14} />}
             </button>
           )}
           {copyable && (
@@ -307,14 +307,14 @@ function CredField({
               type="button"
               onClick={handleCopy}
               className={cn(
-                "p-1 rounded transition-colors",
+                "p-1.5 rounded transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center",
                 copied
                   ? "text-success"
                   : "text-text-muted hover:text-text-primary",
               )}
               title="Copy"
             >
-              {copied ? <Check size={12} /> : <Copy size={12} />}
+              {copied ? <Check size={14} /> : <Copy size={14} />}
             </button>
           )}
         </div>
@@ -557,9 +557,9 @@ export default function CreateDBForm({
             type="submit"
             disabled={isSubmitting}
             className={cn(
-              "flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white",
+              "flex items-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold text-white",
               "bg-accent hover:bg-accent-hover active:bg-accent-pressed",
-              "focus:outline-none transition-colors",
+              "focus:outline-none transition-colors min-h-[44px]",
               "disabled:opacity-50 disabled:cursor-not-allowed",
             )}
           >

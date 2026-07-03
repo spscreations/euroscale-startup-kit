@@ -29,14 +29,14 @@ export default function Home() {
         <div className="flex items-center justify-center gap-3 pt-2">
           <Link
             href="/login"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white hover:bg-accent-hover active:bg-accent-pressed transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-white hover:bg-accent-hover active:bg-accent-pressed transition-colors min-h-[44px]"
           >
             Sign in
             <ArrowRight size={15} />
           </Link>
           <Link
             href="/signup"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border-default bg-surface-1 px-5 py-2.5 text-sm font-medium text-text-secondary hover:text-text-primary hover:border-border-hover transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border-default bg-surface-1 px-5 py-3 text-sm font-medium text-text-secondary hover:text-text-primary hover:border-border-hover transition-colors min-h-[44px]"
           >
             Create account
           </Link>

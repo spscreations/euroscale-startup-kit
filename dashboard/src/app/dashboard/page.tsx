@@ -130,9 +130,9 @@ function DashboardContent() {
               onClick={() => refetch()}
               disabled={isLoading}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium",
+                "inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-medium",
                 "text-text-secondary hover:text-text-primary hover:bg-surface-2",
-                "transition-colors border border-border-subtle",
+                "transition-colors border border-border-subtle min-h-[44px]",
                 isLoading && "opacity-50 cursor-not-allowed",
               )}
               aria-label="Refresh databases"
@@ -146,7 +146,7 @@ function DashboardContent() {
 
             <button
               onClick={() => setShowCreate(true)}
-              className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-white bg-accent hover:bg-accent-hover active:bg-accent-pressed transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold text-white bg-accent hover:bg-accent-hover active:bg-accent-pressed transition-colors min-h-[44px]"
             >
               <Plus size={14} />
               New database
@@ -273,7 +273,7 @@ function DashboardContent() {
             onClick={() => !createMutation.isPending && setShowCreate(false)}
           />
 
-          <div className="relative w-full max-w-sm rounded-xl border border-border-subtle bg-surface-1 p-5 shadow-2xl animate-slide-up">
+          <div className="relative w-full max-w-full sm:max-w-sm rounded-none sm:rounded-xl border border-border-subtle bg-surface-1 p-5 sm:p-5 shadow-2xl animate-slide-up sm:my-4 min-h-[100dvh] sm:min-h-0 flex flex-col justify-center">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-semibold text-text-primary">
                 New database
@@ -281,10 +281,10 @@ function DashboardContent() {
               <button
                 onClick={() => setShowCreate(false)}
                 disabled={createMutation.isPending}
-                className="text-text-muted hover:text-text-primary transition-colors"
+                className="p-2 -mr-2 text-text-muted hover:text-text-primary transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                 aria-label="Close dialog"
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
 
@@ -333,7 +333,7 @@ function DashboardContent() {
                       onClick={() => setNewDbRegion(r.value)}
                       disabled={createMutation.isPending}
                       className={cn(
-                        "flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-colors",
+                        "flex items-center gap-2 rounded-lg border px-3 py-2.5 text-xs transition-colors min-h-[44px]",
                         newDbRegion === r.value
                           ? "border-accent bg-accent-subtle text-accent-text"
                           : "border-border-subtle bg-surface-2 text-text-secondary hover:border-border-default hover:text-text-primary",
@@ -352,9 +352,9 @@ function DashboardContent() {
                 type="submit"
                 disabled={!newDbName.trim() || createMutation.isPending}
                 className={cn(
-                  "w-full flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-white",
+                  "w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white",
                   "bg-accent hover:bg-accent-hover active:bg-accent-pressed",
-                  "transition-colors",
+                  "transition-colors min-h-[44px]",
                   "disabled:opacity-50 disabled:cursor-not-allowed",
                 )}
               >

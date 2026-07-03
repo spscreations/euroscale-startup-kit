@@ -131,7 +131,7 @@ function FieldRow({
 }) {
   return (
     <div className="flex items-center justify-between py-2 border-b border-border-subtle last:border-b-0">
-      <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider min-w-[80px]">
+      <span className="text-xs font-medium text-text-muted uppercase tracking-wider min-w-[80px]">
         {label}
       </span>
       <div className="flex items-center ml-2 overflow-hidden">
@@ -232,19 +232,19 @@ function ConfirmDialog({
       : { btn: "bg-warning hover:bg-warning/90 text-black" };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 animate-fade-in">
       <div
         className="absolute inset-0 bg-black/60"
         onClick={onCancel}
       />
-      <div className="relative w-full max-w-sm rounded-xl border border-border-subtle bg-surface-1 p-5 space-y-4 animate-slide-up shadow-2xl">
+      <div className="relative w-full max-w-full sm:max-w-sm rounded-none sm:rounded-xl border border-border-subtle bg-surface-1 p-5 sm:p-5 space-y-4 animate-slide-up shadow-2xl min-h-[100dvh] sm:min-h-0 flex flex-col justify-center">
         <h3 className="text-sm font-semibold text-text-primary">{title}</h3>
         <p className="text-xs text-text-secondary">{message}</p>
         <div className="flex gap-2.5 pt-1">
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 rounded-lg border border-border-subtle px-3 py-2 text-xs font-medium text-text-secondary hover:bg-surface-2 transition-colors"
+            className="flex-1 rounded-lg border border-border-subtle px-3 py-2.5 text-xs font-medium text-text-secondary hover:bg-surface-2 transition-colors min-h-[44px]"
           >
             Cancel
           </button>
@@ -252,7 +252,7 @@ function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             className={cn(
-              "flex-1 rounded-lg px-3 py-2 text-xs font-semibold text-white transition-colors",
+              "flex-1 rounded-lg px-3 py-2.5 text-xs font-semibold text-white transition-colors min-h-[44px]",
               colors.btn,
             )}
           >
@@ -289,14 +289,14 @@ function DeleteConfirmDialog({
   const match = typed === databaseName;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 animate-fade-in">
       <div
         className="absolute inset-0 bg-black/60"
         onClick={onCancel}
       />
       <form
         onSubmit={handleSubmit}
-        className="relative w-full max-w-md rounded-xl border border-error-subtle bg-surface-1 p-5 space-y-4 animate-slide-up shadow-2xl"
+        className="relative w-full max-w-full sm:max-w-md rounded-none sm:rounded-xl border border-error-subtle bg-surface-1 p-5 sm:p-5 space-y-4 animate-slide-up shadow-2xl min-h-[100dvh] sm:min-h-0 flex flex-col justify-center"
       >
         <div className="flex items-start gap-3">
           <ShieldAlert
@@ -349,7 +349,7 @@ function DeleteConfirmDialog({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="flex-1 rounded-lg border border-border-subtle px-3 py-2 text-xs font-medium text-text-secondary hover:bg-surface-2 transition-colors disabled:opacity-50"
+            className="flex-1 rounded-lg border border-border-subtle px-3 py-2.5 text-xs font-medium text-text-secondary hover:bg-surface-2 transition-colors disabled:opacity-50 min-h-[44px]"
           >
             Cancel
           </button>
@@ -357,7 +357,7 @@ function DeleteConfirmDialog({
             type="submit"
             disabled={!match || loading}
             className={cn(
-              "flex-1 rounded-lg px-3 py-2 text-xs font-semibold text-white transition-colors",
+              "flex-1 rounded-lg px-3 py-2.5 text-xs font-semibold text-white transition-colors min-h-[44px]",
               match && !loading
                 ? "bg-error hover:bg-error/90"
                 : "bg-error/50 cursor-not-allowed",
@@ -559,7 +559,7 @@ export default function DatabaseDetailPage() {
           </h1>
           <span
             className={cn(
-              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
+              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider",
               badge.className,
             )}
           >
@@ -571,7 +571,7 @@ export default function DatabaseDetailPage() {
             )}
             {badge.label}
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-accent-subtle text-accent-text px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
+          <span className="inline-flex items-center gap-1 rounded-full bg-accent-subtle text-accent-text px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider">
             {db.engine}
           </span>
         </div>
@@ -730,7 +730,7 @@ export default function DatabaseDetailPage() {
             <div className="p-3.5 rounded-lg bg-surface-2 border border-border-subtle space-y-1.5">
               <div className="flex items-center gap-1.5">
                 <HardDrive size={13} className="text-accent-text" />
-                <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider">
+                <span className="text-xs font-medium text-text-muted uppercase tracking-wider">
                   Storage
                 </span>
               </div>
@@ -746,7 +746,7 @@ export default function DatabaseDetailPage() {
             <div className="p-3.5 rounded-lg bg-surface-2 border border-border-subtle space-y-1.5">
               <div className="flex items-center gap-1.5">
                 <Zap size={13} className="text-accent-text" />
-                <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider">
+                <span className="text-xs font-medium text-text-muted uppercase tracking-wider">
                   Connections
                 </span>
               </div>
@@ -765,7 +765,7 @@ export default function DatabaseDetailPage() {
             <div className="p-3.5 rounded-lg bg-surface-2 border border-border-subtle space-y-1.5">
               <div className="flex items-center gap-1.5">
                 <Activity size={13} className="text-accent-text" />
-                <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider">
+                <span className="text-xs font-medium text-text-muted uppercase tracking-wider">
                   Queries
                 </span>
               </div>
@@ -796,7 +796,7 @@ export default function DatabaseDetailPage() {
 
           <div className="grid gap-3 p-5 sm:grid-cols-2">
             <div className="p-3.5 rounded-lg bg-surface-2 border border-border-subtle space-y-1">
-              <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider">
+              <span className="text-xs font-medium text-text-muted uppercase tracking-wider">
                 Last Backup
               </span>
               <p className="text-xs text-text-primary flex items-center gap-1.5">
@@ -807,7 +807,7 @@ export default function DatabaseDetailPage() {
               </p>
             </div>
             <div className="p-3.5 rounded-lg bg-surface-2 border border-border-subtle space-y-1">
-              <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider">
+              <span className="text-xs font-medium text-text-muted uppercase tracking-wider">
                 Next Scheduled
               </span>
               <p className="text-xs text-text-primary flex items-center gap-1.5">
@@ -818,7 +818,7 @@ export default function DatabaseDetailPage() {
           </div>
 
           <div className="px-5 pb-4">
-            <p className="text-[11px] text-text-muted">
+            <p className="text-xs text-text-muted">
               Automated backups are coming soon. See{" "}
               <a
                 href="https://docs.euroscale.io/backups"
@@ -850,7 +850,7 @@ export default function DatabaseDetailPage() {
               onClick={() => setShowRotateConfirm(true)}
               disabled={rotateMutation.isPending}
               className={cn(
-                "flex-1 flex items-center justify-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-medium transition-colors",
+                "flex-1 flex items-center justify-center gap-1.5 rounded-lg border px-3.5 py-2.5 text-xs font-medium transition-colors min-h-[44px]",
                 "border-warning-subtle text-warning-text bg-warning-subtle/50 hover:bg-warning-subtle",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
               )}
@@ -871,7 +871,7 @@ export default function DatabaseDetailPage() {
               onClick={() => setShowDeleteConfirm(true)}
               disabled={deleteMutation.isPending}
               className={cn(
-                "flex-1 flex items-center justify-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-medium transition-colors",
+                "flex-1 flex items-center justify-center gap-1.5 rounded-lg border px-3.5 py-2.5 text-xs font-medium transition-colors min-h-[44px]",
                 "border-error-subtle text-error-text bg-error-subtle/50 hover:bg-error-subtle",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
               )}

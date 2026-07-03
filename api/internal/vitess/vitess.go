@@ -70,7 +70,7 @@ func (m *Manager) CreateDatabase(ctx context.Context, name string) error {
 //
 // Under the hood this calls:
 //
-//	vtctlclient -server <vtctldAddr> DeleteKeyspace <name>
+//	vtctlclient -server <vtctldAddr> DeleteKeyspace --force <name>
 func (m *Manager) DeleteDatabase(ctx context.Context, name string) error {
 	if err := validateDatabaseName(name); err != nil {
 		return err
@@ -78,7 +78,7 @@ func (m *Manager) DeleteDatabase(ctx context.Context, name string) error {
 
 	cmd := exec.CommandContext(ctx, "vtctlclient",
 		"--server", m.vtctldAddr,
-		"DeleteKeyspace", name,
+		"DeleteKeyspace", "--force", name,
 	)
 
 	output, err := cmd.CombinedOutput()

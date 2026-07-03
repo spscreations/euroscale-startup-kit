@@ -127,7 +127,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-text-muted hover:text-text-secondary transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                   tabIndex={-1}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
@@ -141,9 +141,9 @@ export default function LoginPage() {
               type="submit"
               disabled={loading}
               className={cn(
-                "w-full flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-white",
+                "w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white",
                 "bg-accent hover:bg-accent-hover active:bg-accent-pressed",
-                "focus:outline-none transition-colors",
+                "focus:outline-none transition-colors min-h-[44px]",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
               )}
             >
