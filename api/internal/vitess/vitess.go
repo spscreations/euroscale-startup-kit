@@ -54,7 +54,7 @@ func (m *Manager) CreateDatabase(ctx context.Context, name string) error {
 	}
 
 	cmd := exec.CommandContext(ctx, "vtctlclient",
-		"-server", m.vtctldAddr,
+		"--server", m.vtctldAddr,
 		"CreateKeyspace", name,
 	)
 
@@ -77,7 +77,7 @@ func (m *Manager) DeleteDatabase(ctx context.Context, name string) error {
 	}
 
 	cmd := exec.CommandContext(ctx, "vtctlclient",
-		"-server", m.vtctldAddr,
+		"--server", m.vtctldAddr,
 		"DeleteKeyspace", name,
 	)
 
