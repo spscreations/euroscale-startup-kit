@@ -1,4 +1,4 @@
-FROM node:26-alpine AS builder
+FROM node:24-alpine AS builder
 WORKDIR /app
 ARG NEXT_PUBLIC_API_BASE_URL=http://91.99.187.108:30081
 ARG NEXT_PUBLIC_RPC_BASE_URL=http://91.99.187.108:30081
@@ -9,7 +9,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM node:26-alpine AS runner
+FROM node:24-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=builder /app/.next ./.next
