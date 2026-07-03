@@ -4,8 +4,6 @@ go 1.26
 
 require (
 	connectrpc.com/connect v1.18.1
-	connectrpc.com/grpcreflect v1.3.0
-	github.com/go-sql-driver/mysql v1.8.1
 	github.com/google/uuid v1.6.0
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.34.2
@@ -15,7 +13,6 @@ require (
 )
 
 require (
-	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect

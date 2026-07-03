@@ -1,3 +1,6 @@
+# ── Vitess binary stage ─────────────────────────────────────────────────────
+FROM vitess/lite:v24.0.1 AS vitess-bin
+
 # ── Build stage ──────────────────────────────────────────────────────────────
 FROM golang:1.26-alpine AS builder
 
@@ -28,8 +31,11 @@ RUN apk add --no-cache ca-certificates tzdata && \
 
 WORKDIR /home/euroscale
 
-# Copy binary from builder.
+# Copy API binary from builder.
 COPY --from=builder /euroscale-api /usr/local/bin/euroscale-api
+
+# Copy vtctlclient from the vitess/lite image for keyspace management.
+COPY --from=vitess-bin /vt/bin/vtctlclient /usr/local/bin/vtctlclient
 
 # Create TLS cert directory for mounted secrets.
 RUN mkdir -p /etc/euroscale/tls && \

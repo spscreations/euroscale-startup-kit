@@ -542,6 +542,11 @@ func main() {
 		vtgateAddr = "euroscale-vtgate:3306"
 	}
 
+	vtctldAddr := os.Getenv("VTCTLD_ADDR")
+	if vtctldAddr == "" {
+		vtctldAddr = "euroscale-vtctld:15999"
+	}
+
 	apiKey := os.Getenv("EUROSCALE_API_KEY")
 	if apiKey == "" {
 		log.Fatal("EUROSCALE_API_KEY environment variable is required")
@@ -577,14 +582,14 @@ func main() {
 		_ = healthSrv.Shutdown(ctx)
 	}()
 
-	// ── Connect to Vitess vtgate ──────────────────────────────────────────
+	// ── Connect to Vitess ──────────────────────────────────────────────────
 	log.Printf("Connecting to vtgate at %s...", vtgateAddr)
-	vtgateMgr, err := vitess.NewManager(vtgateAddr)
+	vtgateMgr, err := vitess.NewManager(vtgateAddr, vtctldAddr)
 	if err != nil {
-		log.Fatalf("Failed to connect to vtgate: %v", err)
+		log.Fatalf("Failed to initialize vitess manager: %v", err)
 	}
 	defer vtgateMgr.Close()
-	log.Println("Connected to vtgate successfully.")
+	log.Println("Vitess manager initialized successfully.")
 
 	// ── Create K8s clientset ──────────────────────────────────────────────
 	config, err := rest.InClusterConfig()
