@@ -1,10 +1,10 @@
 export const APP_NAME = "EuroScale";
 
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.euroscale.io";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://91.99.187.108:30081";
 
 export const RPC_BASE_URL =
-  process.env.NEXT_PUBLIC_RPC_BASE_URL || "https://api.euroscale.io/rpc";
+  process.env.NEXT_PUBLIC_RPC_BASE_URL || "http://91.99.187.108:30081";
 
 export const DASHBOARD_URL =
   process.env.NEXT_PUBLIC_DASHBOARD_URL || "https://app.euroscale.io";

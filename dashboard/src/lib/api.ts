@@ -1,5 +1,5 @@
 import type { Transport } from "@connectrpc/connect";
-import { createGrpcWebTransport } from "@connectrpc/connect-web";
+import { createConnectTransport } from "@connectrpc/connect-web";
 import { RPC_BASE_URL } from "@/lib/constants";
 
 // ── Error Types ─────────────────────────────────────────────────────────────
@@ -30,14 +30,25 @@ export function setTokenGetter(getToken: TokenGetter): void {
 // ── Transport ───────────────────────────────────────────────────────────────
 
 /**
- * Creates a gRPC-web Transport configured for the EuroScale API.
+ * Creates a Connect transport configured for the EuroScale API.
+ *
+ * Uses the Connect protocol (application/connect+json) which works
+ * over HTTP/1.1 and does not require a gRPC-web proxy. The server
+ * serves both auth endpoints and Connect RPCs on the same port.
  *
  * Auth tokens are injected via interceptor, so callers don't need to
  * manage headers manually.
  */
 export function createTransport(): Transport {
-  return createGrpcWebTransport({
+  return createConnectTransport({
     baseUrl: RPC_BASE_URL,
+    // Use binary (application/connect+proto) for better performance.
+    // Falls back to JSON when binary is not supported.
+    useBinaryFormat: true,
+    fetch: (url, init) => {
+      // Add CORS mode for cross-origin requests from the browser.
+      return fetch(url, { ...init, mode: "cors" });
+    },
     interceptors: [
       (next) => async (req) => {
         const token = tokenGetter?.();

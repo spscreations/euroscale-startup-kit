@@ -29,7 +29,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
+	"connectrpc.com/grpcreflect"
+
 	"github.com/spscreations/euroscale-startup-kit/api/internal/auth"
+	connectpkg "github.com/spscreations/euroscale-startup-kit/api/internal/connect"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/models"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/secrets"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/vitess"
@@ -632,7 +635,7 @@ func main() {
 		}
 	}()
 
-	// ── Build HTTP server (auth only) ────────────────────────────────────
+	// ── Build HTTP server (auth + Connect/gRPC-web) ─────────────────────
 	httpMux := http.NewServeMux()
 
 	// Auth endpoints
@@ -651,6 +654,20 @@ func main() {
 		srv.authHandler(w, r)
 	})
 
+	// Build and register Connect/gRPC-web handler on the same port.
+	// This makes the DatabaseService available to browsers via HTTP/1.1
+	// using the Connect protocol (JSON or binary), plus gRPC-web.
+	connectHandler := connectpkg.NewHandler(srv, apiKey)
+	httpMux.Handle("/euroscale.v1.DatabaseService/", connectHandler)
+
+	// Connect gRPC reflection for debugging / tooling.
+	reflectHandler := grpcreflect.NewHandler(
+		grpcreflect.NewStaticReflector(
+			"euroscale.v1.DatabaseService",
+		),
+	)
+	httpMux.Handle("/grpc.reflection.", reflectHandler)
+
 	httpServer := &http.Server{
 		Addr:         httpPort,
 		Handler:      withCORS(httpMux),
@@ -660,7 +677,7 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("HTTP server (auth) listening on %s", httpPort)
+		log.Printf("HTTP server (auth + Connect/gRPC-web) listening on %s", httpPort)
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("HTTP server failed: %v", err)
 		}
@@ -684,11 +701,21 @@ func main() {
 }
 
 // withCORS wraps a handler with permissive CORS headers for development.
+// It adds headers required by gRPC-web and the Connect protocol so browsers
+// can make cross-origin RPC calls to the HTTP server on port 8081.
 func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-User-Agent, X-Grpc-Web, Grpc-Timeout, Connect-Protocol-Version, Connect-Protocol-Version-Client")
+		w.Header().Set("Access-Control-Allow-Headers",
+			"Content-Type, Authorization, X-User-Agent, "+
+				"X-Grpc-Web, Grpc-Timeout, Grpc-Accept-Encoding, Grpc-Encoding, "+
+				"Connect-Protocol-Version, Connect-Protocol-Version-Client, "+
+				"Connect-Timeout-Ms, Connect-Content-Encoding, Connect-Accept-Encoding, "+
+				"Accept-Encoding, Content-Encoding, X-Requested-With")
+		w.Header().Set("Access-Control-Expose-Headers",
+			"Content-Encoding, Grpc-Encoding, Grpc-Message, Grpc-Status, "+
+				"Connect-Protocol-Version, Connect-Content-Encoding, Connect-Accept-Encoding")
 		w.Header().Set("Access-Control-Max-Age", "86400")
 
 		if r.Method == http.MethodOptions {
