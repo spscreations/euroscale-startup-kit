@@ -22,8 +22,7 @@ import {
   ShieldAlert,
   WifiOff,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { formatDate } from "@/lib/utils";
+import { cn, copyToClipboard, formatDate } from "@/lib/utils";
 import { useDatabase } from "@/hooks/useDatabase";
 import { useDeleteDatabase } from "@/hooks/useDeleteDatabase";
 import { useRotateCredentials } from "@/hooks/useRotateCredentials";
@@ -35,7 +34,7 @@ function useCopyToClipboard() {
 
   const copy = useCallback(async (text: string, label: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      await copyToClipboard(text);
       setCopied(label);
       toast.success(`Copied ${label}`);
       setTimeout(() => setCopied(null), 2000);

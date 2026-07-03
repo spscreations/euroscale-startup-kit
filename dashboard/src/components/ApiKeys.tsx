@@ -14,8 +14,7 @@ import {
   Clock,
   Shield,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { formatDate } from "@/lib/utils";
+import { cn, copyToClipboard, formatDate } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -106,7 +105,7 @@ function CreateKeyModal({ open, onClose, onCreated }: CreateKeyModalProps) {
   const handleCopy = useCallback(async () => {
     if (!createdKey?.fullKey) return;
     try {
-      await navigator.clipboard.writeText(createdKey.fullKey);
+      await copyToClipboard(createdKey.fullKey);
       setCopied(true);
       toast.success("API key copied to clipboard");
       setTimeout(() => setCopied(false), 2500);
@@ -510,7 +509,7 @@ function ApiKeyRow({
 
   const handleCopy = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(apiKey.prefix + "*".repeat(32));
+      await copyToClipboard(apiKey.prefix + "*".repeat(32));
       setCopied(true);
       toast.success("Key prefix copied");
       setTimeout(() => setCopied(false), 2500);

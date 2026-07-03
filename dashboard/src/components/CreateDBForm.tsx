@@ -12,7 +12,7 @@ import {
   AlertTriangle,
   ChevronLeft,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, copyToClipboard } from "@/lib/utils";
 import { useCreateDatabase } from "@/hooks/useCreateDatabase";
 import { useAuth } from "@/lib/auth";
 import type { CreateDatabaseResponse } from "@/lib/proto/euroscale/v1/database_pb";
@@ -105,21 +105,10 @@ function CredentialCard({
     inputRef.current?.select();
   }, []);
 
-  async function copyToClipboard(text: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textarea);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    }
+  async function handleCopy(text: string) {
+    await copyToClipboard(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
   }
 
   return (
@@ -192,7 +181,7 @@ function CredentialCard({
             </button>
             <button
               type="button"
-              onClick={() => copyToClipboard(response.connectionString)}
+              onClick={() => handleCopy(response.connectionString)}
               className={cn(
                 "p-1.5 rounded transition-colors",
                 copied
@@ -282,7 +271,7 @@ function CredField({
 
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(value);
+      await copyToClipboard(value);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {}

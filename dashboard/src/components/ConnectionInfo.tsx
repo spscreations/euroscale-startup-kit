@@ -13,7 +13,7 @@ import {
   Lock,
   Globe,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, copyToClipboard } from "@/lib/utils";
 import { useRotateCredentials } from "@/hooks/useRotateCredentials";
 import type { Database } from "@/lib/proto/euroscale/v1/database_pb";
 import type { LucideIcon } from "lucide-react";
@@ -52,7 +52,7 @@ function CopyButton({ value, label }: { value: string; label: string }) {
 
   const handleCopy = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(value);
+      await copyToClipboard(value);
       setCopied(true);
       toast.success(`${label} copied`);
       setTimeout(() => setCopied(false), 2000);
