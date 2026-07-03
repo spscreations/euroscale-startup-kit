@@ -54,7 +54,7 @@ spec:
                   key: vtgate_addr
                   optional: true
             - name: VTCTLD_ADDR
-              value: "euroscale-vtctld:15999"
+              value: "euroscale-vtctld-65a39cf7:15999"
             - name: K8S_NAMESPACE
               valueFrom:
                 configMapKeyRef:
