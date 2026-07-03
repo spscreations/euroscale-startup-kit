@@ -29,8 +29,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
-	"connectrpc.com/grpcreflect"
-
 	"github.com/spscreations/euroscale-startup-kit/api/internal/auth"
 	connectpkg "github.com/spscreations/euroscale-startup-kit/api/internal/connect"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/models"
@@ -659,14 +657,6 @@ func main() {
 	// using the Connect protocol (JSON or binary), plus gRPC-web.
 	connectHandler := connectpkg.NewHandler(srv, apiKey)
 	httpMux.Handle("/euroscale.v1.DatabaseService/", connectHandler)
-
-	// Connect gRPC reflection for debugging / tooling.
-	reflectHandler := grpcreflect.NewHandler(
-		grpcreflect.NewStaticReflector(
-			"euroscale.v1.DatabaseService",
-		),
-	)
-	httpMux.Handle("/grpc.reflection.", reflectHandler)
 
 	httpServer := &http.Server{
 		Addr:         httpPort,
