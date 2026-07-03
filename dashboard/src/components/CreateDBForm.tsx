@@ -74,15 +74,15 @@ const REGIONS: RegionOption[] = [
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function isValidDBName(name: string): boolean {
-  return /^[a-z][a-z0-9_]{2,63}$/.test(name);
+  return /^[a-zA-Z][a-zA-Z0-9_]{1,62}$/.test(name);
 }
 
 function formatNameError(name: string): string | null {
   if (name.length === 0) return null;
-  if (name.length < 3) return "Name must be at least 3 characters";
-  if (!/^[a-z]/.test(name)) return "Must start with a lowercase letter";
-  if (!/^[a-z0-9_]+$/.test(name))
-    return "Only lowercase letters, numbers, and underscores";
+  if (name.length < 2) return "Name must be at least 2 characters";
+  if (!/^[a-zA-Z]/.test(name)) return "Must start with a letter";
+  if (!/^[a-zA-Z0-9_]+$/.test(name))
+    return "Only letters, numbers, and underscores";
   if (name.length > 63) return "Name must be 63 characters or fewer";
   return null;
 }
@@ -363,7 +363,7 @@ export default function CreateDBForm({
     }
     if (!isValidDBName(name.trim())) {
       setError(
-        "Name must start with a lowercase letter, contain only lowercase letters, numbers, and underscores, and be 3–63 characters.",
+        "Name must start with a letter, contain only letters, numbers, and underscores, and be 2–63 characters.",
       );
       return;
     }
@@ -473,7 +473,7 @@ export default function CreateDBForm({
             <p className="text-xs text-error-text">{nameError}</p>
           )}
           <p className="text-xs text-text-muted">
-            3–63 lowercase letters, numbers, and underscores. Must start with a
+            2–63 characters: letters, numbers, and underscores. Must start with a
             letter.
           </p>
         </div>

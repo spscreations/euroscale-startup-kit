@@ -301,7 +301,7 @@ function DashboardContent() {
                   type="text"
                   value={newDbName}
                   onChange={(e) => setNewDbName(e.target.value)}
-                  placeholder="my-database"
+                  placeholder="my_database"
                   required
                   disabled={createMutation.isPending}
                   className={cn(
@@ -314,7 +314,7 @@ function DashboardContent() {
                   )}
                 />
                 <p className="mt-1 text-[11px] text-text-muted">
-                  Lowercase letters, numbers, and hyphens only.
+                  Letters, numbers, and underscores only.
                 </p>
               </div>
 
