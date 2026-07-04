@@ -78,11 +78,16 @@ func (m *Manager) DeleteDatabase(ctx context.Context, name string) error {
 
 	cmd := exec.CommandContext(ctx, "vtctlclient",
 		"--server", m.vtctldAddr,
-		"DeleteKeyspace", name, "Force=true",
+		"DeleteKeyspace", name,
 	)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		// If the keyspace lock doesn't exist (partial state), the
+		// keyspace is effectively already gone — treat as success.
+		if strings.Contains(string(output), "failed to lock") {
+			return nil
+		}
 		return fmt.Errorf("failed to delete keyspace %q: %w\noutput: %s", name, err, string(output))
 	}
 
