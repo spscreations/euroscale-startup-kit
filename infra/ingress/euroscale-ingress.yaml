@@ -6,6 +6,7 @@ metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
+    traefik.ingress.kubernetes.io/router.middlewares: euroscale-ip-whitelist@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
@@ -38,6 +39,7 @@ metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
+    traefik.ingress.kubernetes.io/router.middlewares: euroscale-ip-whitelist@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
