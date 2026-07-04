@@ -13,6 +13,14 @@
 | **Business** | €399/mo | Unlimited | 250 GB | Burstable compute | Multi-cloud HA, sharding (Vitess/Citus), audit logs |
 | **Enterprise** | Custom | Unlimited | Unlimited | Unlimited | Dedicated clusters, on-prem option, SLA 99.99%, support SLAs |
 
+### Add-ons (all tiers)
+| Add-on | Price | Details |
+|--------|-------|---------|
+| **Additional storage** | €0.20/GB/mo | Per-GB over plan limit, billed daily. Sourced from Hetzner block storage (3–5× cheaper than AWS EBS). |
+| **Autoscale compute** | €0.04/CU-hr | Burstable compute units (1–4 CU per DB). Automatically scales up under load, scales to zero when idle. Pay per second above baseline. |
+| **Cross-region replication** | +30% of base plan | Active replica in another EU region (e.g. Nuremberg → Helsinki) |
+| **Multi-cloud HA** | +50% of base plan | Active-active across Hetzner + OVH + Exoscale |
+
 ### 2. Multi-Cloud Add-on (10% of revenue)
 - Cross-region replication: +30% of base plan
 - Multi-cloud active-active: +50% of base plan (Hetzner + OVH + Exoscale)

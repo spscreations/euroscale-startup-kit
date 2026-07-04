@@ -675,6 +675,27 @@ export type UsageLimits = Message<"euroscale.v1.UsageLimits"> & {
    * @generated from field: int64 write_units_per_month = 4;
    */
   writeUnitsPerMonth: bigint;
+
+  /**
+   * Price per additional GB of storage per month (€0.20).
+   *
+   * @generated from field: double additional_storage_gb_price = 5;
+   */
+  additionalStorageGbPrice: number;
+
+  /**
+   * Price per CU-hour for autoscale compute (€0.04).
+   *
+   * @generated from field: double autoscale_cu_price = 6;
+   */
+  autoscaleCuPrice: number;
+
+  /**
+   * Max CU this tier can autoscale to (-1 = unlimited, 0 = disabled).
+   *
+   * @generated from field: int32 autoscale_max_cu = 7;
+   */
+  autoscaleMaxCu: number;
 };
 
 /**

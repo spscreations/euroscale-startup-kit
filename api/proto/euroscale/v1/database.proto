@@ -279,6 +279,15 @@ message TierLimits {
 
   // Write units allowed per month (-1 = unlimited/burstable).
   int64 write_units_per_month = 4;
+
+  // Price per additional GB of storage per month (€0.20).
+  double additional_storage_gb_price = 5;
+
+  // Price per CU-hour for autoscale compute (€0.04).
+  double autoscale_cu_price = 6;
+
+  // Max CU this tier can autoscale to (-1 = unlimited, 0 = disabled).
+  int32 autoscale_max_cu = 7;
 }
 
 message Usage {

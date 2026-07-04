@@ -27,6 +27,8 @@ const (
 	DatabaseService_GetIPWhitelist_FullMethodName         = "/euroscale.v1.DatabaseService/GetIPWhitelist"
 	DatabaseService_AddIPWhitelistEntry_FullMethodName    = "/euroscale.v1.DatabaseService/AddIPWhitelistEntry"
 	DatabaseService_RemoveIPWhitelistEntry_FullMethodName = "/euroscale.v1.DatabaseService/RemoveIPWhitelistEntry"
+	DatabaseService_GetUsage_FullMethodName               = "/euroscale.v1.DatabaseService/GetUsage"
+	DatabaseService_SetUserTier_FullMethodName            = "/euroscale.v1.DatabaseService/SetUserTier"
 )
 
 // DatabaseServiceClient is the client API for DatabaseService service.
@@ -53,6 +55,10 @@ type DatabaseServiceClient interface {
 	AddIPWhitelistEntry(ctx context.Context, in *AddIPWhitelistEntryRequest, opts ...grpc.CallOption) (*AddIPWhitelistEntryResponse, error)
 	// RemoveIPWhitelistEntry removes a CIDR range from a database's IP whitelist.
 	RemoveIPWhitelistEntry(ctx context.Context, in *RemoveIPWhitelistEntryRequest, opts ...grpc.CallOption) (*RemoveIPWhitelistEntryResponse, error)
+	// GetUsage returns the current usage and tier limits for a user.
+	GetUsage(ctx context.Context, in *GetUsageRequest, opts ...grpc.CallOption) (*GetUsageResponse, error)
+	// SetUserTier updates the subscription tier for a user (admin only).
+	SetUserTier(ctx context.Context, in *SetUserTierRequest, opts ...grpc.CallOption) (*SetUserTierResponse, error)
 }
 
 type databaseServiceClient struct {
@@ -143,6 +149,26 @@ func (c *databaseServiceClient) RemoveIPWhitelistEntry(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *databaseServiceClient) GetUsage(ctx context.Context, in *GetUsageRequest, opts ...grpc.CallOption) (*GetUsageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUsageResponse)
+	err := c.cc.Invoke(ctx, DatabaseService_GetUsage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *databaseServiceClient) SetUserTier(ctx context.Context, in *SetUserTierRequest, opts ...grpc.CallOption) (*SetUserTierResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetUserTierResponse)
+	err := c.cc.Invoke(ctx, DatabaseService_SetUserTier_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DatabaseServiceServer is the server API for DatabaseService service.
 // All implementations must embed UnimplementedDatabaseServiceServer
 // for forward compatibility.
@@ -167,6 +193,10 @@ type DatabaseServiceServer interface {
 	AddIPWhitelistEntry(context.Context, *AddIPWhitelistEntryRequest) (*AddIPWhitelistEntryResponse, error)
 	// RemoveIPWhitelistEntry removes a CIDR range from a database's IP whitelist.
 	RemoveIPWhitelistEntry(context.Context, *RemoveIPWhitelistEntryRequest) (*RemoveIPWhitelistEntryResponse, error)
+	// GetUsage returns the current usage and tier limits for a user.
+	GetUsage(context.Context, *GetUsageRequest) (*GetUsageResponse, error)
+	// SetUserTier updates the subscription tier for a user (admin only).
+	SetUserTier(context.Context, *SetUserTierRequest) (*SetUserTierResponse, error)
 	mustEmbedUnimplementedDatabaseServiceServer()
 }
 
@@ -200,6 +230,12 @@ func (UnimplementedDatabaseServiceServer) AddIPWhitelistEntry(context.Context, *
 }
 func (UnimplementedDatabaseServiceServer) RemoveIPWhitelistEntry(context.Context, *RemoveIPWhitelistEntryRequest) (*RemoveIPWhitelistEntryResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RemoveIPWhitelistEntry not implemented")
+}
+func (UnimplementedDatabaseServiceServer) GetUsage(context.Context, *GetUsageRequest) (*GetUsageResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUsage not implemented")
+}
+func (UnimplementedDatabaseServiceServer) SetUserTier(context.Context, *SetUserTierRequest) (*SetUserTierResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetUserTier not implemented")
 }
 func (UnimplementedDatabaseServiceServer) mustEmbedUnimplementedDatabaseServiceServer() {}
 func (UnimplementedDatabaseServiceServer) testEmbeddedByValue()                         {}
@@ -366,6 +402,42 @@ func _DatabaseService_RemoveIPWhitelistEntry_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DatabaseService_GetUsage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUsageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DatabaseServiceServer).GetUsage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DatabaseService_GetUsage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DatabaseServiceServer).GetUsage(ctx, req.(*GetUsageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DatabaseService_SetUserTier_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetUserTierRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DatabaseServiceServer).SetUserTier(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DatabaseService_SetUserTier_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DatabaseServiceServer).SetUserTier(ctx, req.(*SetUserTierRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DatabaseService_ServiceDesc is the grpc.ServiceDesc for DatabaseService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -404,6 +476,14 @@ var DatabaseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemoveIPWhitelistEntry",
 			Handler:    _DatabaseService_RemoveIPWhitelistEntry_Handler,
+		},
+		{
+			MethodName: "GetUsage",
+			Handler:    _DatabaseService_GetUsage_Handler,
+		},
+		{
+			MethodName: "SetUserTier",
+			Handler:    _DatabaseService_SetUserTier_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

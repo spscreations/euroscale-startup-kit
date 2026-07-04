@@ -1,11 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import {
   Crown,
   ArrowUpRight,
   Building2,
   Loader2,
   AlertTriangle,
+  HardDrive,
+  Cpu,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatBytes } from "@/lib/utils";
@@ -27,6 +31,11 @@ function bigintToNumber(n: bigint | undefined): number {
 
 export default function TierCard() {
   const { data, isLoading, isError, error } = useUsage();
+
+  // Add-on state
+  const [storageGB, setStorageGB] = useState<number>(10);
+  const [autoscaleEnabled, setAutoscaleEnabled] = useState(false);
+  const [autoscaleCU, setAutoscaleCU] = useState(1);
 
   // Loading skeleton
   if (isLoading) {
@@ -73,6 +82,22 @@ export default function TierCard() {
 
   const showUpgrade = tier === "free" || tier === "scale";
   const isEnterprise = tier === "enterprise";
+
+  // Pricing from limits
+  const storagePricePerGB = limits?.additionalStorageGbPrice ?? 0.20;
+  const cuPricePerHour = limits?.autoscaleCuPrice ?? 0.04;
+  const maxAutoscaleCU = limits?.autoscaleMaxCu ?? 0;
+  const canAutoscale = maxAutoscaleCU > 0;
+
+  // Estimated monthly hours (730 hours ≈ 1 month)
+  const estimatedMonthlyHours = 730;
+
+  // Cost calculations
+  const storageCost = storageGB * storagePricePerGB;
+  const autoscaleCost = autoscaleEnabled
+    ? autoscaleCU * cuPricePerHour * estimatedMonthlyHours
+    : 0;
+  const totalAddonCost = storageCost + autoscaleCost;
 
   return (
     <div className="rounded-lg border border-border-subtle bg-surface-1 p-4 space-y-4">
@@ -132,6 +157,164 @@ export default function TierCard() {
           limit={maxWrites}
           unit="writes"
         />
+      </div>
+
+      {/* ── Add-ons Section ── */}
+      <div className="border-t border-border-subtle pt-4 space-y-4">
+        <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-1.5">
+          <Zap size={12} />
+          Add-ons
+        </h4>
+
+        {/* Additional Storage */}
+        <div className="rounded-md border border-border-subtle bg-surface-2 p-3 space-y-3">
+          <div className="flex items-center gap-2">
+            <HardDrive size={14} className="text-text-secondary" />
+            <span className="text-xs font-medium text-text-primary">
+              Additional Storage
+            </span>
+            <span className="text-[11px] text-text-muted ml-auto">
+              €{storagePricePerGB.toFixed(2)}/GB/mo
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={1}
+              max={1000}
+              value={storageGB}
+              onChange={(e) => {
+                const v = parseInt(e.target.value, 10);
+                if (!isNaN(v) && v >= 0) setStorageGB(v);
+              }}
+              className={cn(
+                "w-20 rounded-md bg-surface-1 border border-border-subtle",
+                "px-2.5 py-1.5 text-xs text-text-primary text-center",
+                "focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent",
+                "transition-colors tabular-nums",
+              )}
+            />
+            <span className="text-xs text-text-muted">GB</span>
+            <span className="text-xs text-text-muted ml-auto">
+              +€{storageCost.toFixed(2)}/mo
+            </span>
+          </div>
+        </div>
+
+        {/* Autoscale Compute */}
+        <div className="rounded-md border border-border-subtle bg-surface-2 p-3 space-y-3">
+          <div className="flex items-center gap-2">
+            <Cpu size={14} className="text-text-secondary" />
+            <span className="text-xs font-medium text-text-primary">
+              Autoscale Compute
+            </span>
+            <span className="text-[11px] text-text-muted ml-auto">
+              €{cuPricePerHour.toFixed(2)}/CU-hr
+            </span>
+          </div>
+
+          {canAutoscale ? (
+            <>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={autoscaleEnabled}
+                  onClick={() => setAutoscaleEnabled(!autoscaleEnabled)}
+                  className={cn(
+                    "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
+                    "focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-surface-2",
+                    autoscaleEnabled ? "bg-accent" : "bg-surface-1 border-border-default",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform ring-0 transition-transform",
+                      autoscaleEnabled ? "translate-x-4" : "translate-x-0",
+                    )}
+                  />
+                </button>
+                <span
+                  className={cn(
+                    "text-xs font-medium",
+                    autoscaleEnabled
+                      ? "text-accent-text"
+                      : "text-text-muted",
+                  )}
+                >
+                  {autoscaleEnabled ? "ON" : "OFF"}
+                </span>
+              </div>
+
+              {autoscaleEnabled && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] text-text-muted">
+                      Max CU: <span className="text-text-primary font-mono">{autoscaleCU} CU</span>
+                    </label>
+                    <span className="text-xs text-text-muted tabular-nums">
+                      ≈ €{autoscaleCost.toFixed(2)}/mo
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={1}
+                    max={maxAutoscaleCU > 0 && maxAutoscaleCU < 100 ? maxAutoscaleCU : 4}
+                    value={autoscaleCU}
+                    onChange={(e) =>
+                      setAutoscaleCU(parseInt(e.target.value, 10))
+                    }
+                    className="w-full h-1.5 rounded-full appearance-none bg-surface-1 cursor-pointer
+                      [&::-webkit-slider-thumb]:appearance-none
+                      [&::-webkit-slider-thumb]:w-3.5
+                      [&::-webkit-slider-thumb]:h-3.5
+                      [&::-webkit-slider-thumb]:rounded-full
+                      [&::-webkit-slider-thumb]:bg-accent
+                      [&::-webkit-slider-thumb]:cursor-pointer
+                      [&::-webkit-slider-thumb]:shadow-sm
+                      accent-accent"
+                  />
+                  <div className="flex justify-between text-[10px] text-text-muted">
+                    <span>1 CU</span>
+                    <span>{maxAutoscaleCU > 0 && maxAutoscaleCU < 100 ? maxAutoscaleCU : 4} CU</span>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-xs text-text-muted italic">
+              Autoscale not available on the {tierLabel} plan.
+              <a href="/pricing" className="ml-1 text-accent-text hover:underline">
+                Upgrade →
+              </a>
+            </p>
+          )}
+        </div>
+
+        {/* Total add-on cost summary */}
+        {(storageCost > 0 || autoscaleEnabled) && (
+          <div className="flex items-center justify-between rounded-md bg-accent-subtle px-3 py-2">
+            <span className="text-xs font-medium text-accent-text">
+              Estimated add-on cost
+            </span>
+            <span className="text-xs font-bold text-accent-text tabular-nums">
+              €{totalAddonCost.toFixed(2)}/mo
+            </span>
+          </div>
+        )}
+
+        {/* Apply button */}
+        <button
+          type="button"
+          className={cn(
+            "w-full rounded-md px-4 py-2 text-xs font-semibold transition-colors",
+            "bg-accent text-white hover:bg-accent-hover active:bg-accent-pressed",
+            "min-h-[44px] flex items-center justify-center gap-1.5",
+          )}
+        >
+          Apply Changes
+        </button>
       </div>
     </div>
   );

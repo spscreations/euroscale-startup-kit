@@ -42,49 +42,67 @@ const userTierConfigMap = "euroscale-user-tiers"
 
 // Tier represents a subscription tier with its limits.
 type Tier struct {
-	Name               string
-	MaxDatabases       int   // -1 = unlimited
-	MaxStorageGB       int64 // -1 = unlimited
-	ReadUnitsPerMonth  int64 // -1 = unlimited
-	WriteUnitsPerMonth int64 // -1 = unlimited
+	Name                    string
+	MaxDatabases            int     // -1 = unlimited
+	MaxStorageGB            int64   // -1 = unlimited
+	ReadUnitsPerMonth       int64   // -1 = unlimited
+	WriteUnitsPerMonth      int64   // -1 = unlimited
+	AdditionalStorageGBPrice float64 // €0.20 per GB-month
+	AutoscaleCUPrice         float64  // €0.04 per CU-hour
+	AutoscaleMaxCU           int32    // max CU this tier can autoscale to (-1 = unlimited, 0 = disabled)
 }
 
 // tierDefs holds the canonical tier definitions.
 var tierDefs = map[string]*Tier{
 	TierFree: {
-		Name:               TierFree,
-		MaxDatabases:       1,
-		MaxStorageGB:       1,
-		ReadUnitsPerMonth:  100_000,
-		WriteUnitsPerMonth: 0,
+		Name:                    TierFree,
+		MaxDatabases:            1,
+		MaxStorageGB:            1,
+		ReadUnitsPerMonth:       100_000,
+		WriteUnitsPerMonth:      0,
+		AdditionalStorageGBPrice: 0.20,
+		AutoscaleCUPrice:        0.04,
+		AutoscaleMaxCU:          0,
 	},
 	TierScale: {
-		Name:               TierScale,
-		MaxDatabases:       3,
-		MaxStorageGB:       10,
-		ReadUnitsPerMonth:  1_000_000,
-		WriteUnitsPerMonth: 500_000,
+		Name:                    TierScale,
+		MaxDatabases:            3,
+		MaxStorageGB:            10,
+		ReadUnitsPerMonth:       1_000_000,
+		WriteUnitsPerMonth:      500_000,
+		AdditionalStorageGBPrice: 0.20,
+		AutoscaleCUPrice:        0.04,
+		AutoscaleMaxCU:          2,
 	},
 	TierTeam: {
-		Name:               TierTeam,
-		MaxDatabases:       10,
-		MaxStorageGB:       50,
-		ReadUnitsPerMonth:  10_000_000,
-		WriteUnitsPerMonth: 5_000_000,
+		Name:                    TierTeam,
+		MaxDatabases:            10,
+		MaxStorageGB:            50,
+		ReadUnitsPerMonth:       10_000_000,
+		WriteUnitsPerMonth:      5_000_000,
+		AdditionalStorageGBPrice: 0.20,
+		AutoscaleCUPrice:        0.04,
+		AutoscaleMaxCU:          4,
 	},
 	TierBusiness: {
-		Name:               TierBusiness,
-		MaxDatabases:       UnlimitedDBs,
-		MaxStorageGB:       250,
-		ReadUnitsPerMonth:  UnlimitedDBs, // burstable
-		WriteUnitsPerMonth: UnlimitedDBs, // burstable
+		Name:                    TierBusiness,
+		MaxDatabases:            UnlimitedDBs,
+		MaxStorageGB:            250,
+		ReadUnitsPerMonth:       UnlimitedDBs, // burstable
+		WriteUnitsPerMonth:      UnlimitedDBs, // burstable
+		AdditionalStorageGBPrice: 0.20,
+		AutoscaleCUPrice:        0.04,
+		AutoscaleMaxCU:          8,
 	},
 	TierEnterprise: {
-		Name:               TierEnterprise,
-		MaxDatabases:       UnlimitedDBs,
-		MaxStorageGB:       UnlimitedDBs,
-		ReadUnitsPerMonth:  UnlimitedDBs,
-		WriteUnitsPerMonth: UnlimitedDBs,
+		Name:                    TierEnterprise,
+		MaxDatabases:            UnlimitedDBs,
+		MaxStorageGB:            UnlimitedDBs,
+		ReadUnitsPerMonth:       UnlimitedDBs,
+		WriteUnitsPerMonth:      UnlimitedDBs,
+		AdditionalStorageGBPrice: 0.20,
+		AutoscaleCUPrice:        0.04,
+		AutoscaleMaxCU:          UnlimitedDBs,
 	},
 }
 

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
+import TierBadge from "@/components/TierBadge";
 import { useState } from "react";
 
 const navItems = [
@@ -78,9 +79,12 @@ export default function DashboardLayout({
             {session?.name?.charAt(0)?.toUpperCase() ?? "?"}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-text-primary truncate leading-tight">
-              {session?.name ?? "User"}
-            </p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-medium text-text-primary truncate leading-tight">
+                {session?.name ?? "User"}
+              </p>
+              <TierBadge />
+            </div>
             <p className="text-xs text-text-muted truncate leading-tight">
               {session?.email ?? ""}
             </p>

@@ -1231,8 +1231,14 @@ type TierLimits struct {
 	ReadUnitsPerMonth int64 `protobuf:"varint,3,opt,name=read_units_per_month,json=readUnitsPerMonth,proto3" json:"read_units_per_month,omitempty"`
 	// Write units allowed per month (-1 = unlimited/burstable).
 	WriteUnitsPerMonth int64 `protobuf:"varint,4,opt,name=write_units_per_month,json=writeUnitsPerMonth,proto3" json:"write_units_per_month,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Price per additional GB of storage per month (€0.20).
+	AdditionalStorageGbPrice float64 `protobuf:"fixed64,5,opt,name=additional_storage_gb_price,json=additionalStorageGbPrice,proto3" json:"additional_storage_gb_price,omitempty"`
+	// Price per CU-hour for autoscale compute (€0.04).
+	AutoscaleCuPrice float64 `protobuf:"fixed64,6,opt,name=autoscale_cu_price,json=autoscaleCuPrice,proto3" json:"autoscale_cu_price,omitempty"`
+	// Max CU this tier can autoscale to (-1 = unlimited, 0 = disabled).
+	AutoscaleMaxCu int32 `protobuf:"varint,7,opt,name=autoscale_max_cu,json=autoscaleMaxCu,proto3" json:"autoscale_max_cu,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *TierLimits) Reset() {
@@ -1289,6 +1295,27 @@ func (x *TierLimits) GetReadUnitsPerMonth() int64 {
 func (x *TierLimits) GetWriteUnitsPerMonth() int64 {
 	if x != nil {
 		return x.WriteUnitsPerMonth
+	}
+	return 0
+}
+
+func (x *TierLimits) GetAdditionalStorageGbPrice() float64 {
+	if x != nil {
+		return x.AdditionalStorageGbPrice
+	}
+	return 0
+}
+
+func (x *TierLimits) GetAutoscaleCuPrice() float64 {
+	if x != nil {
+		return x.AutoscaleCuPrice
+	}
+	return 0
+}
+
+func (x *TierLimits) GetAutoscaleMaxCu() int32 {
+	if x != nil {
+		return x.AutoscaleMaxCu
 	}
 	return 0
 }
@@ -1632,13 +1659,16 @@ const file_euroscale_v1_database_proto_rawDesc = "" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\"*\n" +
 	"\x0fGetUsageRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"\xc1\x01\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"\xd8\x02\n" +
 	"\n" +
 	"TierLimits\x12#\n" +
 	"\rmax_databases\x18\x01 \x01(\x05R\fmaxDatabases\x12*\n" +
 	"\x11max_storage_bytes\x18\x02 \x01(\x03R\x0fmaxStorageBytes\x12/\n" +
 	"\x14read_units_per_month\x18\x03 \x01(\x03R\x11readUnitsPerMonth\x121\n" +
-	"\x15write_units_per_month\x18\x04 \x01(\x03R\x12writeUnitsPerMonth\"\xa5\x01\n" +
+	"\x15write_units_per_month\x18\x04 \x01(\x03R\x12writeUnitsPerMonth\x12=\n" +
+	"\x1badditional_storage_gb_price\x18\x05 \x01(\x01R\x18additionalStorageGbPrice\x12,\n" +
+	"\x12autoscale_cu_price\x18\x06 \x01(\x01R\x10autoscaleCuPrice\x12(\n" +
+	"\x10autoscale_max_cu\x18\a \x01(\x05R\x0eautoscaleMaxCu\"\xa5\x01\n" +
 	"\x05Usage\x12%\n" +
 	"\x0edatabase_count\x18\x01 \x01(\x05R\rdatabaseCount\x12#\n" +
 	"\rstorage_bytes\x18\x02 \x01(\x03R\fstorageBytes\x12&\n" +

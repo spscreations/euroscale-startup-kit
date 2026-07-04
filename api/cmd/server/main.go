@@ -515,10 +515,13 @@ func (s *server) GetUsage(ctx context.Context, req *pb.GetUsageRequest) (*pb.Get
 	}
 
 	limits := &pb.TierLimits{
-		MaxDatabases:      int32(tier.MaxDatabases),
-		MaxStorageBytes:   tier.MaxStorageGB * 1_073_741_824, // GB to bytes
-		ReadUnitsPerMonth: tier.ReadUnitsPerMonth,
-		WriteUnitsPerMonth: tier.WriteUnitsPerMonth,
+		MaxDatabases:              int32(tier.MaxDatabases),
+		MaxStorageBytes:           tier.MaxStorageGB * 1_073_741_824, // GB to bytes
+		ReadUnitsPerMonth:         tier.ReadUnitsPerMonth,
+		WriteUnitsPerMonth:        tier.WriteUnitsPerMonth,
+		AdditionalStorageGbPrice:  tier.AdditionalStorageGBPrice,
+		AutoscaleCuPrice:          tier.AutoscaleCUPrice,
+		AutoscaleMaxCu:            tier.AutoscaleMaxCU,
 	}
 
 	return &pb.GetUsageResponse{
