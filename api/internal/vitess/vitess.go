@@ -78,7 +78,7 @@ func (m *Manager) DeleteDatabase(ctx context.Context, name string) error {
 
 	cmd := exec.CommandContext(ctx, "vtctlclient",
 		"--server", m.vtctldAddr,
-		"DeleteKeyspace", "--force", name,
+		"DeleteKeyspace", name, "Force=true",
 	)
 
 	output, err := cmd.CombinedOutput()
