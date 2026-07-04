@@ -127,6 +127,9 @@ spec:
             keySecret:
               name: euroscale-vtgate-tls
               key: tls.key
+            clientCACertSecret:
+              name: euroscale-db-ca
+              key: ca.crt
 
     - name: helsinki
       gateway:
@@ -152,8 +155,10 @@ spec:
             keySecret:
               name: euroscale-vtgate-tls
               key: tls.key
+            clientCACertSecret:
+              name: euroscale-db-ca
+              key: ca.crt
 
-  # ── Keyspaces ────────────────────────────────────────────────
   keyspaces:
     - name: main
       durabilityPolicy: cross_cell
