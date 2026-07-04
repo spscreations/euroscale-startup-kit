@@ -63,8 +63,22 @@ export const addIPWhitelistEntry = DatabaseService.method.addIPWhitelistEntry;
 export const removeIPWhitelistEntry = DatabaseService.method.removeIPWhitelistEntry;
 
 /**
- * GetUsage returns current tier, limits, and usage for a user.
+ * GetUsage returns the current usage and tier limits for a user.
  *
  * @generated from rpc euroscale.v1.DatabaseService.GetUsage
  */
 export const getUsage = DatabaseService.method.getUsage;
+
+/**
+ * SetUserTier updates the subscription tier for a user (admin only).
+ *
+ * @generated from rpc euroscale.v1.DatabaseService.SetUserTier
+ */
+export const setUserTier = DatabaseService.method.setUserTier;
+
+/**
+ * ResizeStorage expands a database's persistent volume by the specified GB.
+ *
+ * @generated from rpc euroscale.v1.DatabaseService.ResizeStorage
+ */
+export const resizeStorage = DatabaseService.method.resizeStorage;

@@ -31,6 +31,7 @@ type DatabaseServiceServer interface {
 	RemoveIPWhitelistEntry(ctx context.Context, req *pb.RemoveIPWhitelistEntryRequest) (*pb.RemoveIPWhitelistEntryResponse, error)
 	GetUsage(ctx context.Context, req *pb.GetUsageRequest) (*pb.GetUsageResponse, error)
 	SetUserTier(ctx context.Context, req *pb.SetUserTierRequest) (*pb.SetUserTierResponse, error)
+	ResizeStorage(ctx context.Context, req *pb.ResizeStorageRequest) (*pb.ResizeStorageResponse, error)
 }
 
 // MetadataServiceServer is the interface the metadata service satisfies.
@@ -60,6 +61,9 @@ const (
 	// Tier & usage paths.
 	PathGetUsage   = "/euroscale.v1.DatabaseService/GetUsage"
 	PathSetUserTier = "/euroscale.v1.DatabaseService/SetUserTier"
+
+	// Storage paths.
+	PathResizeStorage = "/euroscale.v1.DatabaseService/ResizeStorage"
 
 	// MetadataService paths.
 	PathListSchemaDatabases = "/euroscale.v1.MetadataService/ListSchemaDatabases"
@@ -206,6 +210,19 @@ func NewHandler(srv DatabaseServiceServer, apiKey string, extraInterceptors ...c
 		PathSetUserTier,
 		func(ctx context.Context, req *connect.Request[pb.SetUserTierRequest]) (*connect.Response[pb.SetUserTierResponse], error) {
 			resp, err := srv.SetUserTier(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		connect.WithInterceptors(allInterceptors...),
+	))
+
+	// ResizeStorage
+	mux.Handle(PathResizeStorage, connect.NewUnaryHandler(
+		PathResizeStorage,
+		func(ctx context.Context, req *connect.Request[pb.ResizeStorageRequest]) (*connect.Response[pb.ResizeStorageResponse], error) {
+			resp, err := srv.ResizeStorage(ctx, req.Msg)
 			if err != nil {
 				return nil, err
 			}

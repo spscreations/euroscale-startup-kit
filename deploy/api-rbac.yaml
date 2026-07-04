@@ -25,6 +25,43 @@ rules:
     verbs: ["get", "list", "create", "update", "delete", "patch"]
 
 ---
+# Role granting the API and volume autoscaler permission to manage PVCs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: euroscale-api-pvcs
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: api
+rules:
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch", "patch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims/status"]
+    verbs: ["get", "list", "watch"]
+
+---
+# RoleBinding attaching the PVC Role to the ServiceAccount.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: euroscale-api-pvcs
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: api
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: euroscale-api-pvcs
+subjects:
+  - kind: ServiceAccount
+    name: euroscale-api
+    namespace: euroscale
+
+---
 # RoleBinding attaching the Role to the ServiceAccount.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

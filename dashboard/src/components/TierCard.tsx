@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
   Crown,
   ArrowUpRight,
@@ -10,11 +10,15 @@ import {
   HardDrive,
   Cpu,
   Zap,
+  Check,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { formatBytes } from "@/lib/utils";
+import { cn, formatBytes } from "@/lib/utils";
 import { useUsage } from "@/hooks/useUsage";
+import { useResizeStorage } from "@/hooks/useResizeStorage";
+import { useAuth } from "@/lib/auth";
 import UsageBar from "./UsageBar";
+import { useDatabases } from "@/hooks/useDatabases";
+import toast from "react-hot-toast";
 
 const TIER_LABELS: Record<string, string> = {
   free: "Free",
@@ -24,7 +28,7 @@ const TIER_LABELS: Record<string, string> = {
   enterprise: "Enterprise",
 };
 
-function bigintToNumber(n: bigint | undefined): number {
+function bigintToNumber(n: number | bigint | undefined | null): number {
   if (n === undefined || n === null) return 0;
   return Number(n);
 }
@@ -88,6 +92,45 @@ export default function TierCard() {
   const cuPricePerHour = limits?.autoscaleCuPrice ?? 0.04;
   const maxAutoscaleCU = limits?.autoscaleMaxCu ?? 0;
   const canAutoscale = maxAutoscaleCU > 0;
+
+  // Auth + databases for resize target
+  const { session } = useAuth();
+  const { data: dbs } = useDatabases();
+  const resizeMutation = useResizeStorage();
+
+  const handleApply = useCallback(() => {
+    if (!session?.id) {
+      toast.error("Not authenticated");
+      return;
+    }
+    if (storageGB <= 0 && !autoscaleEnabled) {
+      toast.error("No changes to apply");
+      return;
+    }
+    if (storageGB > 0) {
+      // Resize the first database (in production, user selects which DB)
+      const targetDb = dbs?.databases?.[0];
+      if (!targetDb?.databaseId) {
+        toast.error("No databases to resize. Create a database first.");
+        return;
+      }
+      resizeMutation.mutate(
+        { databaseId: targetDb.databaseId, additionalGb: storageGB },
+        {
+          onSuccess: (res) => {
+            toast.success(`Storage resized to ${res.newTotalGb}GB`);
+            setStorageGB(10); // Reset input
+          },
+          onError: (err) => {
+            toast.error(`Failed: ${err.message}`);
+          },
+        },
+      );
+    }
+    if (autoscaleEnabled) {
+      toast.success(`Autoscale set to ${autoscaleCU} CU (billing integration pending)`);
+    }
+  }, [session?.id, storageGB, autoscaleEnabled, autoscaleCU, dbs, resizeMutation]);
 
   // Estimated monthly hours (730 hours ≈ 1 month)
   const estimatedMonthlyHours = 730;
@@ -307,13 +350,20 @@ export default function TierCard() {
         {/* Apply button */}
         <button
           type="button"
+          onClick={handleApply}
+          disabled={resizeMutation.isPending}
           className={cn(
             "w-full rounded-md px-4 py-2 text-xs font-semibold transition-colors",
             "bg-accent text-white hover:bg-accent-hover active:bg-accent-pressed",
+            "disabled:opacity-50 disabled:cursor-not-allowed",
             "min-h-[44px] flex items-center justify-center gap-1.5",
           )}
         >
-          Apply Changes
+          {resizeMutation.isPending ? (
+            <><Loader2 size={14} className="animate-spin" /> Resizing...</>
+          ) : (
+            <>Apply Changes</>
+          )}
         </button>
       </div>
     </div>

@@ -37,6 +37,9 @@ service DatabaseService {
 
   // SetUserTier updates the subscription tier for a user (admin only).
   rpc SetUserTier(SetUserTierRequest) returns (SetUserTierResponse);
+
+  // ResizeStorage expands a database's persistent volume by the specified GB.
+  rpc ResizeStorage(ResizeStorageRequest) returns (ResizeStorageResponse);
 }
 
 // ── CreateDatabase ──────────────────────────────────────────────────────────
@@ -329,4 +332,25 @@ message SetUserTierRequest {
 message SetUserTierResponse {
   // Whether the operation succeeded.
   bool success = 1;
+}
+
+// ── ResizeStorage ────────────────────────────────────────────────────────────
+
+message ResizeStorageRequest {
+  // ID of the database whose PVC to resize.
+  string database_id = 1;
+
+  // GB to add to the current PVC (not the total new size).
+  int32 additional_gb = 2;
+}
+
+message ResizeStorageResponse {
+  // Whether the resize was accepted by the storage provider.
+  bool success = 1;
+
+  // New total PVC size in GB after the resize.
+  int64 new_total_gb = 2;
+
+  // Human-readable message (e.g. reason for failure).
+  string message = 3;
 }

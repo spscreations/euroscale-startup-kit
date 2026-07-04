@@ -162,6 +162,7 @@ spec:
                   dataVolumeClaimTemplate:
                     accessModes:
                       - ReadWriteOnce
+                    storageClassName: hcloud-volumes
                     resources:
                       requests:
                         storage: 10Gi
@@ -189,6 +190,7 @@ spec:
                   dataVolumeClaimTemplate:
                     accessModes:
                       - ReadWriteOnce
+                    storageClassName: hcloud-volumes
                     resources:
                       requests:
                         storage: 10Gi

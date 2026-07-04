@@ -1,0 +1,74 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: volume-autoscaler
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: volume-autoscaler
+    managed: "true"
+spec:
+  schedule: "*/15 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: euroscale-api
+          restartPolicy: OnFailure
+          containers:
+            - name: autoscaler
+              image: bitnami/kubectl:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  NAMESPACE=euroscale
+                  MAX_VOLUME_GB=10240
+                  PCT_NORMAL=0.80
+                  PCT_AGGRESSIVE=0.90
+
+                  for pvc in $(kubectl get pvc -n "$NAMESPACE" -o name); do
+                    name="${pvc#persistentvolumeclaim/}"
+                    storage=$(kubectl get "$pvc" -n "$NAMESPACE" -o jsonpath='{.status.capacity.storage}' 2>/dev/null || echo "")
+
+                    # Skip local-path PVCs (they don't support expansion)
+                    sc=$(kubectl get "$pvc" -n "$NAMESPACE" -o jsonpath='{.spec.storageClassName}' 2>/dev/null || echo "")
+                    [ "$sc" != "hcloud-volumes" ] && continue
+
+                    # Parse storage to GB
+                    cap_bytes=$(numfmt --from=iec "$storage" 2>/dev/null || echo "0")
+                    [ "$cap_bytes" -eq 0 ] && continue
+                    cap_gb=$((cap_bytes / 1073741824))
+
+                    # Get usage from annotations or skip (real impl uses node agent)
+                    usage=$(kubectl get "$pvc" -n "$NAMESPACE" -o jsonpath='{.metadata.annotations.volume-usage-pct}' 2>/dev/null || echo "")
+                    [ -z "$usage" ] && continue
+
+                    if (( $(echo "$usage > 90" | bc -l) )) && [ "$cap_gb" -ge "$MAX_VOLUME_GB" ]; then
+                      echo "ALERT: PVC $name at ${usage}% on ${cap_gb}Gi (max 10TB) — needs Vitess reshard!"
+                      continue
+                    fi
+
+                    if (( $(echo "$usage > 90" | bc -l) )); then
+                      new=$((cap_gb * 150 / 100))
+                      [ "$new" -gt "$MAX_VOLUME_GB" ] && new=$MAX_VOLUME_GB
+                      echo "AGGRESSIVE: $name ${cap_gb}Gi→${new}Gi (${usage}% full)"
+                      kubectl patch "$pvc" -n "$NAMESPACE" --type=merge \
+                        -p "{\"spec\":{\"resources\":{\"requests\":{\"storage\":\"${new}Gi\"}}}}"
+
+                    elif (( $(echo "$usage > 80" | bc -l) )); then
+                      new=$((cap_gb * 120 / 100))
+                      [ "$new" -gt "$MAX_VOLUME_GB" ] && new=$MAX_VOLUME_GB
+                      echo "NORMAL: $name ${cap_gb}Gi→${new}Gi (${usage}% full)"
+                      kubectl patch "$pvc" -n "$NAMESPACE" --type=merge \
+                        -p "{\"spec\":{\"resources\":{\"requests\":{\"storage\":\"${new}Gi\"}}}}"
+                    fi
+                  done
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 32Mi
+                limits:
+                  cpu: 100m
+                  memory: 64Mi

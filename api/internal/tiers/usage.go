@@ -135,3 +135,17 @@ func (s *Store) DecrementDatabaseCount(ctx context.Context, userID string) error
 	}
 	return s.writeUsage(ctx, userID, usage)
 }
+
+// AddStorageBytes adds the given number of bytes to the user's storage usage.
+// The delta can be positive (increment) or negative (decrement).
+func (s *Store) AddStorageBytes(ctx context.Context, userID string, delta int64) error {
+	usage, err := s.readUsage(ctx, userID)
+	if err != nil {
+		return err
+	}
+	usage.StorageBytes += delta
+	if usage.StorageBytes < 0 {
+		usage.StorageBytes = 0
+	}
+	return s.writeUsage(ctx, userID, usage)
+}

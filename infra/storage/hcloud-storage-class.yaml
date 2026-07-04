@@ -1,0 +1,25 @@
+# EuroScale Hetzner Cloud CSI StorageClass
+# Provides block storage volumes backed by Hetzner Cloud Volumes.
+# Supports online resize (allowVolumeExpansion) up to 10TB per volume.
+#
+# The CSI driver auto-detects the node's location and creates volumes
+# in the same datacenter (fsn1 = Nuremberg, hel1 = Helsinki).
+#
+# Cost: ~€0.06/GB/mo for provisioned capacity.
+#
+# See: https://github.com/hetznercloud/csi-driver
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: hcloud-volumes
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+  labels:
+    app: euroscale
+    component: storage
+provisioner: csi.hetzner.cloud
+parameters:
+  csi.storage.k8s.io/fstype: ext4
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer

@@ -36,6 +36,7 @@ import (
 	metasvc "github.com/spscreations/euroscale-startup-kit/api/internal/metadata"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/models"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/secrets"
+	"github.com/spscreations/euroscale-startup-kit/api/internal/storage"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/tiers"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/vitess"
 
@@ -82,6 +83,7 @@ type server struct {
 	secrets   *secrets.Store
 	ipwl      *ipwhitelist.Store
 	tierStore *tiers.Store
+	resizer   *storage.Resizer
 
 	host     string
 	sslCAPem string
@@ -557,6 +559,47 @@ func (s *server) SetUserTier(ctx context.Context, req *pb.SetUserTierRequest) (*
 	}, nil
 }
 
+// ResizeStorage expands a database's PVC by the specified GB amount.
+func (s *server) ResizeStorage(ctx context.Context, req *pb.ResizeStorageRequest) (*pb.ResizeStorageResponse, error) {
+	if req.DatabaseId == "" {
+		return nil, status.Error(codes.InvalidArgument, "database_id is required")
+	}
+	if req.AdditionalGb <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "additional_gb must be positive")
+	}
+
+	// Find the user who owns this database to update tier usage.
+	userID := s.secrets.GetUserID(ctx, req.DatabaseId)
+	if userID == "" {
+		return nil, status.Errorf(codes.NotFound, "database %q not found", req.DatabaseId)
+	}
+
+	// Resize the PVC.
+	newTotalGB, err := s.resizer.ResizePVC(ctx, req.DatabaseId, req.AdditionalGb)
+	if err != nil {
+		log.Printf("ERROR: failed to resize PVC for database %q: %v", req.DatabaseId, err)
+		return &pb.ResizeStorageResponse{
+			Success: false,
+			Message: fmt.Sprintf("resize failed: %v", err),
+		}, nil
+	}
+
+	// Update the usage tracking (add the delta to storage_bytes).
+	if err := s.tierStore.AddStorageBytes(ctx, userID, int64(req.AdditionalGb)*1_073_741_824); err != nil {
+		log.Printf("ERROR: failed to update storage usage for user %q: %v", userID, err)
+		// Non-fatal — the PVC was already resized.
+	}
+
+	log.Printf("INFO: resized storage for database %q by %d GB (new total: %d GB)",
+		req.DatabaseId, req.AdditionalGb, newTotalGB)
+
+	return &pb.ResizeStorageResponse{
+		Success:     true,
+		NewTotalGb:  newTotalGB,
+		Message:     fmt.Sprintf("PVC resized from %d GB to %d GB", newTotalGB-int64(req.AdditionalGb), newTotalGB),
+	}, nil
+}
+
 // ── helpers ─────────────────────────────────────────────────────────────────
 
 // extractDBName pulls the database name from a connection string like:
@@ -1000,6 +1043,7 @@ func main() {
 	secretsStore := secrets.NewStore(clientset, namespace)
 	ipwlStore := ipwhitelist.NewStore(clientset, namespace)
 	tierStore := tiers.NewStore(clientset, namespace)
+	resizer := storage.NewResizer(clientset, namespace)
 	log.Println("K8s clientset created successfully.")
 
 	// Ensure the user-tier ConfigMap exists.
@@ -1017,6 +1061,7 @@ func main() {
 		secrets:   secretsStore,
 		ipwl:      ipwlStore,
 		tierStore: tierStore,
+		resizer:   resizer,
 		host:      host,
 		sslCAPem:  sslCAPem,
 		apiKey:    apiKey,
