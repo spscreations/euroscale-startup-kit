@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file euroscale/v1/database.proto.
  */
 export const file_euroscale_v1_database: GenFile = /*@__PURE__*/
-  fileDesc("ChtldXJvc2NhbGUvdjEvZGF0YWJhc2UucHJvdG8SDGV1cm9zY2FsZS52MSJWChVDcmVhdGVEYXRhYmFzZVJlcXVlc3QSDAoEbmFtZRgBIAEoCRIOCgZlbmdpbmUYAiABKAkSDgoGcmVnaW9uGAMgASgJEg8KB3VzZXJfaWQYBCABKAki4AEKFkNyZWF0ZURhdGFiYXNlUmVzcG9uc2USEwoLZGF0YWJhc2VfaWQYASABKAkSGQoRY29ubmVjdGlvbl9zdHJpbmcYAiABKAkSDAoEaG9zdBgDIAEoCRIMCgRwb3J0GAQgASgFEhAKCHVzZXJuYW1lGAUgASgJEhAKCHBhc3N3b3JkGAYgASgJEhIKCnNzbF9jYV9wZW0YByABKAkSDgoGZW5naW5lGAggASgJEg4KBnJlZ2lvbhgJIAEoCRIOCgZzdGF0dXMYCiABKAkSEgoKY3JlYXRlZF9hdBgLIAEoCSIsChVEZWxldGVEYXRhYmFzZVJlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkiOgoWRGVsZXRlRGF0YWJhc2VSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB21lc3NhZ2UYAiABKAkiTgoUTGlzdERhdGFiYXNlc1JlcXVlc3QSDwoHdXNlcl9pZBgBIAEoCRIRCglwYWdlX3NpemUYAiABKAUSEgoKcGFnZV90b2tlbhgDIAEoCSJqChVMaXN0RGF0YWJhc2VzUmVzcG9uc2USKQoJZGF0YWJhc2VzGAEgAygLMhYuZXVyb3NjYWxlLnYxLkRhdGFiYXNlEhcKD25leHRfcGFnZV90b2tlbhgCIAEoCRINCgV0b3RhbBgDIAEoBSIpChJHZXREYXRhYmFzZVJlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkiPwoTR2V0RGF0YWJhc2VSZXNwb25zZRIoCghkYXRhYmFzZRgBIAEoCzIWLmV1cm9zY2FsZS52MS5EYXRhYmFzZSIvChhSb3RhdGVDcmVkZW50aWFsc1JlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkinwEKGVJvdGF0ZUNyZWRlbnRpYWxzUmVzcG9uc2USEwoLZGF0YWJhc2VfaWQYASABKAkSGQoRY29ubmVjdGlvbl9zdHJpbmcYAiABKAkSEAoIdXNlcm5hbWUYAyABKAkSEAoIcGFzc3dvcmQYBCABKAkSEgoKc3NsX2NhX3BlbRgFIAEoCRIMCgRob3N0GAYgASgJEgwKBHBvcnQYByABKAUinwEKCERhdGFiYXNlEhMKC2RhdGFiYXNlX2lkGAEgASgJEgwKBG5hbWUYAiABKAkSDgoGZW5naW5lGAMgASgJEg4KBnJlZ2lvbhgEIAEoCRIMCgRob3N0GAUgASgJEgwKBHBvcnQYBiABKAUSEAoIdXNlcm5hbWUYByABKAkSDgoGc3RhdHVzGAggASgJEhIKCmNyZWF0ZWRfYXQYCSABKAky3wMKD0RhdGFiYXNlU2VydmljZRJbCg5DcmVhdGVEYXRhYmFzZRIjLmV1cm9zY2FsZS52MS5DcmVhdGVEYXRhYmFzZVJlcXVlc3QaJC5ldXJvc2NhbGUudjEuQ3JlYXRlRGF0YWJhc2VSZXNwb25zZRJbCg5EZWxldGVEYXRhYmFzZRIjLmV1cm9zY2FsZS52MS5EZWxldGVEYXRhYmFzZVJlcXVlc3QaJC5ldXJvc2NhbGUudjEuRGVsZXRlRGF0YWJhc2VSZXNwb25zZRJYCg1MaXN0RGF0YWJhc2VzEiIuZXVyb3NjYWxlLnYxLkxpc3REYXRhYmFzZXNSZXF1ZXN0GiMuZXVyb3NjYWxlLnYxLkxpc3REYXRhYmFzZXNSZXNwb25zZRJSCgtHZXREYXRhYmFzZRIgLmV1cm9zY2FsZS52MS5HZXREYXRhYmFzZVJlcXVlc3QaIS5ldXJvc2NhbGUudjEuR2V0RGF0YWJhc2VSZXNwb25zZRJkChFSb3RhdGVDcmVkZW50aWFscxImLmV1cm9zY2FsZS52MS5Sb3RhdGVDcmVkZW50aWFsc1JlcXVlc3QaJy5ldXJvc2NhbGUudjEuUm90YXRlQ3JlZGVudGlhbHNSZXNwb25zZUJQWk5naXRodWIuY29tL3Nwc2NyZWF0aW9ucy9ldXJvc2NhbGUtc3RhcnR1cC1raXQvYXBpL2dlbi9ldXJvc2NhbGUvdjE7ZXVyb3NjYWxldjFiBnByb3RvMw");
+  fileDesc("ChtldXJvc2NhbGUvdjEvZGF0YWJhc2UucHJvdG8SDGV1cm9zY2FsZS52MSJWChVDcmVhdGVEYXRhYmFzZVJlcXVlc3QSDAoEbmFtZRgBIAEoCRIOCgZlbmdpbmUYAiABKAkSDgoGcmVnaW9uGAMgASgJEg8KB3VzZXJfaWQYBCABKAki4AEKFkNyZWF0ZURhdGFiYXNlUmVzcG9uc2USEwoLZGF0YWJhc2VfaWQYASABKAkSGQoRY29ubmVjdGlvbl9zdHJpbmcYAiABKAkSDAoEaG9zdBgDIAEoCRIMCgRwb3J0GAQgASgFEhAKCHVzZXJuYW1lGAUgASgJEhAKCHBhc3N3b3JkGAYgASgJEhIKCnNzbF9jYV9wZW0YByABKAkSDgoGZW5naW5lGAggASgJEg4KBnJlZ2lvbhgJIAEoCRIOCgZzdGF0dXMYCiABKAkSEgoKY3JlYXRlZF9hdBgLIAEoCSIsChVEZWxldGVEYXRhYmFzZVJlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkiOgoWRGVsZXRlRGF0YWJhc2VSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB21lc3NhZ2UYAiABKAkiTgoUTGlzdERhdGFiYXNlc1JlcXVlc3QSDwoHdXNlcl9pZBgBIAEoCRIRCglwYWdlX3NpemUYAiABKAUSEgoKcGFnZV90b2tlbhgDIAEoCSJqChVMaXN0RGF0YWJhc2VzUmVzcG9uc2USKQoJZGF0YWJhc2VzGAEgAygLMhYuZXVyb3NjYWxlLnYxLkRhdGFiYXNlEhcKD25leHRfcGFnZV90b2tlbhgCIAEoCRINCgV0b3RhbBgDIAEoBSIpChJHZXREYXRhYmFzZVJlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkiPwoTR2V0RGF0YWJhc2VSZXNwb25zZRIoCghkYXRhYmFzZRgBIAEoCzIWLmV1cm9zY2FsZS52MS5EYXRhYmFzZSIvChhSb3RhdGVDcmVkZW50aWFsc1JlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkinwEKGVJvdGF0ZUNyZWRlbnRpYWxzUmVzcG9uc2USEwoLZGF0YWJhc2VfaWQYASABKAkSGQoRY29ubmVjdGlvbl9zdHJpbmcYAiABKAkSEAoIdXNlcm5hbWUYAyABKAkSEAoIcGFzc3dvcmQYBCABKAkSEgoKc3NsX2NhX3BlbRgFIAEoCRIMCgRob3N0GAYgASgJEgwKBHBvcnQYByABKAUinwEKCERhdGFiYXNlEhMKC2RhdGFiYXNlX2lkGAEgASgJEgwKBG5hbWUYAiABKAkSDgoGZW5naW5lGAMgASgJEg4KBnJlZ2lvbhgEIAEoCRIMCgRob3N0GAUgASgJEgwKBHBvcnQYBiABKAUSEAoIdXNlcm5hbWUYByABKAkSDgoGc3RhdHVzGAggASgJEhIKCmNyZWF0ZWRfYXQYCSABKAkiSQoQSVBXaGl0ZWxpc3RFbnRyeRIMCgRjaWRyGAEgASgJEhMKC2Rlc2NyaXB0aW9uGAIgASgJEhIKCmNyZWF0ZWRfYXQYAyABKAkiLAoVR2V0SVBXaGl0ZWxpc3RSZXF1ZXN0EhMKC2RhdGFiYXNlX2lkGAEgASgJIkkKFkdldElQV2hpdGVsaXN0UmVzcG9uc2USLwoHZW50cmllcxgBIAMoCzIeLmV1cm9zY2FsZS52MS5JUFdoaXRlbGlzdEVudHJ5IlQKGkFkZElQV2hpdGVsaXN0RW50cnlSZXF1ZXN0EhMKC2RhdGFiYXNlX2lkGAEgASgJEgwKBGNpZHIYAiABKAkSEwoLZGVzY3JpcHRpb24YAyABKAkiTAobQWRkSVBXaGl0ZWxpc3RFbnRyeVJlc3BvbnNlEi0KBWVudHJ5GAEgASgLMh4uZXVyb3NjYWxlLnYxLklQV2hpdGVsaXN0RW50cnkiQgodUmVtb3ZlSVBXaGl0ZWxpc3RFbnRyeVJlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkSDAoEY2lkchgCIAEoCSJCCh5SZW1vdmVJUFdoaXRlbGlzdEVudHJ5UmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIPCgdtZXNzYWdlGAIgASgJMp0GCg9EYXRhYmFzZVNlcnZpY2USWwoOQ3JlYXRlRGF0YWJhc2USIy5ldXJvc2NhbGUudjEuQ3JlYXRlRGF0YWJhc2VSZXF1ZXN0GiQuZXVyb3NjYWxlLnYxLkNyZWF0ZURhdGFiYXNlUmVzcG9uc2USWwoORGVsZXRlRGF0YWJhc2USIy5ldXJvc2NhbGUudjEuRGVsZXRlRGF0YWJhc2VSZXF1ZXN0GiQuZXVyb3NjYWxlLnYxLkRlbGV0ZURhdGFiYXNlUmVzcG9uc2USWAoNTGlzdERhdGFiYXNlcxIiLmV1cm9zY2FsZS52MS5MaXN0RGF0YWJhc2VzUmVxdWVzdBojLmV1cm9zY2FsZS52MS5MaXN0RGF0YWJhc2VzUmVzcG9uc2USUgoLR2V0RGF0YWJhc2USIC5ldXJvc2NhbGUudjEuR2V0RGF0YWJhc2VSZXF1ZXN0GiEuZXVyb3NjYWxlLnYxLkdldERhdGFiYXNlUmVzcG9uc2USZAoRUm90YXRlQ3JlZGVudGlhbHMSJi5ldXJvc2NhbGUudjEuUm90YXRlQ3JlZGVudGlhbHNSZXF1ZXN0GicuZXVyb3NjYWxlLnYxLlJvdGF0ZUNyZWRlbnRpYWxzUmVzcG9uc2USWwoOR2V0SVBXaGl0ZWxpc3QSIy5ldXJvc2NhbGUudjEuR2V0SVBXaGl0ZWxpc3RSZXF1ZXN0GiQuZXVyb3NjYWxlLnYxLkdldElQV2hpdGVsaXN0UmVzcG9uc2USagoTQWRkSVBXaGl0ZWxpc3RFbnRyeRIoLmV1cm9zY2FsZS52MS5BZGRJUFdoaXRlbGlzdEVudHJ5UmVxdWVzdBopLmV1cm9zY2FsZS52MS5BZGRJUFdoaXRlbGlzdEVudHJ5UmVzcG9uc2UScwoWUmVtb3ZlSVBXaGl0ZWxpc3RFbnRyeRIrLmV1cm9zY2FsZS52MS5SZW1vdmVJUFdoaXRlbGlzdEVudHJ5UmVxdWVzdBosLmV1cm9zY2FsZS52MS5SZW1vdmVJUFdoaXRlbGlzdEVudHJ5UmVzcG9uc2VCUFpOZ2l0aHViLmNvbS9zcHNjcmVhdGlvbnMvZXVyb3NjYWxlLXN0YXJ0dXAta2l0L2FwaS9nZW4vZXVyb3NjYWxlL3YxO2V1cm9zY2FsZXYxYgZwcm90bzM");
 
 /**
  * @generated from message euroscale.v1.CreateDatabaseRequest
@@ -449,6 +449,183 @@ export const DatabaseSchema: GenMessage<Database> = /*@__PURE__*/
   messageDesc(file_euroscale_v1_database, 10);
 
 /**
+ * A single IP whitelist entry (CIDR range with description).
+ *
+ * @generated from message euroscale.v1.IPWhitelistEntry
+ */
+export type IPWhitelistEntry = Message<"euroscale.v1.IPWhitelistEntry"> & {
+  /**
+   * CIDR notation, e.g. "192.168.1.0/24" or "10.0.0.1/32".
+   *
+   * @generated from field: string cidr = 1;
+   */
+  cidr: string;
+
+  /**
+   * Human-readable label for this entry.
+   *
+   * @generated from field: string description = 2;
+   */
+  description: string;
+
+  /**
+   * Timestamp of creation (RFC 3339).
+   *
+   * @generated from field: string created_at = 3;
+   */
+  createdAt: string;
+};
+
+/**
+ * Describes the message euroscale.v1.IPWhitelistEntry.
+ * Use `create(IPWhitelistEntrySchema)` to create a new message.
+ */
+export const IPWhitelistEntrySchema: GenMessage<IPWhitelistEntry> = /*@__PURE__*/
+  messageDesc(file_euroscale_v1_database, 11);
+
+/**
+ * @generated from message euroscale.v1.GetIPWhitelistRequest
+ */
+export type GetIPWhitelistRequest = Message<"euroscale.v1.GetIPWhitelistRequest"> & {
+  /**
+   * ID of the database.
+   *
+   * @generated from field: string database_id = 1;
+   */
+  databaseId: string;
+};
+
+/**
+ * Describes the message euroscale.v1.GetIPWhitelistRequest.
+ * Use `create(GetIPWhitelistRequestSchema)` to create a new message.
+ */
+export const GetIPWhitelistRequestSchema: GenMessage<GetIPWhitelistRequest> = /*@__PURE__*/
+  messageDesc(file_euroscale_v1_database, 12);
+
+/**
+ * @generated from message euroscale.v1.GetIPWhitelistResponse
+ */
+export type GetIPWhitelistResponse = Message<"euroscale.v1.GetIPWhitelistResponse"> & {
+  /**
+   * List of whitelist entries.
+   *
+   * @generated from field: repeated euroscale.v1.IPWhitelistEntry entries = 1;
+   */
+  entries: IPWhitelistEntry[];
+};
+
+/**
+ * Describes the message euroscale.v1.GetIPWhitelistResponse.
+ * Use `create(GetIPWhitelistResponseSchema)` to create a new message.
+ */
+export const GetIPWhitelistResponseSchema: GenMessage<GetIPWhitelistResponse> = /*@__PURE__*/
+  messageDesc(file_euroscale_v1_database, 13);
+
+/**
+ * @generated from message euroscale.v1.AddIPWhitelistEntryRequest
+ */
+export type AddIPWhitelistEntryRequest = Message<"euroscale.v1.AddIPWhitelistEntryRequest"> & {
+  /**
+   * ID of the database.
+   *
+   * @generated from field: string database_id = 1;
+   */
+  databaseId: string;
+
+  /**
+   * CIDR notation to whitelist.
+   *
+   * @generated from field: string cidr = 2;
+   */
+  cidr: string;
+
+  /**
+   * Human-readable description.
+   *
+   * @generated from field: string description = 3;
+   */
+  description: string;
+};
+
+/**
+ * Describes the message euroscale.v1.AddIPWhitelistEntryRequest.
+ * Use `create(AddIPWhitelistEntryRequestSchema)` to create a new message.
+ */
+export const AddIPWhitelistEntryRequestSchema: GenMessage<AddIPWhitelistEntryRequest> = /*@__PURE__*/
+  messageDesc(file_euroscale_v1_database, 14);
+
+/**
+ * @generated from message euroscale.v1.AddIPWhitelistEntryResponse
+ */
+export type AddIPWhitelistEntryResponse = Message<"euroscale.v1.AddIPWhitelistEntryResponse"> & {
+  /**
+   * The newly created entry (may be empty on error).
+   *
+   * @generated from field: euroscale.v1.IPWhitelistEntry entry = 1;
+   */
+  entry?: IPWhitelistEntry | undefined;
+};
+
+/**
+ * Describes the message euroscale.v1.AddIPWhitelistEntryResponse.
+ * Use `create(AddIPWhitelistEntryResponseSchema)` to create a new message.
+ */
+export const AddIPWhitelistEntryResponseSchema: GenMessage<AddIPWhitelistEntryResponse> = /*@__PURE__*/
+  messageDesc(file_euroscale_v1_database, 15);
+
+/**
+ * @generated from message euroscale.v1.RemoveIPWhitelistEntryRequest
+ */
+export type RemoveIPWhitelistEntryRequest = Message<"euroscale.v1.RemoveIPWhitelistEntryRequest"> & {
+  /**
+   * ID of the database.
+   *
+   * @generated from field: string database_id = 1;
+   */
+  databaseId: string;
+
+  /**
+   * CIDR to remove.
+   *
+   * @generated from field: string cidr = 2;
+   */
+  cidr: string;
+};
+
+/**
+ * Describes the message euroscale.v1.RemoveIPWhitelistEntryRequest.
+ * Use `create(RemoveIPWhitelistEntryRequestSchema)` to create a new message.
+ */
+export const RemoveIPWhitelistEntryRequestSchema: GenMessage<RemoveIPWhitelistEntryRequest> = /*@__PURE__*/
+  messageDesc(file_euroscale_v1_database, 16);
+
+/**
+ * @generated from message euroscale.v1.RemoveIPWhitelistEntryResponse
+ */
+export type RemoveIPWhitelistEntryResponse = Message<"euroscale.v1.RemoveIPWhitelistEntryResponse"> & {
+  /**
+   * Whether the removal succeeded.
+   *
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+
+  /**
+   * Human-readable message.
+   *
+   * @generated from field: string message = 2;
+   */
+  message: string;
+};
+
+/**
+ * Describes the message euroscale.v1.RemoveIPWhitelistEntryResponse.
+ * Use `create(RemoveIPWhitelistEntryResponseSchema)` to create a new message.
+ */
+export const RemoveIPWhitelistEntryResponseSchema: GenMessage<RemoveIPWhitelistEntryResponse> = /*@__PURE__*/
+  messageDesc(file_euroscale_v1_database, 17);
+
+/**
  * DatabaseService provisions and manages Vitess databases on demand.
  *
  * @generated from service euroscale.v1.DatabaseService
@@ -505,6 +682,36 @@ export const DatabaseService: GenService<{
     methodKind: "unary";
     input: typeof RotateCredentialsRequestSchema;
     output: typeof RotateCredentialsResponseSchema;
+  },
+  /**
+   * GetIPWhitelist returns the IP whitelist for a database.
+   *
+   * @generated from rpc euroscale.v1.DatabaseService.GetIPWhitelist
+   */
+  getIPWhitelist: {
+    methodKind: "unary";
+    input: typeof GetIPWhitelistRequestSchema;
+    output: typeof GetIPWhitelistResponseSchema;
+  },
+  /**
+   * AddIPWhitelistEntry adds a CIDR range to a database's IP whitelist.
+   *
+   * @generated from rpc euroscale.v1.DatabaseService.AddIPWhitelistEntry
+   */
+  addIPWhitelistEntry: {
+    methodKind: "unary";
+    input: typeof AddIPWhitelistEntryRequestSchema;
+    output: typeof AddIPWhitelistEntryResponseSchema;
+  },
+  /**
+   * RemoveIPWhitelistEntry removes a CIDR range from a database's IP whitelist.
+   *
+   * @generated from rpc euroscale.v1.DatabaseService.RemoveIPWhitelistEntry
+   */
+  removeIPWhitelistEntry: {
+    methodKind: "unary";
+    input: typeof RemoveIPWhitelistEntryRequestSchema;
+    output: typeof RemoveIPWhitelistEntryResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_euroscale_v1_database, 0);

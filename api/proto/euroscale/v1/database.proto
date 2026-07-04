@@ -22,6 +22,15 @@ service DatabaseService {
   // RotateCredentials generates new credentials for an existing database,
   // invalidating the old ones. Returns the new credentials ONCE.
   rpc RotateCredentials(RotateCredentialsRequest) returns (RotateCredentialsResponse);
+
+  // GetIPWhitelist returns the IP whitelist for a database.
+  rpc GetIPWhitelist(GetIPWhitelistRequest) returns (GetIPWhitelistResponse);
+
+  // AddIPWhitelistEntry adds a CIDR range to a database's IP whitelist.
+  rpc AddIPWhitelistEntry(AddIPWhitelistEntryRequest) returns (AddIPWhitelistEntryResponse);
+
+  // RemoveIPWhitelistEntry removes a CIDR range from a database's IP whitelist.
+  rpc RemoveIPWhitelistEntry(RemoveIPWhitelistEntryRequest) returns (RemoveIPWhitelistEntryResponse);
 }
 
 // ── CreateDatabase ──────────────────────────────────────────────────────────
@@ -187,4 +196,60 @@ message Database {
 
   // Creation timestamp (RFC 3339).
   string created_at = 9;
+}
+
+// ── IP Whitelist ────────────────────────────────────────────────────────────
+
+// A single IP whitelist entry (CIDR range with description).
+message IPWhitelistEntry {
+  // CIDR notation, e.g. "192.168.1.0/24" or "10.0.0.1/32".
+  string cidr = 1;
+
+  // Human-readable label for this entry.
+  string description = 2;
+
+  // Timestamp of creation (RFC 3339).
+  string created_at = 3;
+}
+
+message GetIPWhitelistRequest {
+  // ID of the database.
+  string database_id = 1;
+}
+
+message GetIPWhitelistResponse {
+  // List of whitelist entries.
+  repeated IPWhitelistEntry entries = 1;
+}
+
+message AddIPWhitelistEntryRequest {
+  // ID of the database.
+  string database_id = 1;
+
+  // CIDR notation to whitelist.
+  string cidr = 2;
+
+  // Human-readable description.
+  string description = 3;
+}
+
+message AddIPWhitelistEntryResponse {
+  // The newly created entry (may be empty on error).
+  IPWhitelistEntry entry = 1;
+}
+
+message RemoveIPWhitelistEntryRequest {
+  // ID of the database.
+  string database_id = 1;
+
+  // CIDR to remove.
+  string cidr = 2;
+}
+
+message RemoveIPWhitelistEntryResponse {
+  // Whether the removal succeeded.
+  bool success = 1;
+
+  // Human-readable message.
+  string message = 2;
 }

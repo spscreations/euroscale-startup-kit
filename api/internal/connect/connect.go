@@ -26,6 +26,17 @@ type DatabaseServiceServer interface {
 	ListDatabases(ctx context.Context, req *pb.ListDatabasesRequest) (*pb.ListDatabasesResponse, error)
 	GetDatabase(ctx context.Context, req *pb.GetDatabaseRequest) (*pb.GetDatabaseResponse, error)
 	RotateCredentials(ctx context.Context, req *pb.RotateCredentialsRequest) (*pb.RotateCredentialsResponse, error)
+	GetIPWhitelist(ctx context.Context, req *pb.GetIPWhitelistRequest) (*pb.GetIPWhitelistResponse, error)
+	AddIPWhitelistEntry(ctx context.Context, req *pb.AddIPWhitelistEntryRequest) (*pb.AddIPWhitelistEntryResponse, error)
+	RemoveIPWhitelistEntry(ctx context.Context, req *pb.RemoveIPWhitelistEntryRequest) (*pb.RemoveIPWhitelistEntryResponse, error)
+}
+
+// MetadataServiceServer is the interface the metadata service satisfies.
+type MetadataServiceServer interface {
+	ListSchemaDatabases(ctx context.Context, req *pb.ListSchemaDatabasesRequest) (*pb.ListSchemaDatabasesResponse, error)
+	ListTables(ctx context.Context, req *pb.ListTablesRequest) (*pb.ListTablesResponse, error)
+	ListColumns(ctx context.Context, req *pb.ListColumnsRequest) (*pb.ListColumnsResponse, error)
+	PreviewTable(ctx context.Context, req *pb.PreviewTableRequest) (*pb.PreviewTableResponse, error)
 }
 
 // ── RPC paths ────────────────────────────────────────────────────────────────
@@ -38,6 +49,17 @@ const (
 	PathListDatabases     = "/euroscale.v1.DatabaseService/ListDatabases"
 	PathGetDatabase       = "/euroscale.v1.DatabaseService/GetDatabase"
 	PathRotateCredentials = "/euroscale.v1.DatabaseService/RotateCredentials"
+
+	// IP whitelist paths.
+	PathGetIPWhitelist        = "/euroscale.v1.DatabaseService/GetIPWhitelist"
+	PathAddIPWhitelistEntry    = "/euroscale.v1.DatabaseService/AddIPWhitelistEntry"
+	PathRemoveIPWhitelistEntry = "/euroscale.v1.DatabaseService/RemoveIPWhitelistEntry"
+
+	// MetadataService paths.
+	PathListSchemaDatabases = "/euroscale.v1.MetadataService/ListSchemaDatabases"
+	PathListTables          = "/euroscale.v1.MetadataService/ListTables"
+	PathListColumns         = "/euroscale.v1.MetadataService/ListColumns"
+	PathPreviewTable        = "/euroscale.v1.MetadataService/PreviewTable"
 )
 
 // ── Handler construction ─────────────────────────────────────────────────────
@@ -45,11 +67,16 @@ const (
 // NewHandler returns an http.Handler that serves all five DatabaseService RPCs
 // via the Connect protocol. It validates an API key on every request using the
 // same auth logic as the gRPC interceptor (x-api-key header or Authorization:
-// Bearer token).
-func NewHandler(srv DatabaseServiceServer, apiKey string) http.Handler {
+// Bearer token). Additional interceptors (e.g., IP whitelist) can be passed
+// and are chained after the auth interceptor.
+func NewHandler(srv DatabaseServiceServer, apiKey string, extraInterceptors ...connect.Interceptor) http.Handler {
 	mux := http.NewServeMux()
 
-	interceptor := authInterceptor(apiKey)
+	authInter := authInterceptor(apiKey)
+
+	// Build the full interceptor chain: auth first, then extras.
+	allInterceptors := []connect.Interceptor{authInter}
+	allInterceptors = append(allInterceptors, extraInterceptors...)
 
 	// CreateDatabase
 	mux.Handle(PathCreateDatabase, connect.NewUnaryHandler(
@@ -61,7 +88,7 @@ func NewHandler(srv DatabaseServiceServer, apiKey string) http.Handler {
 			}
 			return connect.NewResponse(resp), nil
 		},
-		connect.WithInterceptors(interceptor),
+		connect.WithInterceptors(allInterceptors...),
 	))
 
 	// DeleteDatabase
@@ -74,7 +101,7 @@ func NewHandler(srv DatabaseServiceServer, apiKey string) http.Handler {
 			}
 			return connect.NewResponse(resp), nil
 		},
-		connect.WithInterceptors(interceptor),
+		connect.WithInterceptors(allInterceptors...),
 	))
 
 	// ListDatabases
@@ -87,7 +114,7 @@ func NewHandler(srv DatabaseServiceServer, apiKey string) http.Handler {
 			}
 			return connect.NewResponse(resp), nil
 		},
-		connect.WithInterceptors(interceptor),
+		connect.WithInterceptors(allInterceptors...),
 	))
 
 	// GetDatabase
@@ -100,7 +127,7 @@ func NewHandler(srv DatabaseServiceServer, apiKey string) http.Handler {
 			}
 			return connect.NewResponse(resp), nil
 		},
-		connect.WithInterceptors(interceptor),
+		connect.WithInterceptors(allInterceptors...),
 	))
 
 	// RotateCredentials
@@ -113,7 +140,110 @@ func NewHandler(srv DatabaseServiceServer, apiKey string) http.Handler {
 			}
 			return connect.NewResponse(resp), nil
 		},
-		connect.WithInterceptors(interceptor),
+		connect.WithInterceptors(allInterceptors...),
+	))
+
+	// GetIPWhitelist
+	mux.Handle(PathGetIPWhitelist, connect.NewUnaryHandler(
+		PathGetIPWhitelist,
+		func(ctx context.Context, req *connect.Request[pb.GetIPWhitelistRequest]) (*connect.Response[pb.GetIPWhitelistResponse], error) {
+			resp, err := srv.GetIPWhitelist(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		connect.WithInterceptors(allInterceptors...),
+	))
+
+	// AddIPWhitelistEntry
+	mux.Handle(PathAddIPWhitelistEntry, connect.NewUnaryHandler(
+		PathAddIPWhitelistEntry,
+		func(ctx context.Context, req *connect.Request[pb.AddIPWhitelistEntryRequest]) (*connect.Response[pb.AddIPWhitelistEntryResponse], error) {
+			resp, err := srv.AddIPWhitelistEntry(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		connect.WithInterceptors(allInterceptors...),
+	))
+
+	// RemoveIPWhitelistEntry
+	mux.Handle(PathRemoveIPWhitelistEntry, connect.NewUnaryHandler(
+		PathRemoveIPWhitelistEntry,
+		func(ctx context.Context, req *connect.Request[pb.RemoveIPWhitelistEntryRequest]) (*connect.Response[pb.RemoveIPWhitelistEntryResponse], error) {
+			resp, err := srv.RemoveIPWhitelistEntry(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		connect.WithInterceptors(allInterceptors...),
+	))
+
+	return mux
+}
+
+// NewMetadataHandler returns an http.Handler that serves MetadataService RPCs
+// via the Connect protocol with API key authentication.
+func NewMetadataHandler(srv MetadataServiceServer, apiKey string, extraInterceptors ...connect.Interceptor) http.Handler {
+	mux := http.NewServeMux()
+
+	authInter := authInterceptor(apiKey)
+	allInterceptors := []connect.Interceptor{authInter}
+	allInterceptors = append(allInterceptors, extraInterceptors...)
+
+	// ListSchemaDatabases
+	mux.Handle(PathListSchemaDatabases, connect.NewUnaryHandler(
+		PathListSchemaDatabases,
+		func(ctx context.Context, req *connect.Request[pb.ListSchemaDatabasesRequest]) (*connect.Response[pb.ListSchemaDatabasesResponse], error) {
+			resp, err := srv.ListSchemaDatabases(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		connect.WithInterceptors(allInterceptors...),
+	))
+
+	// ListTables
+	mux.Handle(PathListTables, connect.NewUnaryHandler(
+		PathListTables,
+		func(ctx context.Context, req *connect.Request[pb.ListTablesRequest]) (*connect.Response[pb.ListTablesResponse], error) {
+			resp, err := srv.ListTables(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		connect.WithInterceptors(allInterceptors...),
+	))
+
+	// ListColumns
+	mux.Handle(PathListColumns, connect.NewUnaryHandler(
+		PathListColumns,
+		func(ctx context.Context, req *connect.Request[pb.ListColumnsRequest]) (*connect.Response[pb.ListColumnsResponse], error) {
+			resp, err := srv.ListColumns(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		connect.WithInterceptors(allInterceptors...),
+	))
+
+	// PreviewTable
+	mux.Handle(PathPreviewTable, connect.NewUnaryHandler(
+		PathPreviewTable,
+		func(ctx context.Context, req *connect.Request[pb.PreviewTableRequest]) (*connect.Response[pb.PreviewTableResponse], error) {
+			resp, err := srv.PreviewTable(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		connect.WithInterceptors(allInterceptors...),
 	))
 
 	return mux
@@ -122,7 +252,7 @@ func NewHandler(srv DatabaseServiceServer, apiKey string) http.Handler {
 // ── Auth interceptor ─────────────────────────────────────────────────────────
 
 // authInterceptor returns a Connect unary interceptor that validates the API key
-// from either the "x-api-key" header or an "Authorization: Bearer <key>" header.
+// from either the "x-api-key" header or an "Authorization: *** Bearer token.
 // This mirrors the auth logic in the gRPC interceptor so both transports share
 // the same auth semantics.
 func authInterceptor(apiKey string) connect.UnaryInterceptorFunc {
@@ -133,7 +263,7 @@ func authInterceptor(apiKey string) connect.UnaryInterceptorFunc {
 				return next(ctx, req)
 			}
 
-			// Check Authorization: Bearer <key>.
+			// Check Authorization: Bearer ***
 			if auth := req.Header().Get("Authorization"); auth != "" {
 				if key, ok := strings.CutPrefix(auth, "Bearer "); ok && key == apiKey {
 					return next(ctx, req)

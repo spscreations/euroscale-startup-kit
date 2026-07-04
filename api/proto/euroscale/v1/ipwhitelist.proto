@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package euroscale.v1;
+
+option go_package = "github.com/spscreations/euroscale-startup-kit/api/gen/euroscale/v1;euroscalev1";
+
+// IPWhitelistService manages per-user IP whitelists for access control.
+// Each user can maintain a list of allowed IP addresses or CIDR ranges.
+// An empty whitelist means access is allowed from anywhere.
+service IPWhitelistService {
+  // ListIPWhitelist returns the IPs/CIDRs currently whitelisted for a user.
+  rpc ListIPWhitelist(ListIPWhitelistRequest) returns (ListIPWhitelistResponse);
+
+  // AddIPToWhitelist adds an IP address or CIDR range to the user's whitelist.
+  rpc AddIPToWhitelist(AddIPToWhitelistRequest) returns (AddIPToWhitelistResponse);
+
+  // RemoveIPFromWhitelist removes an IP address or CIDR range from the user's whitelist.
+  rpc RemoveIPFromWhitelist(RemoveIPFromWhitelistRequest) returns (RemoveIPFromWhitelistResponse);
+}
+
+// ── ListIPWhitelist ──────────────────────────────────────────────────────────
+
+message ListIPWhitelistRequest {
+  // Required. User ID to look up the whitelist for.
+  string user_id = 1;
+}
+
+message ListIPWhitelistResponse {
+  // List of whitelisted IP addresses and/or CIDR ranges.
+  repeated string ips = 1;
+}
+
+// ── AddIPToWhitelist ─────────────────────────────────────────────────────────
+
+message AddIPToWhitelistRequest {
+  // Required. User ID whose whitelist to modify.
+  string user_id = 1;
+
+  // Required. IP address (e.g. "192.168.1.1") or CIDR range (e.g. "10.0.0.0/8") to add.
+  string ip = 2;
+}
+
+message AddIPToWhitelistResponse {
+  // Updated list of whitelisted IPs/CIDRs after the addition.
+  repeated string ips = 1;
+}
+
+// ── RemoveIPFromWhitelist ────────────────────────────────────────────────────
+
+message RemoveIPFromWhitelistRequest {
+  // Required. User ID whose whitelist to modify.
+  string user_id = 1;
+
+  // Required. IP address or CIDR range to remove from the whitelist.
+  string ip = 2;
+}
+
+message RemoveIPFromWhitelistResponse {
+  // Updated list of whitelisted IPs/CIDRs after the removal.
+  repeated string ips = 1;
+}

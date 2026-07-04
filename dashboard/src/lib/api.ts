@@ -19,12 +19,19 @@ export class ApiError extends Error {
 // ── Auth Interceptor ────────────────────────────────────────────────────────
 
 type TokenGetter = () => string | null;
+type UserIdGetter = () => string | null;
 
 let tokenGetter: TokenGetter | null = null;
+let userIdGetter: UserIdGetter | null = null;
 
 /** Register a function that returns the current auth token. */
 export function setTokenGetter(getToken: TokenGetter): void {
   tokenGetter = getToken;
+}
+
+/** Register a function that returns the current user ID. */
+export function setUserIdGetter(getUserId: UserIdGetter): void {
+  userIdGetter = getUserId;
 }
 
 // ── Transport ───────────────────────────────────────────────────────────────
@@ -54,6 +61,10 @@ export function createTransport(): Transport {
         const token = tokenGetter?.();
         if (token) {
           req.header.set("Authorization", `Bearer ${token}`);
+        }
+        const userId = userIdGetter?.();
+        if (userId) {
+          req.header.set("X-User-ID", userId);
         }
         return next(req);
       },

@@ -118,6 +118,15 @@ spec:
           tablet_types_to_wait: "REPLICA,PRIMARY"
           mysql_server_version: "8.0.36"
           mysql_auth_server_static_string: '{"mysql_user":[{"Password":"","UserData":"mysql_user"}]}'
+        secureTransport:
+          required: true
+          tls:
+            certSecret:
+              name: euroscale-vtgate-tls
+              key: tls.crt
+            keySecret:
+              name: euroscale-vtgate-tls
+              key: tls.key
 
     - name: helsinki
       gateway:
@@ -134,6 +143,15 @@ spec:
           tablet_types_to_wait: "REPLICA,PRIMARY"
           mysql_server_version: "8.0.36"
           mysql_auth_server_static_string: '{"mysql_user":[{"Password":"","UserData":"mysql_user"}]}'
+        secureTransport:
+          required: true
+          tls:
+            certSecret:
+              name: euroscale-vtgate-tls
+              key: tls.crt
+            keySecret:
+              name: euroscale-vtgate-tls
+              key: tls.key
 
   # ── Keyspaces ────────────────────────────────────────────────
   keyspaces:

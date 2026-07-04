@@ -1270,12 +1270,15 @@ const file_euroscale_v1_database_proto_rawDesc = "" +
 	"\x04cidr\x18\x02 \x01(\tR\x04cidr\"T\n" +
 	"\x1eRemoveIPWhitelistEntryResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2\xee\x03\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage2\x9d\x06\n" +
 	"\x0fDatabaseService\x12[\n" +
 	"\x0eCreateDatabase\x12#.euroscale.v1.CreateDatabaseRequest\x1a$.euroscale.v1.CreateDatabaseResponse\x12[\n" +
 	"\x0eDeleteDatabase\x12#.euroscale.v1.DeleteDatabaseRequest\x1a$.euroscale.v1.DeleteDatabaseResponse\x12X\n" +
 	"\rListDatabases\x12\".euroscale.v1.ListDatabasesRequest\x1a#.euroscale.v1.ListDatabasesResponse\x12R\n" +
-	"\vGetDatabase\x12 .euroscale.v1.GetDatabaseRequest\x1a!.euroscale.v1.GetDatabaseResponse\x12s\n" +
+	"\vGetDatabase\x12 .euroscale.v1.GetDatabaseRequest\x1a!.euroscale.v1.GetDatabaseResponse\x12d\n" +
+	"\x11RotateCredentials\x12&.euroscale.v1.RotateCredentialsRequest\x1a'.euroscale.v1.RotateCredentialsResponse\x12[\n" +
+	"\x0eGetIPWhitelist\x12#.euroscale.v1.GetIPWhitelistRequest\x1a$.euroscale.v1.GetIPWhitelistResponse\x12j\n" +
+	"\x13AddIPWhitelistEntry\x12(.euroscale.v1.AddIPWhitelistEntryRequest\x1a).euroscale.v1.AddIPWhitelistEntryResponse\x12s\n" +
 	"\x16RemoveIPWhitelistEntry\x12+.euroscale.v1.RemoveIPWhitelistEntryRequest\x1a,.euroscale.v1.RemoveIPWhitelistEntryResponseBPZNgithub.com/spscreations/euroscale-startup-kit/api/gen/euroscale/v1;euroscalev1b\x06proto3"
 
 var (
@@ -1320,14 +1323,20 @@ var file_euroscale_v1_database_proto_depIdxs = []int32{
 	2,  // 5: euroscale.v1.DatabaseService.DeleteDatabase:input_type -> euroscale.v1.DeleteDatabaseRequest
 	4,  // 6: euroscale.v1.DatabaseService.ListDatabases:input_type -> euroscale.v1.ListDatabasesRequest
 	6,  // 7: euroscale.v1.DatabaseService.GetDatabase:input_type -> euroscale.v1.GetDatabaseRequest
-	16, // 8: euroscale.v1.DatabaseService.RemoveIPWhitelistEntry:input_type -> euroscale.v1.RemoveIPWhitelistEntryRequest
-	1,  // 9: euroscale.v1.DatabaseService.CreateDatabase:output_type -> euroscale.v1.CreateDatabaseResponse
-	3,  // 10: euroscale.v1.DatabaseService.DeleteDatabase:output_type -> euroscale.v1.DeleteDatabaseResponse
-	5,  // 11: euroscale.v1.DatabaseService.ListDatabases:output_type -> euroscale.v1.ListDatabasesResponse
-	7,  // 12: euroscale.v1.DatabaseService.GetDatabase:output_type -> euroscale.v1.GetDatabaseResponse
-	17, // 13: euroscale.v1.DatabaseService.RemoveIPWhitelistEntry:output_type -> euroscale.v1.RemoveIPWhitelistEntryResponse
-	9,  // [9:14] is the sub-list for method output_type
-	4,  // [4:9] is the sub-list for method input_type
+	8,  // 8: euroscale.v1.DatabaseService.RotateCredentials:input_type -> euroscale.v1.RotateCredentialsRequest
+	12, // 9: euroscale.v1.DatabaseService.GetIPWhitelist:input_type -> euroscale.v1.GetIPWhitelistRequest
+	14, // 10: euroscale.v1.DatabaseService.AddIPWhitelistEntry:input_type -> euroscale.v1.AddIPWhitelistEntryRequest
+	16, // 11: euroscale.v1.DatabaseService.RemoveIPWhitelistEntry:input_type -> euroscale.v1.RemoveIPWhitelistEntryRequest
+	1,  // 12: euroscale.v1.DatabaseService.CreateDatabase:output_type -> euroscale.v1.CreateDatabaseResponse
+	3,  // 13: euroscale.v1.DatabaseService.DeleteDatabase:output_type -> euroscale.v1.DeleteDatabaseResponse
+	5,  // 14: euroscale.v1.DatabaseService.ListDatabases:output_type -> euroscale.v1.ListDatabasesResponse
+	7,  // 15: euroscale.v1.DatabaseService.GetDatabase:output_type -> euroscale.v1.GetDatabaseResponse
+	9,  // 16: euroscale.v1.DatabaseService.RotateCredentials:output_type -> euroscale.v1.RotateCredentialsResponse
+	13, // 17: euroscale.v1.DatabaseService.GetIPWhitelist:output_type -> euroscale.v1.GetIPWhitelistResponse
+	15, // 18: euroscale.v1.DatabaseService.AddIPWhitelistEntry:output_type -> euroscale.v1.AddIPWhitelistEntryResponse
+	17, // 19: euroscale.v1.DatabaseService.RemoveIPWhitelistEntry:output_type -> euroscale.v1.RemoveIPWhitelistEntryResponse
+	12, // [12:20] is the sub-list for method output_type
+	4,  // [4:12] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
 	4,  // [4:4] is the sub-list for extension extendee
 	0,  // [0:4] is the sub-list for field type_name

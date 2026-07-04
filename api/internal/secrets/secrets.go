@@ -4,6 +4,7 @@ package secrets
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -168,4 +169,52 @@ func secretToCredentials(secret *corev1.Secret) *models.DatabaseCredentials {
 		ConnectionString: string(secret.Data["connection_string"]),
 		SSLCAPem:         string(secret.Data["ssl_ca_pem"]),
 	}
+}
+
+// SaveIPWhitelist stores the IP whitelist entries in the database's K8s Secret
+// under the "ip_whitelist" key as a JSON-serialized array.
+func (s *Store) SaveIPWhitelist(ctx context.Context, databaseID string, entries []models.IPWhitelistEntry) error {
+	// Read the existing secret to preserve other fields.
+	secret, err := s.clientset.CoreV1().Secrets(s.namespace).Get(ctx, secretNameFor(databaseID), metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get k8s secret for database %q: %w", databaseID, err)
+	}
+
+	entriesJSON, err := json.Marshal(entries)
+	if err != nil {
+		return fmt.Errorf("failed to marshal IP whitelist: %w", err)
+	}
+
+	if secret.Data == nil {
+		secret.Data = make(map[string][]byte)
+	}
+	secret.Data["ip_whitelist"] = entriesJSON
+
+	_, err = s.clientset.CoreV1().Secrets(s.namespace).Update(ctx, secret, metav1.UpdateOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to update IP whitelist in k8s secret for database %q: %w", databaseID, err)
+	}
+
+	return nil
+}
+
+// GetIPWhitelist retrieves the IP whitelist entries from the database's K8s Secret.
+// If the "ip_whitelist" key does not exist, it returns an empty slice.
+func (s *Store) GetIPWhitelist(ctx context.Context, databaseID string) ([]models.IPWhitelistEntry, error) {
+	secret, err := s.clientset.CoreV1().Secrets(s.namespace).Get(ctx, secretNameFor(databaseID), metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get k8s secret for database %q: %w", databaseID, err)
+	}
+
+	entriesJSON, ok := secret.Data["ip_whitelist"]
+	if !ok || len(entriesJSON) == 0 {
+		return []models.IPWhitelistEntry{}, nil
+	}
+
+	var entries []models.IPWhitelistEntry
+	if err := json.Unmarshal(entriesJSON, &entries); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal IP whitelist for database %q: %w", databaseID, err)
+	}
+
+	return entries, nil
 }

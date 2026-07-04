@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"connectrpc.com/connect"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
@@ -31,6 +32,8 @@ import (
 
 	"github.com/spscreations/euroscale-startup-kit/api/internal/auth"
 	connectpkg "github.com/spscreations/euroscale-startup-kit/api/internal/connect"
+	"github.com/spscreations/euroscale-startup-kit/api/internal/ipwhitelist"
+	"github.com/spscreations/euroscale-startup-kit/api/internal/metadata"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/models"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/secrets"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/vitess"
@@ -74,8 +77,9 @@ type authResponse struct {
 type server struct {
 	pb.UnimplementedDatabaseServiceServer
 
-	vtgate  *vitess.Manager
-	secrets *secrets.Store
+	vtgate   *vitess.Manager
+	secrets  *secrets.Store
+	ipwl     *ipwhitelist.Store
 
 	host     string
 	sslCAPem string
@@ -345,6 +349,127 @@ func (s *server) RotateCredentials(ctx context.Context, req *pb.RotateCredential
 	}, nil
 }
 
+// GetIPWhitelist returns the IP whitelist entries for a database.
+func (s *server) GetIPWhitelist(ctx context.Context, req *pb.GetIPWhitelistRequest) (*pb.GetIPWhitelistResponse, error) {
+	if req.DatabaseId == "" {
+		return nil, status.Error(codes.InvalidArgument, "database_id is required")
+	}
+
+	entries, err := s.secrets.GetIPWhitelist(ctx, req.DatabaseId)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get IP whitelist: %v", err)
+	}
+
+	pbEntries := make([]*pb.IPWhitelistEntry, 0, len(entries))
+	for _, e := range entries {
+		pbEntries = append(pbEntries, &pb.IPWhitelistEntry{
+			Cidr:        e.CIDR,
+			Description: e.Description,
+			CreatedAt:   e.CreatedAt.Format(time.RFC3339),
+		})
+	}
+
+	return &pb.GetIPWhitelistResponse{
+		Entries: pbEntries,
+	}, nil
+}
+
+// AddIPWhitelistEntry adds a CIDR range to a database's IP whitelist.
+func (s *server) AddIPWhitelistEntry(ctx context.Context, req *pb.AddIPWhitelistEntryRequest) (*pb.AddIPWhitelistEntryResponse, error) {
+	if req.DatabaseId == "" {
+		return nil, status.Error(codes.InvalidArgument, "database_id is required")
+	}
+	if req.Cidr == "" {
+		return nil, status.Error(codes.InvalidArgument, "cidr is required")
+	}
+
+	// Validate CIDR format.
+	if _, _, err := net.ParseCIDR(req.Cidr); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid CIDR: %v", err)
+	}
+
+	// Get existing whitelist.
+	entries, err := s.secrets.GetIPWhitelist(ctx, req.DatabaseId)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get IP whitelist: %v", err)
+	}
+
+	// Check for duplicates.
+	for _, e := range entries {
+		if e.CIDR == req.Cidr {
+			return nil, status.Errorf(codes.AlreadyExists, "CIDR %q is already in the whitelist", req.Cidr)
+		}
+	}
+
+	// Add new entry.
+	now := time.Now().UTC()
+	newEntry := models.IPWhitelistEntry{
+		CIDR:        req.Cidr,
+		Description: req.Description,
+		CreatedAt:   now,
+	}
+	entries = append(entries, newEntry)
+
+	if err := s.secrets.SaveIPWhitelist(ctx, req.DatabaseId, entries); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to save IP whitelist: %v", err)
+	}
+
+	log.Printf("INFO: added CIDR %q to whitelist for database %q", req.Cidr, req.DatabaseId)
+
+	return &pb.AddIPWhitelistEntryResponse{
+		Entry: &pb.IPWhitelistEntry{
+			Cidr:        newEntry.CIDR,
+			Description: newEntry.Description,
+			CreatedAt:   newEntry.CreatedAt.Format(time.RFC3339),
+		},
+	}, nil
+}
+
+// RemoveIPWhitelistEntry removes a CIDR range from a database's IP whitelist.
+func (s *server) RemoveIPWhitelistEntry(ctx context.Context, req *pb.RemoveIPWhitelistEntryRequest) (*pb.RemoveIPWhitelistEntryResponse, error) {
+	if req.DatabaseId == "" {
+		return nil, status.Error(codes.InvalidArgument, "database_id is required")
+	}
+	if req.Cidr == "" {
+		return nil, status.Error(codes.InvalidArgument, "cidr is required")
+	}
+
+	// Get existing whitelist.
+	entries, err := s.secrets.GetIPWhitelist(ctx, req.DatabaseId)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get IP whitelist: %v", err)
+	}
+
+	// Filter out the matching CIDR.
+	found := false
+	filtered := make([]models.IPWhitelistEntry, 0, len(entries))
+	for _, e := range entries {
+		if e.CIDR == req.Cidr {
+			found = true
+			continue
+		}
+		filtered = append(filtered, e)
+	}
+
+	if !found {
+		return &pb.RemoveIPWhitelistEntryResponse{
+			Success: false,
+			Message: fmt.Sprintf("CIDR %q not found in whitelist", req.Cidr),
+		}, nil
+	}
+
+	if err := s.secrets.SaveIPWhitelist(ctx, req.DatabaseId, filtered); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to save IP whitelist: %v", err)
+	}
+
+	log.Printf("INFO: removed CIDR %q from whitelist for database %q", req.Cidr, req.DatabaseId)
+
+	return &pb.RemoveIPWhitelistEntryResponse{
+		Success: true,
+		Message: fmt.Sprintf("CIDR %q removed from whitelist", req.Cidr),
+	}, nil
+}
+
 // ── helpers ─────────────────────────────────────────────────────────────────
 
 // extractDBName pulls the database name from a connection string like:
@@ -451,6 +576,189 @@ func writeJSON(w http.ResponseWriter, status int, v interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(v)
+}
+
+// ── IP Whitelist REST handlers ──────────────────────────────────────────────
+
+// ipWhitelistListResponse is the JSON shape for listing IPs.
+type ipWhitelistListResponse struct {
+	IPs []string `json:"ips"`
+}
+
+// ipWhitelistAddRequest is the JSON shape for adding an IP.
+type ipWhitelistAddRequest struct {
+	IP string `json:"ip"`
+}
+
+// ipWhitelistRemoveRequest is the JSON shape for removing an IP.
+type ipWhitelistRemoveRequest struct {
+	IP string `json:"ip"`
+}
+
+// ipWhitelistHandler handles GET (list), POST (add), and DELETE (remove)
+// for per-user IP whitelists. The user_id is extracted from the
+// X-User-ID header.
+func (s *server) ipWhitelistHandler(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("X-User-ID")
+	if userID == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"message": "X-User-ID header is required"})
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		s.handleListIPs(w, r, userID)
+	case http.MethodPost:
+		s.handleAddIP(w, r, userID)
+	case http.MethodDelete:
+		s.handleRemoveIP(w, r, userID)
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *server) handleListIPs(w http.ResponseWriter, r *http.Request, userID string) {
+	ips, err := s.ipwl.GetIPs(r.Context(), userID)
+	if err != nil {
+		log.Printf("ERROR: failed to list IPs for user %q: %v", userID, err)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"message": "failed to list IPs"})
+		return
+	}
+
+	if ips == nil {
+		ips = []string{}
+	}
+
+	writeJSON(w, http.StatusOK, ipWhitelistListResponse{IPs: ips})
+}
+
+func (s *server) handleAddIP(w http.ResponseWriter, r *http.Request, userID string) {
+	var req ipWhitelistAddRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"message": "invalid request body"})
+		return
+	}
+
+	if req.IP == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"message": "ip is required"})
+		return
+	}
+
+	if err := s.ipwl.AddIP(r.Context(), userID, req.IP); err != nil {
+		log.Printf("ERROR: failed to add IP %q for user %q: %v", req.IP, userID, err)
+		writeJSON(w, http.StatusBadRequest, map[string]string{"message": err.Error()})
+		return
+	}
+
+	log.Printf("INFO: added IP %q to whitelist for user %q", req.IP, userID)
+
+	// Return the updated list.
+	s.handleListIPs(w, r, userID)
+}
+
+func (s *server) handleRemoveIP(w http.ResponseWriter, r *http.Request, userID string) {
+	var req ipWhitelistRemoveRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"message": "invalid request body"})
+		return
+	}
+
+	if req.IP == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"message": "ip is required"})
+		return
+	}
+
+	if err := s.ipwl.RemoveIP(r.Context(), userID, req.IP); err != nil {
+		log.Printf("ERROR: failed to remove IP %q for user %q: %v", req.IP, userID, err)
+		writeJSON(w, http.StatusBadRequest, map[string]string{"message": err.Error()})
+		return
+	}
+
+	log.Printf("INFO: removed IP %q from whitelist for user %q", req.IP, userID)
+
+	// Return the updated list.
+	s.handleListIPs(w, r, userID)
+}
+
+// extractClientIP extracts the real client IP from request headers or RemoteAddr.
+// Checks X-Forwarded-For first, then X-Real-IP, then falls back to RemoteAddr.
+func extractClientIP(r *http.Request) string {
+	// Check X-Forwarded-For (client, proxy1, proxy2...).
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		// Take the leftmost IP (original client).
+		if idx := strings.IndexByte(xff, ','); idx > 0 {
+			return strings.TrimSpace(xff[:idx])
+		}
+		return strings.TrimSpace(xff)
+	}
+
+	// Check X-Real-IP.
+	if xri := r.Header.Get("X-Real-IP"); xri != "" {
+		return strings.TrimSpace(xri)
+	}
+
+	// Fall back to RemoteAddr.
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		// If no port, use as-is.
+		return r.RemoteAddr
+	}
+	return host
+}
+
+// ── IP Whitelist Connect interceptor ─────────────────────────────────────
+
+// ipWhitelistInterceptor returns a Connect unary interceptor that enforces
+// per-user IP whitelists. It extracts the client IP and user ID from headers,
+// then checks whether the IP is allowed for that user.
+// An empty whitelist means all IPs are allowed.
+func ipWhitelistInterceptor(store *ipwhitelist.Store) connect.UnaryInterceptorFunc {
+	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
+		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+			userID := req.Header().Get("X-User-ID")
+			if userID == "" {
+				// If no user ID header, skip IP check (auth endpoint calls).
+				return next(ctx, req)
+			}
+
+			// Extract client IP from the request.
+			clientIP := req.Header().Get("X-Forwarded-For")
+			if clientIP == "" {
+				clientIP = req.Header().Get("X-Real-IP")
+			}
+			if clientIP == "" {
+				// If we can't determine the client IP from headers,
+				// skip the check rather than blocking legitimate traffic.
+				return next(ctx, req)
+			}
+
+			// Take leftmost IP if X-Forwarded-For contains multiple.
+			if idx := strings.IndexByte(clientIP, ','); idx > 0 {
+				clientIP = strings.TrimSpace(clientIP[:idx])
+			}
+			clientIP = strings.TrimSpace(clientIP)
+
+			allowed, err := store.IsAllowed(ctx, userID, clientIP)
+			if err != nil {
+				log.Printf("ERROR: IP whitelist check failed for user %q, IP %q: %v", userID, clientIP, err)
+				return nil, connect.NewError(
+					connect.CodeInternal,
+					fmt.Errorf("internal error checking IP whitelist"),
+				)
+			}
+
+			if !allowed {
+				log.Printf("WARNING: blocked IP %q for user %q (not in whitelist)", clientIP, userID)
+				return nil, connect.NewError(
+					connect.CodePermissionDenied,
+					fmt.Errorf("IP %q is not in your allowed IPs list", clientIP),
+				)
+			}
+
+			return next(ctx, req)
+		}
+	}
+	return connect.UnaryInterceptorFunc(interceptor)
 }
 
 // ── Auth interceptor (supports both x-api-key and Authorization: Bearer) ─────
@@ -603,6 +911,7 @@ func main() {
 	}
 
 	secretsStore := secrets.NewStore(clientset, namespace)
+	ipwlStore := ipwhitelist.NewStore(clientset, namespace)
 	log.Println("K8s clientset created successfully.")
 
 	// ── Load SSL CA certificate ───────────────────────────────────────────
@@ -612,6 +921,7 @@ func main() {
 	srv := &server{
 		vtgate:   vtgateMgr,
 		secrets:  secretsStore,
+		ipwl:     ipwlStore,
 		host:     host,
 		sslCAPem: sslCAPem,
 		apiKey:   apiKey,
@@ -621,6 +931,10 @@ func main() {
 		grpc.UnaryInterceptor(authInterceptor(apiKey)),
 	)
 	pb.RegisterDatabaseServiceServer(grpcServer, srv)
+
+	// Register the MetadataService for schema introspection.
+	metaSvc := metadata.NewService(secretsStore, vtgateAddr, host)
+	pb.RegisterMetadataServiceServer(grpcServer, metaSvc)
 
 	// Enable gRPC reflection for debugging tools.
 	reflection.Register(grpcServer)
@@ -657,11 +971,20 @@ func main() {
 		srv.authHandler(w, r)
 	})
 
+	// IP whitelist management endpoints
+	httpMux.HandleFunc("/api/v1/ip-whitelist", srv.ipWhitelistHandler)
+	httpMux.HandleFunc("/api/v1/ip-whitelist/", srv.ipWhitelistHandler)
+
 	// Build and register Connect/gRPC-web handler on the same port.
 	// This makes the DatabaseService available to browsers via HTTP/1.1
 	// using the Connect protocol (JSON or binary), plus gRPC-web.
-	connectHandler := connectpkg.NewHandler(srv, apiKey)
+	// Chain the IP whitelist interceptor after the auth interceptor.
+	connectHandler := connectpkg.NewHandler(srv, apiKey, ipWhitelistInterceptor(ipwlStore))
 	httpMux.Handle("/euroscale.v1.DatabaseService/", connectHandler)
+
+	// Register MetadataService for schema browsing.
+	metaConnectHandler := connectpkg.NewMetadataHandler(metaSvc, apiKey)
+	httpMux.Handle("/euroscale.v1.MetadataService/", metaConnectHandler)
 
 	httpServer := &http.Server{
 		Addr:         httpPort,
@@ -703,7 +1026,7 @@ func withCORS(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers",
-			"Content-Type, Authorization, X-User-Agent, "+
+			"Content-Type, Authorization, X-User-Agent, X-User-ID, "+
 				"X-Grpc-Web, Grpc-Timeout, Grpc-Accept-Encoding, Grpc-Encoding, "+
 				"Connect-Protocol-Version, Connect-Protocol-Version-Client, "+
 				"Connect-Timeout-Ms, Connect-Content-Encoding, Connect-Accept-Encoding, "+

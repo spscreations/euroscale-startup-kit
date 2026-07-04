@@ -38,6 +38,13 @@ const (
 	StatusError    = "error"
 )
 
+// IPWhitelistEntry represents a single allowed IP/CIDR range for a database.
+type IPWhitelistEntry struct {
+	CIDR        string    `json:"cidr"`
+	Description string    `json:"description"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
 // Engine and region constants.
 const (
 	EngineMySQL     = "mysql"

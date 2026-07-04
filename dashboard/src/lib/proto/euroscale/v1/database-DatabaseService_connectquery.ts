@@ -40,3 +40,24 @@ export const getDatabase = DatabaseService.method.getDatabase;
  * @generated from rpc euroscale.v1.DatabaseService.RotateCredentials
  */
 export const rotateCredentials = DatabaseService.method.rotateCredentials;
+
+/**
+ * GetIPWhitelist returns the IP whitelist for a database.
+ *
+ * @generated from rpc euroscale.v1.DatabaseService.GetIPWhitelist
+ */
+export const getIPWhitelist = DatabaseService.method.getIPWhitelist;
+
+/**
+ * AddIPWhitelistEntry adds a CIDR range to a database's IP whitelist.
+ *
+ * @generated from rpc euroscale.v1.DatabaseService.AddIPWhitelistEntry
+ */
+export const addIPWhitelistEntry = DatabaseService.method.addIPWhitelistEntry;
+
+/**
+ * RemoveIPWhitelistEntry removes a CIDR range from a database's IP whitelist.
+ *
+ * @generated from rpc euroscale.v1.DatabaseService.RemoveIPWhitelistEntry
+ */
+export const removeIPWhitelistEntry = DatabaseService.method.removeIPWhitelistEntry;

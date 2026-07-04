@@ -1,0 +1,168 @@
+syntax = "proto3";
+
+package euroscale.v1;
+
+option go_package = "github.com/spscreations/euroscale-startup-kit/api/gen/euroscale/v1;euroscalev1";
+
+// MetadataService provides read-only introspection of the Vitess cluster
+// through INFORMATION_SCHEMA queries, scoped to what the authenticated user
+// can access.
+service MetadataService {
+  // ListSchemaDatabases returns all databases visible to the user through vtgate.
+  rpc ListSchemaDatabases(ListSchemaDatabasesRequest) returns (ListSchemaDatabasesResponse);
+
+  // ListTables returns all tables in the given database visible to the user.
+  rpc ListTables(ListTablesRequest) returns (ListTablesResponse);
+
+  // ListColumns returns column metadata for a table.
+  rpc ListColumns(ListColumnsRequest) returns (ListColumnsResponse);
+
+  // PreviewTable returns the first N rows of a table for quick inspection.
+  rpc PreviewTable(PreviewTableRequest) returns (PreviewTableResponse);
+}
+
+// ── ListSchemaDatabases ─────────────────────────────────────────────────────
+
+message ListSchemaDatabasesRequest {
+  // Required. User ID to look up credentials for.
+  string user_id = 1;
+
+  // Optional. Maximum databases per page (default 25, max 100).
+  int32 page_size = 2;
+
+  // Optional. Offset for offset-based pagination.
+  int32 page = 3;
+}
+
+message ListSchemaDatabasesResponse {
+  // List of database names the user can access.
+  repeated string databases = 1;
+
+  // Total number of accessible databases.
+  int32 total = 2;
+
+  // Current page (0-indexed).
+  int32 page = 3;
+
+  // Page size used.
+  int32 page_size = 4;
+}
+
+// ── ListTables ──────────────────────────────────────────────────────────────
+
+message ListTablesRequest {
+  // Required. User ID to look up credentials for.
+  string user_id = 1;
+
+  // Required. Database/keyspace name to list tables from.
+  string database = 2;
+
+  // Optional. Maximum tables per page (default 50, max 100).
+  int32 page_size = 3;
+
+  // Optional. Offset for offset-based pagination.
+  int32 page = 4;
+}
+
+message ListTablesResponse {
+  // List of table names.
+  repeated string tables = 1;
+
+  // Total number of tables.
+  int32 total = 2;
+
+  // Current page (0-indexed).
+  int32 page = 3;
+
+  // Page size used.
+  int32 page_size = 4;
+}
+
+// ── ListColumns ─────────────────────────────────────────────────────────────
+
+message ListColumnsRequest {
+  // Required. User ID to look up credentials for.
+  string user_id = 1;
+
+  // Required. Database/keyspace name.
+  string database = 2;
+
+  // Required. Table name.
+  string table = 3;
+
+  // Optional. Maximum columns per page (default 50, max 100).
+  int32 page_size = 4;
+
+  // Optional. Offset for offset-based pagination.
+  int32 page = 5;
+}
+
+// ColumnInfo describes a single column.
+message ColumnInfo {
+  // Column name.
+  string name = 1;
+
+  // SQL data type (e.g. "varchar(255)", "int", "text").
+  string data_type = 2;
+
+  // Whether the column is nullable ("YES"/"NO").
+  string is_nullable = 3;
+
+  // Column default value, if any.
+  string column_default = 4;
+
+  // Column key ("PRI", "UNI", "MUL", or empty).
+  string column_key = 5;
+
+  // Extra info (e.g. "auto_increment").
+  string extra = 6;
+
+  // Ordinal position (1-indexed).
+  int32 ordinal_position = 7;
+}
+
+message ListColumnsResponse {
+  // List of column metadata.
+  repeated ColumnInfo columns = 1;
+
+  // Total number of columns.
+  int32 total = 2;
+
+  // Current page (0-indexed).
+  int32 page = 3;
+
+  // Page size used.
+  int32 page_size = 4;
+}
+
+// ── PreviewTable ────────────────────────────────────────────────────────────
+
+message PreviewTableRequest {
+  // Required. User ID to look up credentials for.
+  string user_id = 1;
+
+  // Required. Database/keyspace name.
+  string database = 2;
+
+  // Required. Table name.
+  string table = 3;
+
+  // Optional. Max rows to return (default 10, max 100).
+  int32 limit = 4;
+}
+
+message PreviewTableResponse {
+  // Column names in order.
+  repeated string columns = 1;
+
+  // Row data — each row is a list of string values matching column order.
+  repeated Row rows = 2;
+
+  // Total rows in the table (approximate, from INFORMATION_SCHEMA).
+  int64 approximate_total = 3;
+}
+
+// Row is a single row of data, with each value as a string.
+message Row {
+  repeated string values = 1;
+}

@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { setTokenGetter, ApiError } from "@/lib/api";
+import { setTokenGetter, setUserIdGetter, ApiError } from "@/lib/api";
 import { API_BASE_URL, SESSION_DURATION_MS } from "@/lib/constants";
 
 // ── Session shape ───────────────────────────────────────────────────────────
@@ -83,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Wire token into gRPC transport interceptor whenever session changes
   useEffect(() => {
     setTokenGetter(() => session?.token ?? null);
+    setUserIdGetter(() => session?.id ?? null);
   }, [session]);
 
   const login = useCallback(async (email: string, password: string) => {

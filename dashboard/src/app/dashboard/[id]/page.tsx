@@ -26,6 +26,7 @@ import { cn, copyToClipboard, formatDate } from "@/lib/utils";
 import { useDatabase } from "@/hooks/useDatabase";
 import { useDeleteDatabase } from "@/hooks/useDeleteDatabase";
 import { useRotateCredentials } from "@/hooks/useRotateCredentials";
+import IPWhitelist from "@/components/IPWhitelist";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -832,6 +833,9 @@ export default function DatabaseDetailPage() {
             </p>
           </div>
         </section>
+
+        {/* IP Whitelist */}
+        <IPWhitelist databaseId={db.databaseId} />
 
         {/* Danger Zone */}
         <section className="rounded-xl border border-error-subtle bg-surface-1 overflow-hidden">

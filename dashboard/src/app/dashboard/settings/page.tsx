@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import ApiKeys from "@/components/ApiKeys";
+import AllowedIPs from "@/components/AllowedIPs";
 import toast from "react-hot-toast";
 
 interface NPref {
@@ -305,6 +306,15 @@ export default function SettingsPage() {
           desc="Manage programmatic access to the EuroScale API"
         >
           <ApiKeys />
+        </SectionCard>
+
+        {/* Allowed IPs */}
+        <SectionCard
+          icon={Shield}
+          title="Allowed IPs"
+          desc="Restrict API access to specific IP addresses"
+        >
+          <AllowedIPs />
         </SectionCard>
 
         {/* Notifications */}
