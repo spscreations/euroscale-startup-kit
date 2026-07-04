@@ -43,6 +43,23 @@ export default function TierCard() {
   const [autoscaleEnabled, setAutoscaleEnabled] = useState(false);
   const [autoscaleCU, setAutoscaleCU] = useState(1);
 
+  // Auth + databases for resize target
+  const { session } = useAuth();
+  const { data: dbs } = useDatabases();
+  const resizeMutation = useResizeStorage();
+  const { createPayment, isLoading: paymentLoading } = useCreatePayment();
+  const searchParams = useSearchParams();
+
+  // Mollie redirect detection — show toast when user returns from payment
+  useEffect(() => {
+    const paymentStatus = searchParams.get("payment");
+    if (paymentStatus === "success") {
+      toast.success("Payment successful! Your plan has been updated.");
+    } else if (paymentStatus === "cancelled") {
+      toast.error("Payment was cancelled. Your plan has not been changed.");
+    }
+  }, [searchParams]);
+
   // Loading skeleton
   if (isLoading) {
     return (
@@ -94,23 +111,6 @@ export default function TierCard() {
   const cuPricePerHour = limits?.autoscaleCuPrice ?? 0.04;
   const maxAutoscaleCU = limits?.autoscaleMaxCu ?? 0;
   const canAutoscale = maxAutoscaleCU > 0;
-
-  // Auth + databases for resize target
-  const { session } = useAuth();
-  const { data: dbs } = useDatabases();
-  const resizeMutation = useResizeStorage();
-  const { createPayment, isLoading: paymentLoading } = useCreatePayment();
-  const searchParams = useSearchParams();
-
-  // Mollie redirect detection — show toast when user returns from payment
-  useEffect(() => {
-    const paymentStatus = searchParams.get("payment");
-    if (paymentStatus === "success") {
-      toast.success("Payment successful! Your plan has been updated.");
-    } else if (paymentStatus === "cancelled") {
-      toast.error("Payment was cancelled. Your plan has not been changed.");
-    }
-  }, [searchParams]);
 
   const handleApply = useCallback(() => {
     if (!session?.id) {
