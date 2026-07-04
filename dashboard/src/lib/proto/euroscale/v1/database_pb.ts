@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file euroscale/v1/database.proto.
  */
 export const file_euroscale_v1_database: GenFile = /*@__PURE__*/
-  fileDesc("ChtldXJvc2NhbGUvdjEvZGF0YWJhc2UucHJvdG8SDGV1cm9zY2FsZS52MSJWChVDcmVhdGVEYXRhYmFzZVJlcXVlc3QSDAoEbmFtZRgBIAEoCRIOCgZlbmdpbmUYAiABKAkSDgoGcmVnaW9uGAMgASgJEg8KB3VzZXJfaWQYBCABKAki4AEKFkNyZWF0ZURhdGFiYXNlUmVzcG9uc2USEwoLZGF0YWJhc2VfaWQYASABKAkSGQoRY29ubmVjdGlvbl9zdHJpbmcYAiABKAkSDAoEaG9zdBgDIAEoCRIMCgRwb3J0GAQgASgFEhAKCHVzZXJuYW1lGAUgASgJEhAKCHBhc3N3b3JkGAYgASgJEhIKCnNzbF9jYV9wZW0YByABKAkSDgoGZW5naW5lGAggASgJEg4KBnJlZ2lvbhgJIAEoCRIOCgZzdGF0dXMYCiABKAkSEgoKY3JlYXRlZF9hdBgLIAEoCSIsChVEZWxldGVEYXRhYmFzZVJlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkiOgoWRGVsZXRlRGF0YWJhc2VSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB21lc3NhZ2UYAiABKAkiTgoUTGlzdERhdGFiYXNlc1JlcXVlc3QSDwoHdXNlcl9pZBgBIAEoCRIRCglwYWdlX3NpemUYAiABKAUSEgoKcGFnZV90b2tlbhgDIAEoCSJqChVMaXN0RGF0YWJhc2VzUmVzcG9uc2USKQoJZGF0YWJhc2VzGAEgAygLMhYuZXVyb3NjYWxlLnYxLkRhdGFiYXNlEhcKD25leHRfcGFnZV90b2tlbhgCIAEoCRINCgV0b3RhbBgDIAEoBSIpChJHZXREYXRhYmFzZVJlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkiPwoTR2V0RGF0YWJhc2VSZXNwb25zZRIoCghkYXRhYmFzZRgBIAEoCzIWLmV1cm9zY2FsZS52MS5EYXRhYmFzZSIvChhSb3RhdGVDcmVkZW50aWFsc1JlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkinwEKGVJvdGF0ZUNyZWRlbnRpYWxzUmVzcG9uc2USEwoLZGF0YWJhc2VfaWQYASABKAkSGQoRY29ubmVjdGlvbl9zdHJpbmcYAiABKAkSEAoIdXNlcm5hbWUYAyABKAkSEAoIcGFzc3dvcmQYBCABKAkSEgoKc3NsX2NhX3BlbRgFIAEoCRIMCgRob3N0GAYgASgJEgwKBHBvcnQYByABKAUinwEKCERhdGFiYXNlEhMKC2RhdGFiYXNlX2lkGAEgASgJEgwKBG5hbWUYAiABKAkSDgoGZW5naW5lGAMgASgJEg4KBnJlZ2lvbhgEIAEoCRIMCgRob3N0GAUgASgJEgwKBHBvcnQYBiABKAUSEAoIdXNlcm5hbWUYByABKAkSDgoGc3RhdHVzGAggASgJEhIKCmNyZWF0ZWRfYXQYCSABKAkiSQoQSVBXaGl0ZWxpc3RFbnRyeRIMCgRjaWRyGAEgASgJEhMKC2Rlc2NyaXB0aW9uGAIgASgJEhIKCmNyZWF0ZWRfYXQYAyABKAkiLAoVR2V0SVBXaGl0ZWxpc3RSZXF1ZXN0EhMKC2RhdGFiYXNlX2lkGAEgASgJIkkKFkdldElQV2hpdGVsaXN0UmVzcG9uc2USLwoHZW50cmllcxgBIAMoCzIeLmV1cm9zY2FsZS52MS5JUFdoaXRlbGlzdEVudHJ5IlQKGkFkZElQV2hpdGVsaXN0RW50cnlSZXF1ZXN0EhMKC2RhdGFiYXNlX2lkGAEgASgJEgwKBGNpZHIYAiABKAkSEwoLZGVzY3JpcHRpb24YAyABKAkiTAobQWRkSVBXaGl0ZWxpc3RFbnRyeVJlc3BvbnNlEi0KBWVudHJ5GAEgASgLMh4uZXVyb3NjYWxlLnYxLklQV2hpdGVsaXN0RW50cnkiQgodUmVtb3ZlSVBXaGl0ZWxpc3RFbnRyeVJlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkSDAoEY2lkchgCIAEoCSJCCh5SZW1vdmVJUFdoaXRlbGlzdEVudHJ5UmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIPCgdtZXNzYWdlGAIgASgJMp0GCg9EYXRhYmFzZVNlcnZpY2USWwoOQ3JlYXRlRGF0YWJhc2USIy5ldXJvc2NhbGUudjEuQ3JlYXRlRGF0YWJhc2VSZXF1ZXN0GiQuZXVyb3NjYWxlLnYxLkNyZWF0ZURhdGFiYXNlUmVzcG9uc2USWwoORGVsZXRlRGF0YWJhc2USIy5ldXJvc2NhbGUudjEuRGVsZXRlRGF0YWJhc2VSZXF1ZXN0GiQuZXVyb3NjYWxlLnYxLkRlbGV0ZURhdGFiYXNlUmVzcG9uc2USWAoNTGlzdERhdGFiYXNlcxIiLmV1cm9zY2FsZS52MS5MaXN0RGF0YWJhc2VzUmVxdWVzdBojLmV1cm9zY2FsZS52MS5MaXN0RGF0YWJhc2VzUmVzcG9uc2USUgoLR2V0RGF0YWJhc2USIC5ldXJvc2NhbGUudjEuR2V0RGF0YWJhc2VSZXF1ZXN0GiEuZXVyb3NjYWxlLnYxLkdldERhdGFiYXNlUmVzcG9uc2USZAoRUm90YXRlQ3JlZGVudGlhbHMSJi5ldXJvc2NhbGUudjEuUm90YXRlQ3JlZGVudGlhbHNSZXF1ZXN0GicuZXVyb3NjYWxlLnYxLlJvdGF0ZUNyZWRlbnRpYWxzUmVzcG9uc2USWwoOR2V0SVBXaGl0ZWxpc3QSIy5ldXJvc2NhbGUudjEuR2V0SVBXaGl0ZWxpc3RSZXF1ZXN0GiQuZXVyb3NjYWxlLnYxLkdldElQV2hpdGVsaXN0UmVzcG9uc2USagoTQWRkSVBXaGl0ZWxpc3RFbnRyeRIoLmV1cm9zY2FsZS52MS5BZGRJUFdoaXRlbGlzdEVudHJ5UmVxdWVzdBopLmV1cm9zY2FsZS52MS5BZGRJUFdoaXRlbGlzdEVudHJ5UmVzcG9uc2UScwoWUmVtb3ZlSVBXaGl0ZWxpc3RFbnRyeRIrLmV1cm9zY2FsZS52MS5SZW1vdmVJUFdoaXRlbGlzdEVudHJ5UmVxdWVzdBosLmV1cm9zY2FsZS52MS5SZW1vdmVJUFdoaXRlbGlzdEVudHJ5UmVzcG9uc2VCUFpOZ2l0aHViLmNvbS9zcHNjcmVhdGlvbnMvZXVyb3NjYWxlLXN0YXJ0dXAta2l0L2FwaS9nZW4vZXVyb3NjYWxlL3YxO2V1cm9zY2FsZXYxYgZwcm90bzM");
+  fileDesc("ChtldXJvc2NhbGUvdjEvZGF0YWJhc2UucHJvdG8SDGV1cm9zY2FsZS52MSJeChVDcmVhdGVEYXRhYmFzZVJlcXVlc3QSDgoEbmFtZRgBIAEoCTIAEhAKBmVuZ2luZRgCIAEoCTIAEhAKBnJlZ2lvbhgDIAEoCTIAEhEKB3VzZXJfaWQYBCABKAkyACL2AQoWQ3JlYXRlRGF0YWJhc2VSZXNwb25zZRIVCgtkYXRhYmFzZV9pZBgBIAEoCTIAEhsKEWNvbm5lY3Rpb25fc3RyaW5nGAIgASgJMgASDgoEaG9zdBgDIAEoCTIAEg4KBHBvcnQYBCABKAUyABISCgh1c2VybmFtZRgFIAEoCTIAEhIKCHBhc3N3b3JkGAYgASgJMgASFAoKc3NsX2NhX3BlbRgHIAEoCTIAEhAKBmVuZ2luZRgIIAEoCTIAEhAKBnJlZ2lvbhgJIAEoCTIAEhAKBnN0YXR1cxgKIAEoCTIAEhQKCmNyZWF0ZWRfYXQYCyABKAkyACIuChVEZWxldGVEYXRhYmFzZVJlcXVlc3QSFQoLZGF0YWJhc2VfaWQYASABKAkyACI+ChZEZWxldGVEYXRhYmFzZVJlc3BvbnNlEhEKB3N1Y2Nlc3MYASABKAgyABIRCgdtZXNzYWdlGAIgASgJMgAiVAoUTGlzdERhdGFiYXNlc1JlcXVlc3QSEQoHdXNlcl9pZBgBIAEoCTIAEhMKCXBhZ2Vfc2l6ZRgCIAEoBTIAEhQKCnBhZ2VfdG9rZW4YAyABKAkyACJuChVMaXN0RGF0YWJhc2VzUmVzcG9uc2USKQoJZGF0YWJhc2VzGAEgAygLMhYuZXVyb3NjYWxlLnYxLkRhdGFiYXNlEhkKD25leHRfcGFnZV90b2tlbhgCIAEoCTIAEg8KBXRvdGFsGAMgASgFMgAiKwoSR2V0RGF0YWJhc2VSZXF1ZXN0EhUKC2RhdGFiYXNlX2lkGAEgASgJMgAiPwoTR2V0RGF0YWJhc2VSZXNwb25zZRIoCghkYXRhYmFzZRgBIAEoCzIWLmV1cm9zY2FsZS52MS5EYXRhYmFzZSIxChhSb3RhdGVDcmVkZW50aWFsc1JlcXVlc3QSFQoLZGF0YWJhc2VfaWQYASABKAkyACKtAQoZUm90YXRlQ3JlZGVudGlhbHNSZXNwb25zZRIVCgtkYXRhYmFzZV9pZBgBIAEoCTIAEhsKEWNvbm5lY3Rpb25fc3RyaW5nGAIgASgJMgASEgoIdXNlcm5hbWUYAyABKAkyABISCghwYXNzd29yZBgEIAEoCTIAEhQKCnNzbF9jYV9wZW0YBSABKAkyABIOCgRob3N0GAYgASgJMgASDgoEcG9ydBgHIAEoBTIAIrEBCghEYXRhYmFzZRIVCgtkYXRhYmFzZV9pZBgBIAEoCTIAEg4KBG5hbWUYAiABKAkyABIQCgZlbmdpbmUYAyABKAkyABIQCgZyZWdpb24YBCABKAkyABIOCgRob3N0GAUgASgJMgASDgoEcG9ydBgGIAEoBTIAEhIKCHVzZXJuYW1lGAcgASgJMgASEAoGc3RhdHVzGAggASgJMgASFAoKY3JlYXRlZF9hdBgJIAEoCTIAIk8KEElQV2hpdGVsaXN0RW50cnkSDgoEY2lkchgBIAEoCTIAEhUKC2Rlc2NyaXB0aW9uGAIgASgJMgASFAoKY3JlYXRlZF9hdBgDIAEoCTIAIi4KFUdldElQV2hpdGVsaXN0UmVxdWVzdBIVCgtkYXRhYmFzZV9pZBgBIAEoCTIAIkkKFkdldElQV2hpdGVsaXN0UmVzcG9uc2USLwoHZW50cmllcxgBIAMoCzIeLmV1cm9zY2FsZS52MS5JUFdoaXRlbGlzdEVudHJ5IloKGkFkZElQV2hpdGVsaXN0RW50cnlSZXF1ZXN0EhUKC2RhdGFiYXNlX2lkGAEgASgJMgASDgoEY2lkchgCIAEoCTIAEhUKC2Rlc2NyaXB0aW9uGAMgASgJMgAiTAobQWRkSVBXaGl0ZWxpc3RFbnRyeVJlc3BvbnNlEi0KBWVudHJ5GAEgASgLMh4uZXVyb3NjYWxlLnYxLklQV2hpdGVsaXN0RW50cnkiRgodUmVtb3ZlSVBXaGl0ZWxpc3RFbnRyeVJlcXVlc3QSFQoLZGF0YWJhc2VfaWQYASABKAkyABIOCgRjaWRyGAIgASgJMgAiRgoeUmVtb3ZlSVBXaGl0ZWxpc3RFbnRyeVJlc3BvbnNlEhEKB3N1Y2Nlc3MYASABKAgyABIRCgdtZXNzYWdlGAIgASgJMgAiIgoPR2V0VXNhZ2VSZXF1ZXN0Eg8KB3VzZXJfaWQYASABKAkifAoLVXNhZ2VMaW1pdHMSFQoNbWF4X2RhdGFiYXNlcxgBIAEoAxIZChFtYXhfc3RvcmFnZV9ieXRlcxgCIAEoAxIcChRyZWFkX3VuaXRzX3Blcl9tb250aBgDIAEoAxIdChV3cml0ZV91bml0c19wZXJfbW9udGgYBCABKAMicAoMVXNhZ2VDdXJyZW50EhYKDmRhdGFiYXNlX2NvdW50GAEgASgDEhUKDXN0b3JhZ2VfYnl0ZXMYAiABKAMSFwoPcmVhZF91bml0c191c2VkGAMgASgDEhgKEHdyaXRlX3VuaXRzX3VzZWQYBCABKAMihwEKEEdldFVzYWdlUmVzcG9uc2USDwoHdXNlcl9pZBgBIAEoCRIMCgR0aWVyGAIgASgJEikKBmxpbWl0cxgDIAEoCzIZLmV1cm9zY2FsZS52MS5Vc2FnZUxpbWl0cxIpCgV1c2FnZRgEIAEoCzIaLmV1cm9zY2FsZS52MS5Vc2FnZUN1cnJlbnQyjAcKD0RhdGFiYXNlU2VydmljZRJfCg5DcmVhdGVEYXRhYmFzZRIjLmV1cm9zY2FsZS52MS5DcmVhdGVEYXRhYmFzZVJlcXVlc3QaJC5ldXJvc2NhbGUudjEuQ3JlYXRlRGF0YWJhc2VSZXNwb25zZSgAMAASXwoORGVsZXRlRGF0YWJhc2USIy5ldXJvc2NhbGUudjEuRGVsZXRlRGF0YWJhc2VSZXF1ZXN0GiQuZXVyb3NjYWxlLnYxLkRlbGV0ZURhdGFiYXNlUmVzcG9uc2UoADAAElwKDUxpc3REYXRhYmFzZXMSIi5ldXJvc2NhbGUudjEuTGlzdERhdGFiYXNlc1JlcXVlc3QaIy5ldXJvc2NhbGUudjEuTGlzdERhdGFiYXNlc1Jlc3BvbnNlKAAwABJWCgtHZXREYXRhYmFzZRIgLmV1cm9zY2FsZS52MS5HZXREYXRhYmFzZVJlcXVlc3QaIS5ldXJvc2NhbGUudjEuR2V0RGF0YWJhc2VSZXNwb25zZSgAMAASaAoRUm90YXRlQ3JlZGVudGlhbHMSJi5ldXJvc2NhbGUudjEuUm90YXRlQ3JlZGVudGlhbHNSZXF1ZXN0GicuZXVyb3NjYWxlLnYxLlJvdGF0ZUNyZWRlbnRpYWxzUmVzcG9uc2UoADAAEl8KDkdldElQV2hpdGVsaXN0EiMuZXVyb3NjYWxlLnYxLkdldElQV2hpdGVsaXN0UmVxdWVzdBokLmV1cm9zY2FsZS52MS5HZXRJUFdoaXRlbGlzdFJlc3BvbnNlKAAwABJuChNBZGRJUFdoaXRlbGlzdEVudHJ5EiguZXVyb3NjYWxlLnYxLkFkZElQV2hpdGVsaXN0RW50cnlSZXF1ZXN0GikuZXVyb3NjYWxlLnYxLkFkZElQV2hpdGVsaXN0RW50cnlSZXNwb25zZSgAMAASdwoWUmVtb3ZlSVBXaGl0ZWxpc3RFbnRyeRIrLmV1cm9zY2FsZS52MS5SZW1vdmVJUFdoaXRlbGlzdEVudHJ5UmVxdWVzdBosLmV1cm9zY2FsZS52MS5SZW1vdmVJUFdoaXRlbGlzdEVudHJ5UmVzcG9uc2UoADAAEk0KCEdldFVzYWdlEh0uZXVyb3NjYWxlLnYxLkdldFVzYWdlUmVxdWVzdBoeLmV1cm9zY2FsZS52MS5HZXRVc2FnZVJlc3BvbnNlKAAwAEJQWk5naXRodWIuY29tL3Nwc2NyZWF0aW9ucy9ldXJvc2NhbGUtc3RhcnR1cC1raXQvYXBpL2dlbi9ldXJvc2NhbGUvdjE7ZXVyb3NjYWxldjFiBnByb3RvMw");
 
 /**
  * @generated from message euroscale.v1.CreateDatabaseRequest
@@ -626,6 +626,145 @@ export const RemoveIPWhitelistEntryResponseSchema: GenMessage<RemoveIPWhitelistE
   messageDesc(file_euroscale_v1_database, 17);
 
 /**
+ * @generated from message euroscale.v1.GetUsageRequest
+ */
+export type GetUsageRequest = Message<"euroscale.v1.GetUsageRequest"> & {
+  /**
+   * ID of the user requesting usage info.
+   *
+   * @generated from field: string user_id = 1;
+   */
+  userId: string;
+};
+
+/**
+ * Describes the message euroscale.v1.GetUsageRequest.
+ * Use `create(GetUsageRequestSchema)` to create a new message.
+ */
+export const GetUsageRequestSchema: GenMessage<GetUsageRequest> = /*@__PURE__*/
+  messageDesc(file_euroscale_v1_database, 18);
+
+/**
+ * @generated from message euroscale.v1.UsageLimits
+ */
+export type UsageLimits = Message<"euroscale.v1.UsageLimits"> & {
+  /**
+   * Maximum number of databases allowed. 0 = unlimited.
+   *
+   * @generated from field: int64 max_databases = 1;
+   */
+  maxDatabases: bigint;
+
+  /**
+   * Maximum storage in bytes. 0 = unlimited.
+   *
+   * @generated from field: int64 max_storage_bytes = 2;
+   */
+  maxStorageBytes: bigint;
+
+  /**
+   * Read units allowed per month. 0 = unlimited.
+   *
+   * @generated from field: int64 read_units_per_month = 3;
+   */
+  readUnitsPerMonth: bigint;
+
+  /**
+   * Write units allowed per month. 0 = unlimited.
+   *
+   * @generated from field: int64 write_units_per_month = 4;
+   */
+  writeUnitsPerMonth: bigint;
+};
+
+/**
+ * Describes the message euroscale.v1.UsageLimits.
+ * Use `create(UsageLimitsSchema)` to create a new message.
+ */
+export const UsageLimitsSchema: GenMessage<UsageLimits> = /*@__PURE__*/
+  messageDesc(file_euroscale_v1_database, 19);
+
+/**
+ * @generated from message euroscale.v1.UsageCurrent
+ */
+export type UsageCurrent = Message<"euroscale.v1.UsageCurrent"> & {
+  /**
+   * Current number of databases.
+   *
+   * @generated from field: int64 database_count = 1;
+   */
+  databaseCount: bigint;
+
+  /**
+   * Current storage used in bytes.
+   *
+   * @generated from field: int64 storage_bytes = 2;
+   */
+  storageBytes: bigint;
+
+  /**
+   * Read units consumed this month.
+   *
+   * @generated from field: int64 read_units_used = 3;
+   */
+  readUnitsUsed: bigint;
+
+  /**
+   * Write units consumed this month.
+   *
+   * @generated from field: int64 write_units_used = 4;
+   */
+  writeUnitsUsed: bigint;
+};
+
+/**
+ * Describes the message euroscale.v1.UsageCurrent.
+ * Use `create(UsageCurrentSchema)` to create a new message.
+ */
+export const UsageCurrentSchema: GenMessage<UsageCurrent> = /*@__PURE__*/
+  messageDesc(file_euroscale_v1_database, 20);
+
+/**
+ * @generated from message euroscale.v1.GetUsageResponse
+ */
+export type GetUsageResponse = Message<"euroscale.v1.GetUsageResponse"> & {
+  /**
+   * User ID.
+   *
+   * @generated from field: string user_id = 1;
+   */
+  userId: string;
+
+  /**
+   * Current tier name (free, scale, team, business, enterprise).
+   *
+   * @generated from field: string tier = 2;
+   */
+  tier: string;
+
+  /**
+   * Limits for the current tier.
+   *
+   * @generated from field: euroscale.v1.UsageLimits limits = 3;
+   */
+  limits?: UsageLimits | undefined;
+
+  /**
+   * Current usage counts.
+   *
+   * @generated from field: euroscale.v1.UsageCurrent usage = 4;
+   */
+  usage?: UsageCurrent | undefined;
+};
+
+/**
+ * Describes the message euroscale.v1.GetUsageResponse.
+ * Use `create(GetUsageResponseSchema)` to create a new message.
+ */
+export const GetUsageResponseSchema: GenMessage<GetUsageResponse> = /*@__PURE__*/
+  messageDesc(file_euroscale_v1_database, 21);
+
+/**
  * DatabaseService provisions and manages Vitess databases on demand.
  *
  * @generated from service euroscale.v1.DatabaseService
@@ -712,6 +851,16 @@ export const DatabaseService: GenService<{
     methodKind: "unary";
     input: typeof RemoveIPWhitelistEntryRequestSchema;
     output: typeof RemoveIPWhitelistEntryResponseSchema;
+  },
+  /**
+   * GetUsage returns current tier, limits, and usage for a user.
+   *
+   * @generated from rpc euroscale.v1.DatabaseService.GetUsage
+   */
+  getUsage: {
+    methodKind: "unary";
+    input: typeof GetUsageRequestSchema;
+    output: typeof GetUsageResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_euroscale_v1_database, 0);

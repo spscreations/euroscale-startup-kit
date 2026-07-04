@@ -61,3 +61,10 @@ export const addIPWhitelistEntry = DatabaseService.method.addIPWhitelistEntry;
  * @generated from rpc euroscale.v1.DatabaseService.RemoveIPWhitelistEntry
  */
 export const removeIPWhitelistEntry = DatabaseService.method.removeIPWhitelistEntry;
+
+/**
+ * GetUsage returns current tier, limits, and usage for a user.
+ *
+ * @generated from rpc euroscale.v1.DatabaseService.GetUsage
+ */
+export const getUsage = DatabaseService.method.getUsage;

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AuthGuard from "@/components/AuthGuard";
+import TierCard from "@/components/TierCard";
 import StatsCards from "@/components/StatsCards";
 import DatabaseCard from "@/components/DatabaseCard";
 import { useDatabases } from "@/hooks/useDatabases";
@@ -157,6 +158,9 @@ function DashboardContent() {
 
       {/* Content */}
       <main className="flex-1 overflow-auto px-6 py-6 space-y-6">
+        {/* Tier & Usage */}
+        <TierCard />
+
         {/* Stats */}
         <StatsCards
           totalDatabases={totalDatabases}

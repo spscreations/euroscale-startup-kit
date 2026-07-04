@@ -36,6 +36,7 @@ import (
 	metasvc "github.com/spscreations/euroscale-startup-kit/api/internal/metadata"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/models"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/secrets"
+	"github.com/spscreations/euroscale-startup-kit/api/internal/tiers"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/vitess"
 
 	// Import generated protobuf code.
@@ -77,9 +78,10 @@ type authResponse struct {
 type server struct {
 	pb.UnimplementedDatabaseServiceServer
 
-	vtgate   *vitess.Manager
-	secrets  *secrets.Store
-	ipwl     *ipwhitelist.Store
+	vtgate    *vitess.Manager
+	secrets   *secrets.Store
+	ipwl      *ipwhitelist.Store
+	tierStore *tiers.Store
 
 	host     string
 	sslCAPem string
@@ -103,6 +105,19 @@ func (s *server) CreateDatabase(ctx context.Context, req *pb.CreateDatabaseReque
 	}
 	if req.UserId == "" {
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+	}
+
+	// Tier enforcement: check database count limit.
+	tier := s.tierStore.GetTierForUser(ctx, req.UserId)
+	usage, err := s.tierStore.GetCurrentUsage(ctx, req.UserId)
+	if err != nil {
+		log.Printf("ERROR: failed to get usage for user %q: %v", req.UserId, err)
+		return nil, status.Errorf(codes.Internal, "failed to check tier usage: %v", err)
+	}
+	if tier.MaxDatabases != tiers.UnlimitedDBs && int(usage.DatabaseCount) >= tier.MaxDatabases {
+		return nil, status.Errorf(codes.ResourceExhausted,
+			"database limit reached (%d) for tier %q — upgrade at euroscale.app",
+			tier.MaxDatabases, tier.Name)
 	}
 
 	// Default values.
@@ -168,6 +183,12 @@ func (s *server) CreateDatabase(ctx context.Context, req *pb.CreateDatabaseReque
 		return nil, status.Errorf(codes.Internal, "failed to store credentials: %v", err)
 	}
 
+	// Increment the database count for tier tracking.
+	if err := s.tierStore.IncrementDatabaseCount(ctx, req.UserId); err != nil {
+		log.Printf("ERROR: failed to increment database count for user %q: %v", req.UserId, err)
+		// Non-fatal — the database was created, just logging is fine.
+	}
+
 	log.Printf("INFO: created database %q (id=%s, user=%s, region=%s)", dbName, dbID, req.UserId, region)
 
 	return &pb.CreateDatabaseResponse{
@@ -208,6 +229,15 @@ func (s *server) DeleteDatabase(ctx context.Context, req *pb.DeleteDatabaseReque
 	if err := s.secrets.DeleteCredentials(ctx, req.DatabaseId); err != nil {
 		log.Printf("ERROR: failed to delete credentials for %q: %v", req.DatabaseId, err)
 		// Database is already dropped — still return success.
+	}
+
+	// Decrement the database count for tier tracking.
+	// The user_id was extracted from the credentials secret labels above.
+	userID := s.secrets.GetUserID(ctx, req.DatabaseId)
+	if userID != "" {
+		if err := s.tierStore.DecrementDatabaseCount(ctx, userID); err != nil {
+			log.Printf("ERROR: failed to decrement database count for user %q: %v", userID, err)
+		}
 	}
 
 	log.Printf("INFO: deleted database %q", req.DatabaseId)
@@ -467,6 +497,60 @@ func (s *server) RemoveIPWhitelistEntry(ctx context.Context, req *pb.RemoveIPWhi
 	return &pb.RemoveIPWhitelistEntryResponse{
 		Success: true,
 		Message: fmt.Sprintf("CIDR %q removed from whitelist", req.Cidr),
+	}, nil
+}
+
+// ── Tier & Usage RPCs ────────────────────────────────────────────────────────
+
+// GetUsage returns the current usage and tier limits for a user.
+func (s *server) GetUsage(ctx context.Context, req *pb.GetUsageRequest) (*pb.GetUsageResponse, error) {
+	if req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+	}
+
+	tier := s.tierStore.GetTierForUser(ctx, req.UserId)
+	usage, err := s.tierStore.GetCurrentUsage(ctx, req.UserId)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get usage: %v", err)
+	}
+
+	limits := &pb.TierLimits{
+		MaxDatabases:      int32(tier.MaxDatabases),
+		MaxStorageBytes:   tier.MaxStorageGB * 1_073_741_824, // GB to bytes
+		ReadUnitsPerMonth: tier.ReadUnitsPerMonth,
+		WriteUnitsPerMonth: tier.WriteUnitsPerMonth,
+	}
+
+	return &pb.GetUsageResponse{
+		UserId: req.UserId,
+		Tier:   tier.Name,
+		Limits: limits,
+		Usage: &pb.Usage{
+			DatabaseCount: usage.DatabaseCount,
+			StorageBytes:  usage.StorageBytes,
+			ReadUnitsUsed: usage.ReadUnits,
+			WriteUnitsUsed: usage.WriteUnits,
+		},
+	}, nil
+}
+
+// SetUserTier updates the subscription tier for a user (admin only).
+func (s *server) SetUserTier(ctx context.Context, req *pb.SetUserTierRequest) (*pb.SetUserTierResponse, error) {
+	if req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+	}
+	if req.Tier == "" {
+		return nil, status.Error(codes.InvalidArgument, "tier is required")
+	}
+
+	if err := s.tierStore.SetUserTier(ctx, req.UserId, req.Tier); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "failed to set tier: %v", err)
+	}
+
+	log.Printf("INFO: set tier %q for user %q", req.Tier, req.UserId)
+
+	return &pb.SetUserTierResponse{
+		Success: true,
 	}, nil
 }
 
@@ -912,19 +996,27 @@ func main() {
 
 	secretsStore := secrets.NewStore(clientset, namespace)
 	ipwlStore := ipwhitelist.NewStore(clientset, namespace)
+	tierStore := tiers.NewStore(clientset, namespace)
 	log.Println("K8s clientset created successfully.")
+
+	// Ensure the user-tier ConfigMap exists.
+	if err := tierStore.EnsureConfigMap(context.Background()); err != nil {
+		log.Fatalf("Failed to ensure euroscale-user-tiers ConfigMap: %v", err)
+	}
+	log.Println("Tier store initialized successfully.")
 
 	// ── Load SSL CA certificate ───────────────────────────────────────────
 	sslCAPem := loadSSLCert()
 
 	// ── Build the gRPC server ───────────────────────────────────────────────
 	srv := &server{
-		vtgate:   vtgateMgr,
-		secrets:  secretsStore,
-		ipwl:     ipwlStore,
-		host:     host,
-		sslCAPem: sslCAPem,
-		apiKey:   apiKey,
+		vtgate:    vtgateMgr,
+		secrets:   secretsStore,
+		ipwl:      ipwlStore,
+		tierStore: tierStore,
+		host:      host,
+		sslCAPem:  sslCAPem,
+		apiKey:    apiKey,
 	}
 
 	grpcServer := grpc.NewServer(

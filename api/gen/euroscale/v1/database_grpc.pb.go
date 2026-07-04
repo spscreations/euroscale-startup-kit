@@ -23,7 +23,12 @@ const (
 	DatabaseService_DeleteDatabase_FullMethodName         = "/euroscale.v1.DatabaseService/DeleteDatabase"
 	DatabaseService_ListDatabases_FullMethodName          = "/euroscale.v1.DatabaseService/ListDatabases"
 	DatabaseService_GetDatabase_FullMethodName            = "/euroscale.v1.DatabaseService/GetDatabase"
+	DatabaseService_RotateCredentials_FullMethodName      = "/euroscale.v1.DatabaseService/RotateCredentials"
+	DatabaseService_GetIPWhitelist_FullMethodName         = "/euroscale.v1.DatabaseService/GetIPWhitelist"
+	DatabaseService_AddIPWhitelistEntry_FullMethodName    = "/euroscale.v1.DatabaseService/AddIPWhitelistEntry"
 	DatabaseService_RemoveIPWhitelistEntry_FullMethodName = "/euroscale.v1.DatabaseService/RemoveIPWhitelistEntry"
+	DatabaseService_GetUsage_FullMethodName               = "/euroscale.v1.DatabaseService/GetUsage"
+	DatabaseService_SetUserTier_FullMethodName            = "/euroscale.v1.DatabaseService/SetUserTier"
 )
 
 // DatabaseServiceClient is the client API for DatabaseService service.
@@ -43,7 +48,17 @@ type DatabaseServiceClient interface {
 	GetDatabase(ctx context.Context, in *GetDatabaseRequest, opts ...grpc.CallOption) (*GetDatabaseResponse, error)
 	// RotateCredentials generates new credentials for an existing database,
 	// invalidating the old ones. Returns the new credentials ONCE.
+	RotateCredentials(ctx context.Context, in *RotateCredentialsRequest, opts ...grpc.CallOption) (*RotateCredentialsResponse, error)
+	// GetIPWhitelist returns the IP whitelist for a database.
+	GetIPWhitelist(ctx context.Context, in *GetIPWhitelistRequest, opts ...grpc.CallOption) (*GetIPWhitelistResponse, error)
+	// AddIPWhitelistEntry adds a CIDR range to a database's IP whitelist.
+	AddIPWhitelistEntry(ctx context.Context, in *AddIPWhitelistEntryRequest, opts ...grpc.CallOption) (*AddIPWhitelistEntryResponse, error)
+	// RemoveIPWhitelistEntry removes a CIDR range from a database's IP whitelist.
 	RemoveIPWhitelistEntry(ctx context.Context, in *RemoveIPWhitelistEntryRequest, opts ...grpc.CallOption) (*RemoveIPWhitelistEntryResponse, error)
+	// GetUsage returns the current usage and tier limits for a user.
+	GetUsage(ctx context.Context, in *GetUsageRequest, opts ...grpc.CallOption) (*GetUsageResponse, error)
+	// SetUserTier updates the subscription tier for a user (admin only).
+	SetUserTier(ctx context.Context, in *SetUserTierRequest, opts ...grpc.CallOption) (*SetUserTierResponse, error)
 }
 
 type databaseServiceClient struct {
@@ -94,10 +109,60 @@ func (c *databaseServiceClient) GetDatabase(ctx context.Context, in *GetDatabase
 	return out, nil
 }
 
+func (c *databaseServiceClient) RotateCredentials(ctx context.Context, in *RotateCredentialsRequest, opts ...grpc.CallOption) (*RotateCredentialsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RotateCredentialsResponse)
+	err := c.cc.Invoke(ctx, DatabaseService_RotateCredentials_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *databaseServiceClient) GetIPWhitelist(ctx context.Context, in *GetIPWhitelistRequest, opts ...grpc.CallOption) (*GetIPWhitelistResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetIPWhitelistResponse)
+	err := c.cc.Invoke(ctx, DatabaseService_GetIPWhitelist_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *databaseServiceClient) AddIPWhitelistEntry(ctx context.Context, in *AddIPWhitelistEntryRequest, opts ...grpc.CallOption) (*AddIPWhitelistEntryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AddIPWhitelistEntryResponse)
+	err := c.cc.Invoke(ctx, DatabaseService_AddIPWhitelistEntry_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *databaseServiceClient) RemoveIPWhitelistEntry(ctx context.Context, in *RemoveIPWhitelistEntryRequest, opts ...grpc.CallOption) (*RemoveIPWhitelistEntryResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RemoveIPWhitelistEntryResponse)
 	err := c.cc.Invoke(ctx, DatabaseService_RemoveIPWhitelistEntry_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *databaseServiceClient) GetUsage(ctx context.Context, in *GetUsageRequest, opts ...grpc.CallOption) (*GetUsageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUsageResponse)
+	err := c.cc.Invoke(ctx, DatabaseService_GetUsage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *databaseServiceClient) SetUserTier(ctx context.Context, in *SetUserTierRequest, opts ...grpc.CallOption) (*SetUserTierResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetUserTierResponse)
+	err := c.cc.Invoke(ctx, DatabaseService_SetUserTier_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +186,17 @@ type DatabaseServiceServer interface {
 	GetDatabase(context.Context, *GetDatabaseRequest) (*GetDatabaseResponse, error)
 	// RotateCredentials generates new credentials for an existing database,
 	// invalidating the old ones. Returns the new credentials ONCE.
+	RotateCredentials(context.Context, *RotateCredentialsRequest) (*RotateCredentialsResponse, error)
+	// GetIPWhitelist returns the IP whitelist for a database.
+	GetIPWhitelist(context.Context, *GetIPWhitelistRequest) (*GetIPWhitelistResponse, error)
+	// AddIPWhitelistEntry adds a CIDR range to a database's IP whitelist.
+	AddIPWhitelistEntry(context.Context, *AddIPWhitelistEntryRequest) (*AddIPWhitelistEntryResponse, error)
+	// RemoveIPWhitelistEntry removes a CIDR range from a database's IP whitelist.
 	RemoveIPWhitelistEntry(context.Context, *RemoveIPWhitelistEntryRequest) (*RemoveIPWhitelistEntryResponse, error)
+	// GetUsage returns the current usage and tier limits for a user.
+	GetUsage(context.Context, *GetUsageRequest) (*GetUsageResponse, error)
+	// SetUserTier updates the subscription tier for a user (admin only).
+	SetUserTier(context.Context, *SetUserTierRequest) (*SetUserTierResponse, error)
 	mustEmbedUnimplementedDatabaseServiceServer()
 }
 
@@ -144,8 +219,23 @@ func (UnimplementedDatabaseServiceServer) ListDatabases(context.Context, *ListDa
 func (UnimplementedDatabaseServiceServer) GetDatabase(context.Context, *GetDatabaseRequest) (*GetDatabaseResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetDatabase not implemented")
 }
+func (UnimplementedDatabaseServiceServer) RotateCredentials(context.Context, *RotateCredentialsRequest) (*RotateCredentialsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RotateCredentials not implemented")
+}
+func (UnimplementedDatabaseServiceServer) GetIPWhitelist(context.Context, *GetIPWhitelistRequest) (*GetIPWhitelistResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetIPWhitelist not implemented")
+}
+func (UnimplementedDatabaseServiceServer) AddIPWhitelistEntry(context.Context, *AddIPWhitelistEntryRequest) (*AddIPWhitelistEntryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AddIPWhitelistEntry not implemented")
+}
 func (UnimplementedDatabaseServiceServer) RemoveIPWhitelistEntry(context.Context, *RemoveIPWhitelistEntryRequest) (*RemoveIPWhitelistEntryResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RemoveIPWhitelistEntry not implemented")
+}
+func (UnimplementedDatabaseServiceServer) GetUsage(context.Context, *GetUsageRequest) (*GetUsageResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUsage not implemented")
+}
+func (UnimplementedDatabaseServiceServer) SetUserTier(context.Context, *SetUserTierRequest) (*SetUserTierResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetUserTier not implemented")
 }
 func (UnimplementedDatabaseServiceServer) mustEmbedUnimplementedDatabaseServiceServer() {}
 func (UnimplementedDatabaseServiceServer) testEmbeddedByValue()                         {}
@@ -240,6 +330,60 @@ func _DatabaseService_GetDatabase_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DatabaseService_RotateCredentials_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RotateCredentialsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DatabaseServiceServer).RotateCredentials(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DatabaseService_RotateCredentials_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DatabaseServiceServer).RotateCredentials(ctx, req.(*RotateCredentialsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DatabaseService_GetIPWhitelist_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetIPWhitelistRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DatabaseServiceServer).GetIPWhitelist(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DatabaseService_GetIPWhitelist_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DatabaseServiceServer).GetIPWhitelist(ctx, req.(*GetIPWhitelistRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DatabaseService_AddIPWhitelistEntry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddIPWhitelistEntryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DatabaseServiceServer).AddIPWhitelistEntry(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DatabaseService_AddIPWhitelistEntry_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DatabaseServiceServer).AddIPWhitelistEntry(ctx, req.(*AddIPWhitelistEntryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _DatabaseService_RemoveIPWhitelistEntry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RemoveIPWhitelistEntryRequest)
 	if err := dec(in); err != nil {
@@ -254,6 +398,42 @@ func _DatabaseService_RemoveIPWhitelistEntry_Handler(srv interface{}, ctx contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DatabaseServiceServer).RemoveIPWhitelistEntry(ctx, req.(*RemoveIPWhitelistEntryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DatabaseService_GetUsage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUsageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DatabaseServiceServer).GetUsage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DatabaseService_GetUsage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DatabaseServiceServer).GetUsage(ctx, req.(*GetUsageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DatabaseService_SetUserTier_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetUserTierRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DatabaseServiceServer).SetUserTier(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DatabaseService_SetUserTier_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DatabaseServiceServer).SetUserTier(ctx, req.(*SetUserTierRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -282,8 +462,28 @@ var DatabaseService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _DatabaseService_GetDatabase_Handler,
 		},
 		{
+			MethodName: "RotateCredentials",
+			Handler:    _DatabaseService_RotateCredentials_Handler,
+		},
+		{
+			MethodName: "GetIPWhitelist",
+			Handler:    _DatabaseService_GetIPWhitelist_Handler,
+		},
+		{
+			MethodName: "AddIPWhitelistEntry",
+			Handler:    _DatabaseService_AddIPWhitelistEntry_Handler,
+		},
+		{
 			MethodName: "RemoveIPWhitelistEntry",
 			Handler:    _DatabaseService_RemoveIPWhitelistEntry_Handler,
+		},
+		{
+			MethodName: "GetUsage",
+			Handler:    _DatabaseService_GetUsage_Handler,
+		},
+		{
+			MethodName: "SetUserTier",
+			Handler:    _DatabaseService_SetUserTier_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

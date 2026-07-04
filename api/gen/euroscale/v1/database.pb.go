@@ -1176,6 +1176,366 @@ func (x *RemoveIPWhitelistEntryResponse) GetMessage() string {
 	return ""
 }
 
+type GetUsageRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID of the user whose usage to query.
+	UserId        string `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUsageRequest) Reset() {
+	*x = GetUsageRequest{}
+	mi := &file_euroscale_v1_database_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUsageRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUsageRequest) ProtoMessage() {}
+
+func (x *GetUsageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_euroscale_v1_database_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUsageRequest.ProtoReflect.Descriptor instead.
+func (*GetUsageRequest) Descriptor() ([]byte, []int) {
+	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *GetUsageRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type TierLimits struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Maximum number of databases (-1 = unlimited).
+	MaxDatabases int32 `protobuf:"varint,1,opt,name=max_databases,json=maxDatabases,proto3" json:"max_databases,omitempty"`
+	// Maximum storage in bytes (-1 = unlimited).
+	MaxStorageBytes int64 `protobuf:"varint,2,opt,name=max_storage_bytes,json=maxStorageBytes,proto3" json:"max_storage_bytes,omitempty"`
+	// Read units allowed per month (-1 = unlimited/burstable).
+	ReadUnitsPerMonth int64 `protobuf:"varint,3,opt,name=read_units_per_month,json=readUnitsPerMonth,proto3" json:"read_units_per_month,omitempty"`
+	// Write units allowed per month (-1 = unlimited/burstable).
+	WriteUnitsPerMonth int64 `protobuf:"varint,4,opt,name=write_units_per_month,json=writeUnitsPerMonth,proto3" json:"write_units_per_month,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *TierLimits) Reset() {
+	*x = TierLimits{}
+	mi := &file_euroscale_v1_database_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TierLimits) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TierLimits) ProtoMessage() {}
+
+func (x *TierLimits) ProtoReflect() protoreflect.Message {
+	mi := &file_euroscale_v1_database_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TierLimits.ProtoReflect.Descriptor instead.
+func (*TierLimits) Descriptor() ([]byte, []int) {
+	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *TierLimits) GetMaxDatabases() int32 {
+	if x != nil {
+		return x.MaxDatabases
+	}
+	return 0
+}
+
+func (x *TierLimits) GetMaxStorageBytes() int64 {
+	if x != nil {
+		return x.MaxStorageBytes
+	}
+	return 0
+}
+
+func (x *TierLimits) GetReadUnitsPerMonth() int64 {
+	if x != nil {
+		return x.ReadUnitsPerMonth
+	}
+	return 0
+}
+
+func (x *TierLimits) GetWriteUnitsPerMonth() int64 {
+	if x != nil {
+		return x.WriteUnitsPerMonth
+	}
+	return 0
+}
+
+type Usage struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Current number of databases.
+	DatabaseCount int32 `protobuf:"varint,1,opt,name=database_count,json=databaseCount,proto3" json:"database_count,omitempty"`
+	// Current storage used in bytes.
+	StorageBytes int64 `protobuf:"varint,2,opt,name=storage_bytes,json=storageBytes,proto3" json:"storage_bytes,omitempty"`
+	// Read units consumed this month.
+	ReadUnitsUsed int64 `protobuf:"varint,3,opt,name=read_units_used,json=readUnitsUsed,proto3" json:"read_units_used,omitempty"`
+	// Write units consumed this month.
+	WriteUnitsUsed int64 `protobuf:"varint,4,opt,name=write_units_used,json=writeUnitsUsed,proto3" json:"write_units_used,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *Usage) Reset() {
+	*x = Usage{}
+	mi := &file_euroscale_v1_database_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Usage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Usage) ProtoMessage() {}
+
+func (x *Usage) ProtoReflect() protoreflect.Message {
+	mi := &file_euroscale_v1_database_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Usage.ProtoReflect.Descriptor instead.
+func (*Usage) Descriptor() ([]byte, []int) {
+	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *Usage) GetDatabaseCount() int32 {
+	if x != nil {
+		return x.DatabaseCount
+	}
+	return 0
+}
+
+func (x *Usage) GetStorageBytes() int64 {
+	if x != nil {
+		return x.StorageBytes
+	}
+	return 0
+}
+
+func (x *Usage) GetReadUnitsUsed() int64 {
+	if x != nil {
+		return x.ReadUnitsUsed
+	}
+	return 0
+}
+
+func (x *Usage) GetWriteUnitsUsed() int64 {
+	if x != nil {
+		return x.WriteUnitsUsed
+	}
+	return 0
+}
+
+type GetUsageResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The user ID.
+	UserId string `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	// Current tier name (free, scale, team, business, enterprise).
+	Tier string `protobuf:"bytes,2,opt,name=tier,proto3" json:"tier,omitempty"`
+	// The limits for the current tier.
+	Limits *TierLimits `protobuf:"bytes,3,opt,name=limits,proto3" json:"limits,omitempty"`
+	// Current usage.
+	Usage         *Usage `protobuf:"bytes,4,opt,name=usage,proto3" json:"usage,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUsageResponse) Reset() {
+	*x = GetUsageResponse{}
+	mi := &file_euroscale_v1_database_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUsageResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUsageResponse) ProtoMessage() {}
+
+func (x *GetUsageResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_euroscale_v1_database_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUsageResponse.ProtoReflect.Descriptor instead.
+func (*GetUsageResponse) Descriptor() ([]byte, []int) {
+	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *GetUsageResponse) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *GetUsageResponse) GetTier() string {
+	if x != nil {
+		return x.Tier
+	}
+	return ""
+}
+
+func (x *GetUsageResponse) GetLimits() *TierLimits {
+	if x != nil {
+		return x.Limits
+	}
+	return nil
+}
+
+func (x *GetUsageResponse) GetUsage() *Usage {
+	if x != nil {
+		return x.Usage
+	}
+	return nil
+}
+
+type SetUserTierRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID of the user to update.
+	UserId string `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	// Tier name to assign.
+	Tier          string `protobuf:"bytes,2,opt,name=tier,proto3" json:"tier,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetUserTierRequest) Reset() {
+	*x = SetUserTierRequest{}
+	mi := &file_euroscale_v1_database_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetUserTierRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetUserTierRequest) ProtoMessage() {}
+
+func (x *SetUserTierRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_euroscale_v1_database_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetUserTierRequest.ProtoReflect.Descriptor instead.
+func (*SetUserTierRequest) Descriptor() ([]byte, []int) {
+	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *SetUserTierRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *SetUserTierRequest) GetTier() string {
+	if x != nil {
+		return x.Tier
+	}
+	return ""
+}
+
+type SetUserTierResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Whether the operation succeeded.
+	Success       bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetUserTierResponse) Reset() {
+	*x = SetUserTierResponse{}
+	mi := &file_euroscale_v1_database_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetUserTierResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetUserTierResponse) ProtoMessage() {}
+
+func (x *SetUserTierResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_euroscale_v1_database_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetUserTierResponse.ProtoReflect.Descriptor instead.
+func (*SetUserTierResponse) Descriptor() ([]byte, []int) {
+	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *SetUserTierResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
 var File_euroscale_v1_database_proto protoreflect.FileDescriptor
 
 const file_euroscale_v1_database_proto_rawDesc = "" +
@@ -1270,13 +1630,41 @@ const file_euroscale_v1_database_proto_rawDesc = "" +
 	"\x04cidr\x18\x02 \x01(\tR\x04cidr\"T\n" +
 	"\x1eRemoveIPWhitelistEntryResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2\xee\x03\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"*\n" +
+	"\x0fGetUsageRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"\xc1\x01\n" +
+	"\n" +
+	"TierLimits\x12#\n" +
+	"\rmax_databases\x18\x01 \x01(\x05R\fmaxDatabases\x12*\n" +
+	"\x11max_storage_bytes\x18\x02 \x01(\x03R\x0fmaxStorageBytes\x12/\n" +
+	"\x14read_units_per_month\x18\x03 \x01(\x03R\x11readUnitsPerMonth\x121\n" +
+	"\x15write_units_per_month\x18\x04 \x01(\x03R\x12writeUnitsPerMonth\"\xa5\x01\n" +
+	"\x05Usage\x12%\n" +
+	"\x0edatabase_count\x18\x01 \x01(\x05R\rdatabaseCount\x12#\n" +
+	"\rstorage_bytes\x18\x02 \x01(\x03R\fstorageBytes\x12&\n" +
+	"\x0fread_units_used\x18\x03 \x01(\x03R\rreadUnitsUsed\x12(\n" +
+	"\x10write_units_used\x18\x04 \x01(\x03R\x0ewriteUnitsUsed\"\x9c\x01\n" +
+	"\x10GetUsageResponse\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x12\n" +
+	"\x04tier\x18\x02 \x01(\tR\x04tier\x120\n" +
+	"\x06limits\x18\x03 \x01(\v2\x18.euroscale.v1.TierLimitsR\x06limits\x12)\n" +
+	"\x05usage\x18\x04 \x01(\v2\x13.euroscale.v1.UsageR\x05usage\"A\n" +
+	"\x12SetUserTierRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x12\n" +
+	"\x04tier\x18\x02 \x01(\tR\x04tier\"/\n" +
+	"\x13SetUserTierResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess2\xbc\a\n" +
 	"\x0fDatabaseService\x12[\n" +
 	"\x0eCreateDatabase\x12#.euroscale.v1.CreateDatabaseRequest\x1a$.euroscale.v1.CreateDatabaseResponse\x12[\n" +
 	"\x0eDeleteDatabase\x12#.euroscale.v1.DeleteDatabaseRequest\x1a$.euroscale.v1.DeleteDatabaseResponse\x12X\n" +
 	"\rListDatabases\x12\".euroscale.v1.ListDatabasesRequest\x1a#.euroscale.v1.ListDatabasesResponse\x12R\n" +
-	"\vGetDatabase\x12 .euroscale.v1.GetDatabaseRequest\x1a!.euroscale.v1.GetDatabaseResponse\x12s\n" +
-	"\x16RemoveIPWhitelistEntry\x12+.euroscale.v1.RemoveIPWhitelistEntryRequest\x1a,.euroscale.v1.RemoveIPWhitelistEntryResponseBPZNgithub.com/spscreations/euroscale-startup-kit/api/gen/euroscale/v1;euroscalev1b\x06proto3"
+	"\vGetDatabase\x12 .euroscale.v1.GetDatabaseRequest\x1a!.euroscale.v1.GetDatabaseResponse\x12d\n" +
+	"\x11RotateCredentials\x12&.euroscale.v1.RotateCredentialsRequest\x1a'.euroscale.v1.RotateCredentialsResponse\x12[\n" +
+	"\x0eGetIPWhitelist\x12#.euroscale.v1.GetIPWhitelistRequest\x1a$.euroscale.v1.GetIPWhitelistResponse\x12j\n" +
+	"\x13AddIPWhitelistEntry\x12(.euroscale.v1.AddIPWhitelistEntryRequest\x1a).euroscale.v1.AddIPWhitelistEntryResponse\x12s\n" +
+	"\x16RemoveIPWhitelistEntry\x12+.euroscale.v1.RemoveIPWhitelistEntryRequest\x1a,.euroscale.v1.RemoveIPWhitelistEntryResponse\x12I\n" +
+	"\bGetUsage\x12\x1d.euroscale.v1.GetUsageRequest\x1a\x1e.euroscale.v1.GetUsageResponse\x12R\n" +
+	"\vSetUserTier\x12 .euroscale.v1.SetUserTierRequest\x1a!.euroscale.v1.SetUserTierResponseBPZNgithub.com/spscreations/euroscale-startup-kit/api/gen/euroscale/v1;euroscalev1b\x06proto3"
 
 var (
 	file_euroscale_v1_database_proto_rawDescOnce sync.Once
@@ -1290,7 +1678,7 @@ func file_euroscale_v1_database_proto_rawDescGZIP() []byte {
 	return file_euroscale_v1_database_proto_rawDescData
 }
 
-var file_euroscale_v1_database_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_euroscale_v1_database_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_euroscale_v1_database_proto_goTypes = []any{
 	(*CreateDatabaseRequest)(nil),          // 0: euroscale.v1.CreateDatabaseRequest
 	(*CreateDatabaseResponse)(nil),         // 1: euroscale.v1.CreateDatabaseResponse
@@ -1310,27 +1698,45 @@ var file_euroscale_v1_database_proto_goTypes = []any{
 	(*AddIPWhitelistEntryResponse)(nil),    // 15: euroscale.v1.AddIPWhitelistEntryResponse
 	(*RemoveIPWhitelistEntryRequest)(nil),  // 16: euroscale.v1.RemoveIPWhitelistEntryRequest
 	(*RemoveIPWhitelistEntryResponse)(nil), // 17: euroscale.v1.RemoveIPWhitelistEntryResponse
+	(*GetUsageRequest)(nil),                // 18: euroscale.v1.GetUsageRequest
+	(*TierLimits)(nil),                     // 19: euroscale.v1.TierLimits
+	(*Usage)(nil),                          // 20: euroscale.v1.Usage
+	(*GetUsageResponse)(nil),               // 21: euroscale.v1.GetUsageResponse
+	(*SetUserTierRequest)(nil),             // 22: euroscale.v1.SetUserTierRequest
+	(*SetUserTierResponse)(nil),            // 23: euroscale.v1.SetUserTierResponse
 }
 var file_euroscale_v1_database_proto_depIdxs = []int32{
 	10, // 0: euroscale.v1.ListDatabasesResponse.databases:type_name -> euroscale.v1.Database
 	10, // 1: euroscale.v1.GetDatabaseResponse.database:type_name -> euroscale.v1.Database
 	11, // 2: euroscale.v1.GetIPWhitelistResponse.entries:type_name -> euroscale.v1.IPWhitelistEntry
 	11, // 3: euroscale.v1.AddIPWhitelistEntryResponse.entry:type_name -> euroscale.v1.IPWhitelistEntry
-	0,  // 4: euroscale.v1.DatabaseService.CreateDatabase:input_type -> euroscale.v1.CreateDatabaseRequest
-	2,  // 5: euroscale.v1.DatabaseService.DeleteDatabase:input_type -> euroscale.v1.DeleteDatabaseRequest
-	4,  // 6: euroscale.v1.DatabaseService.ListDatabases:input_type -> euroscale.v1.ListDatabasesRequest
-	6,  // 7: euroscale.v1.DatabaseService.GetDatabase:input_type -> euroscale.v1.GetDatabaseRequest
-	16, // 8: euroscale.v1.DatabaseService.RemoveIPWhitelistEntry:input_type -> euroscale.v1.RemoveIPWhitelistEntryRequest
-	1,  // 9: euroscale.v1.DatabaseService.CreateDatabase:output_type -> euroscale.v1.CreateDatabaseResponse
-	3,  // 10: euroscale.v1.DatabaseService.DeleteDatabase:output_type -> euroscale.v1.DeleteDatabaseResponse
-	5,  // 11: euroscale.v1.DatabaseService.ListDatabases:output_type -> euroscale.v1.ListDatabasesResponse
-	7,  // 12: euroscale.v1.DatabaseService.GetDatabase:output_type -> euroscale.v1.GetDatabaseResponse
-	17, // 13: euroscale.v1.DatabaseService.RemoveIPWhitelistEntry:output_type -> euroscale.v1.RemoveIPWhitelistEntryResponse
-	9,  // [9:14] is the sub-list for method output_type
-	4,  // [4:9] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	19, // 4: euroscale.v1.GetUsageResponse.limits:type_name -> euroscale.v1.TierLimits
+	20, // 5: euroscale.v1.GetUsageResponse.usage:type_name -> euroscale.v1.Usage
+	0,  // 6: euroscale.v1.DatabaseService.CreateDatabase:input_type -> euroscale.v1.CreateDatabaseRequest
+	2,  // 7: euroscale.v1.DatabaseService.DeleteDatabase:input_type -> euroscale.v1.DeleteDatabaseRequest
+	4,  // 8: euroscale.v1.DatabaseService.ListDatabases:input_type -> euroscale.v1.ListDatabasesRequest
+	6,  // 9: euroscale.v1.DatabaseService.GetDatabase:input_type -> euroscale.v1.GetDatabaseRequest
+	8,  // 10: euroscale.v1.DatabaseService.RotateCredentials:input_type -> euroscale.v1.RotateCredentialsRequest
+	12, // 11: euroscale.v1.DatabaseService.GetIPWhitelist:input_type -> euroscale.v1.GetIPWhitelistRequest
+	14, // 12: euroscale.v1.DatabaseService.AddIPWhitelistEntry:input_type -> euroscale.v1.AddIPWhitelistEntryRequest
+	16, // 13: euroscale.v1.DatabaseService.RemoveIPWhitelistEntry:input_type -> euroscale.v1.RemoveIPWhitelistEntryRequest
+	18, // 14: euroscale.v1.DatabaseService.GetUsage:input_type -> euroscale.v1.GetUsageRequest
+	22, // 15: euroscale.v1.DatabaseService.SetUserTier:input_type -> euroscale.v1.SetUserTierRequest
+	1,  // 16: euroscale.v1.DatabaseService.CreateDatabase:output_type -> euroscale.v1.CreateDatabaseResponse
+	3,  // 17: euroscale.v1.DatabaseService.DeleteDatabase:output_type -> euroscale.v1.DeleteDatabaseResponse
+	5,  // 18: euroscale.v1.DatabaseService.ListDatabases:output_type -> euroscale.v1.ListDatabasesResponse
+	7,  // 19: euroscale.v1.DatabaseService.GetDatabase:output_type -> euroscale.v1.GetDatabaseResponse
+	9,  // 20: euroscale.v1.DatabaseService.RotateCredentials:output_type -> euroscale.v1.RotateCredentialsResponse
+	13, // 21: euroscale.v1.DatabaseService.GetIPWhitelist:output_type -> euroscale.v1.GetIPWhitelistResponse
+	15, // 22: euroscale.v1.DatabaseService.AddIPWhitelistEntry:output_type -> euroscale.v1.AddIPWhitelistEntryResponse
+	17, // 23: euroscale.v1.DatabaseService.RemoveIPWhitelistEntry:output_type -> euroscale.v1.RemoveIPWhitelistEntryResponse
+	21, // 24: euroscale.v1.DatabaseService.GetUsage:output_type -> euroscale.v1.GetUsageResponse
+	23, // 25: euroscale.v1.DatabaseService.SetUserTier:output_type -> euroscale.v1.SetUserTierResponse
+	16, // [16:26] is the sub-list for method output_type
+	6,  // [6:16] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_euroscale_v1_database_proto_init() }
@@ -1344,7 +1750,7 @@ func file_euroscale_v1_database_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_euroscale_v1_database_proto_rawDesc), len(file_euroscale_v1_database_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -29,6 +29,8 @@ type DatabaseServiceServer interface {
 	GetIPWhitelist(ctx context.Context, req *pb.GetIPWhitelistRequest) (*pb.GetIPWhitelistResponse, error)
 	AddIPWhitelistEntry(ctx context.Context, req *pb.AddIPWhitelistEntryRequest) (*pb.AddIPWhitelistEntryResponse, error)
 	RemoveIPWhitelistEntry(ctx context.Context, req *pb.RemoveIPWhitelistEntryRequest) (*pb.RemoveIPWhitelistEntryResponse, error)
+	GetUsage(ctx context.Context, req *pb.GetUsageRequest) (*pb.GetUsageResponse, error)
+	SetUserTier(ctx context.Context, req *pb.SetUserTierRequest) (*pb.SetUserTierResponse, error)
 }
 
 // MetadataServiceServer is the interface the metadata service satisfies.
@@ -54,6 +56,10 @@ const (
 	PathGetIPWhitelist        = "/euroscale.v1.DatabaseService/GetIPWhitelist"
 	PathAddIPWhitelistEntry    = "/euroscale.v1.DatabaseService/AddIPWhitelistEntry"
 	PathRemoveIPWhitelistEntry = "/euroscale.v1.DatabaseService/RemoveIPWhitelistEntry"
+
+	// Tier & usage paths.
+	PathGetUsage   = "/euroscale.v1.DatabaseService/GetUsage"
+	PathSetUserTier = "/euroscale.v1.DatabaseService/SetUserTier"
 
 	// MetadataService paths.
 	PathListSchemaDatabases = "/euroscale.v1.MetadataService/ListSchemaDatabases"
@@ -174,6 +180,32 @@ func NewHandler(srv DatabaseServiceServer, apiKey string, extraInterceptors ...c
 		PathRemoveIPWhitelistEntry,
 		func(ctx context.Context, req *connect.Request[pb.RemoveIPWhitelistEntryRequest]) (*connect.Response[pb.RemoveIPWhitelistEntryResponse], error) {
 			resp, err := srv.RemoveIPWhitelistEntry(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		connect.WithInterceptors(allInterceptors...),
+	))
+
+	// GetUsage
+	mux.Handle(PathGetUsage, connect.NewUnaryHandler(
+		PathGetUsage,
+		func(ctx context.Context, req *connect.Request[pb.GetUsageRequest]) (*connect.Response[pb.GetUsageResponse], error) {
+			resp, err := srv.GetUsage(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		connect.WithInterceptors(allInterceptors...),
+	))
+
+	// SetUserTier (admin)
+	mux.Handle(PathSetUserTier, connect.NewUnaryHandler(
+		PathSetUserTier,
+		func(ctx context.Context, req *connect.Request[pb.SetUserTierRequest]) (*connect.Response[pb.SetUserTierResponse], error) {
+			resp, err := srv.SetUserTier(ctx, req.Msg)
 			if err != nil {
 				return nil, err
 			}

@@ -31,6 +31,12 @@ service DatabaseService {
 
   // RemoveIPWhitelistEntry removes a CIDR range from a database's IP whitelist.
   rpc RemoveIPWhitelistEntry(RemoveIPWhitelistEntryRequest) returns (RemoveIPWhitelistEntryResponse);
+
+  // GetUsage returns the current usage and tier limits for a user.
+  rpc GetUsage(GetUsageRequest) returns (GetUsageResponse);
+
+  // SetUserTier updates the subscription tier for a user (admin only).
+  rpc SetUserTier(SetUserTierRequest) returns (SetUserTierResponse);
 }
 
 // ── CreateDatabase ──────────────────────────────────────────────────────────
@@ -252,4 +258,66 @@ message RemoveIPWhitelistEntryResponse {
 
   // Human-readable message.
   string message = 2;
+}
+
+// ── Usage & Tiers ──────────────────────────────────────────────────────────
+
+message GetUsageRequest {
+  // ID of the user whose usage to query.
+  string user_id = 1;
+}
+
+message TierLimits {
+  // Maximum number of databases (-1 = unlimited).
+  int32 max_databases = 1;
+
+  // Maximum storage in bytes (-1 = unlimited).
+  int64 max_storage_bytes = 2;
+
+  // Read units allowed per month (-1 = unlimited/burstable).
+  int64 read_units_per_month = 3;
+
+  // Write units allowed per month (-1 = unlimited/burstable).
+  int64 write_units_per_month = 4;
+}
+
+message Usage {
+  // Current number of databases.
+  int32 database_count = 1;
+
+  // Current storage used in bytes.
+  int64 storage_bytes = 2;
+
+  // Read units consumed this month.
+  int64 read_units_used = 3;
+
+  // Write units consumed this month.
+  int64 write_units_used = 4;
+}
+
+message GetUsageResponse {
+  // The user ID.
+  string user_id = 1;
+
+  // Current tier name (free, scale, team, business, enterprise).
+  string tier = 2;
+
+  // The limits for the current tier.
+  TierLimits limits = 3;
+
+  // Current usage.
+  Usage usage = 4;
+}
+
+message SetUserTierRequest {
+  // ID of the user to update.
+  string user_id = 1;
+
+  // Tier name to assign.
+  string tier = 2;
+}
+
+message SetUserTierResponse {
+  // Whether the operation succeeded.
+  bool success = 1;
 }

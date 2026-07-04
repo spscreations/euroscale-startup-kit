@@ -198,6 +198,16 @@ func (s *Store) SaveIPWhitelist(ctx context.Context, databaseID string, entries 
 	return nil
 }
 
+// GetUserID returns the user_id label from a database's K8s Secret.
+// Returns empty string if the secret or label is not found.
+func (s *Store) GetUserID(ctx context.Context, databaseID string) string {
+	secret, err := s.clientset.CoreV1().Secrets(s.namespace).Get(ctx, secretNameFor(databaseID), metav1.GetOptions{})
+	if err != nil {
+		return ""
+	}
+	return secret.Labels["user_id"]
+}
+
 // GetIPWhitelist retrieves the IP whitelist entries from the database's K8s Secret.
 // If the "ip_whitelist" key does not exist, it returns an empty slice.
 func (s *Store) GetIPWhitelist(ctx context.Context, databaseID string) ([]models.IPWhitelistEntry, error) {
