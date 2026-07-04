@@ -51,7 +51,7 @@ export function createTransport(): Transport {
     baseUrl: RPC_BASE_URL,
     // Use binary (application/connect+proto) for better performance.
     // Falls back to JSON when binary is not supported.
-    useBinaryFormat: true,
+    useBinaryFormat: false,
     fetch: (url, init) => {
       // Add CORS mode for cross-origin requests from the browser.
       return fetch(url, { ...init, mode: "cors" });
