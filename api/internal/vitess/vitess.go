@@ -40,6 +40,48 @@ func (m *Manager) Close() error {
 	return nil
 }
 
+// VtctldAddr returns the vtctld address used for administrative operations
+// such as listing backups and triggering restores.
+func (m *Manager) VtctldAddr() string {
+	return m.vtctldAddr
+}
+
+// ListBackups returns the output of `vtctlclient ListBackups` for a keyspace.
+// Returns the raw vtctlclient output as a string, which callers can parse.
+func (m *Manager) ListBackups(ctx context.Context, keyspace string) (string, error) {
+	if err := validateDatabaseName(keyspace); err != nil {
+		return "", err
+	}
+
+	cmd := exec.CommandContext(ctx, "vtctlclient",
+		"--server", m.vtctldAddr,
+		"ListBackups", keyspace,
+	)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("failed to list backups for keyspace %q: %w\noutput: %s", keyspace, err, string(output))
+	}
+
+	return string(output), nil
+}
+
+// RestoreFromBackup triggers a restore of the given tablet alias from the
+// most recent backup via vtctlclient.
+func (m *Manager) RestoreFromBackup(ctx context.Context, tabletAlias string) (string, error) {
+	cmd := exec.CommandContext(ctx, "vtctlclient",
+		"--server", m.vtctldAddr,
+		"RestoreFromBackup", tabletAlias,
+	)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("failed to restore from backup for tablet %q: %w\noutput: %s", tabletAlias, err, string(output))
+	}
+
+	return string(output), nil
+}
+
 // CreateDatabase creates a new keyspace in Vitess via vtctlclient.
 //
 // Under the hood this calls:

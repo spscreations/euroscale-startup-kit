@@ -4,6 +4,7 @@ import AuthGuard from "@/components/AuthGuard";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Clock,
   Database,
   Plus,
   Settings,
@@ -20,6 +21,7 @@ import { useState } from "react";
 
 const navItems = [
   { href: "/dashboard", label: "Databases", icon: Database, exact: true },
+  { href: "/dashboard/backups", label: "Backups", icon: Clock },
   { href: "/dashboard/browse", label: "Browse Data", icon: Search },
   { href: "/dashboard/create", label: "New database", icon: Plus },
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },

@@ -28,6 +28,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 
 	"github.com/spscreations/euroscale-startup-kit/api/internal/auth"
@@ -36,6 +37,7 @@ import (
 	metasvc "github.com/spscreations/euroscale-startup-kit/api/internal/metadata"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/models"
 	molliepkg "github.com/spscreations/euroscale-startup-kit/api/internal/mollie"
+	"github.com/spscreations/euroscale-startup-kit/api/internal/pitr"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/secrets"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/storage"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/tiers"
@@ -93,6 +95,9 @@ type server struct {
 
 	// mollieHTTPHandler handles Mollie payment endpoints (create-payment, webhook, invoices).
 	mollieHTTPHandler *molliepkg.Handler
+
+	// pitrHandler manages Point-In-Time Recovery backups and restores.
+	pitrHandler *pitr.Handler
 }
 
 // ── gRPC method implementations ────────────────────────────────────────────
@@ -1040,6 +1045,11 @@ func main() {
 		log.Fatalf("Failed to create K8s clientset: %v", err)
 	}
 
+	dynamicClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		log.Fatalf("Failed to create dynamic K8s client: %v", err)
+	}
+
 	secretsStore := secrets.NewStore(clientset, namespace)
 	ipwlStore := ipwhitelist.NewStore(clientset, namespace)
 	tierStore := tiers.NewStore(clientset, namespace)
@@ -1078,6 +1088,9 @@ func main() {
 	sslCAPem := loadSSLCert()
 
 	// ── Build the gRPC server ───────────────────────────────────────────────
+	// Initialize the PITR handler for backup/restore operations.
+	pitrHandler := pitr.NewHandler(clientset, dynamicClient, vtctldAddr, namespace)
+
 	srv := &server{
 		vtgate:    vtgateMgr,
 		secrets:   secretsStore,
@@ -1088,6 +1101,7 @@ func main() {
 		sslCAPem:  sslCAPem,
 		apiKey:             apiKey,
 		mollieHTTPHandler: mollieHTTPHandler,
+		pitrHandler:       pitrHandler,
 	}
 
 	grpcServer := grpc.NewServer(
@@ -1147,6 +1161,15 @@ func main() {
 	} else {
 		log.Println("MOLLIE_API_KEY not set — Mollie payment handlers disabled")
 	}
+
+	// PITR backup and restore endpoints
+	httpMux.HandleFunc("/api/v1/backups", srv.pitrHandler.HandleListBackups)
+	httpMux.HandleFunc("/api/v1/backups/", srv.pitrHandler.HandleListBackups)
+	httpMux.HandleFunc("/api/v1/restore", srv.pitrHandler.HandleTriggerRestore)
+	httpMux.HandleFunc("/api/v1/restore/", srv.pitrHandler.HandleTriggerRestore)
+	httpMux.HandleFunc("/api/v1/restores", srv.pitrHandler.HandleRestoreStatus)
+	httpMux.HandleFunc("/api/v1/restores/", srv.pitrHandler.HandleRestoreStatus)
+	log.Println("PITR endpoints registered: /api/v1/backups, /api/v1/restore, /api/v1/restores")
 
 	// Build and register Connect/gRPC-web handler on the same port.
 	// This makes the DatabaseService available to browsers via HTTP/1.1
