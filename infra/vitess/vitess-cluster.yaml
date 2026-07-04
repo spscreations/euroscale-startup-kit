@@ -11,7 +11,6 @@ spec:
   # ── Container Images ──────────────────────────────────────────
   images:
     vtctld: vitess/lite:v24.0.1
-    vtadmin: vitess/lite:v24.0.1
     vtgate: vitess/lite:v24.0.1
     vttablet: vitess/lite:v24.0.1
     mysqld:
@@ -85,21 +84,6 @@ spec:
       limits:
         cpu: 200m
         memory: 256Mi
-
-  # ── vtadmin (API only, no web UI) ────────────────────────────
-  vtadmin:
-    cells:
-      - nuremberg
-    replicas: 1
-    apiResources:
-      requests:
-        cpu: 100m
-        memory: 64Mi
-      limits:
-        cpu: 200m
-        memory: 128Mi
-    apiAddresses:
-      - https://euroscale-vtadmin.euroscale:15000
 
   # ── Cells (failure domains) ──────────────────────────────────
   cells:
