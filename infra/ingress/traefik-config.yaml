@@ -1,0 +1,23 @@
+# Traefik Ingress Controller — Installed via Helm
+# Cloudflare DNS challenge for Let's Encrypt
+# The helm values are stored here for reference and redeployment.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: traefik-config
+  namespace: traefik-system
+data:
+  # Managed via Helm, not applied directly
+  description: |
+    Installed via: helm upgrade --install traefik traefik/traefik -n traefik-system
+    Version: traefik:v3.7.5
+    DNS Challenge: Cloudflare (admin@euroscale.app)
+    Secret: cloudflare-dns (CF_API_TOKEN)
+    
+    Ports:
+      HTTP: 80 → NodePort 30080
+      HTTPS: 443 → NodePort 30443
+    
+    To reinstall:
+      helm upgrade --install traefik traefik/traefik -n traefik-system -f traefik-helm-values.json
