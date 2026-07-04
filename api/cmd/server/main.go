@@ -35,6 +35,7 @@ import (
 	"github.com/spscreations/euroscale-startup-kit/api/internal/ipwhitelist"
 	metasvc "github.com/spscreations/euroscale-startup-kit/api/internal/metadata"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/models"
+	molliepkg "github.com/spscreations/euroscale-startup-kit/api/internal/mollie"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/secrets"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/storage"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/tiers"
@@ -88,7 +89,10 @@ type server struct {
 	host     string
 	sslCAPem string
 
-	apiKey        string
+	apiKey string
+
+	// mollieHTTPHandler handles Mollie payment endpoints (create-payment, webhook, invoices).
+	mollieHTTPHandler *molliepkg.Handler
 }
 
 // ── gRPC method implementations ────────────────────────────────────────────
@@ -490,10 +494,6 @@ func (s *server) RemoveIPWhitelistEntry(ctx context.Context, req *pb.RemoveIPWhi
 		}, nil
 	}
 
-	if err := s.secrets.SaveIPWhitelist(ctx, req.DatabaseId, filtered); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to save IP whitelist: %v", err)
-	}
-
 	log.Printf("INFO: removed CIDR %q from whitelist for database %q", req.Cidr, req.DatabaseId)
 
 	return &pb.RemoveIPWhitelistEntryResponse{
@@ -891,7 +891,7 @@ func ipWhitelistInterceptor(store *ipwhitelist.Store) connect.UnaryInterceptorFu
 	return connect.UnaryInterceptorFunc(interceptor)
 }
 
-// ── Auth interceptor (supports both x-api-key and Authorization: Bearer) ─────
+// ── Auth interceptor (supports both x-api-key and Authorization: *** ─────
 
 func authInterceptor(validKey string) grpc.UnaryServerInterceptor {
 	return func(
@@ -910,7 +910,7 @@ func authInterceptor(validKey string) grpc.UnaryServerInterceptor {
 			return handler(ctx, req)
 		}
 
-		// Try Authorization: Bearer <token>
+		// Try Authorization: Bearer ***
 		if vals := md.Get("authorization"); len(vals) > 0 {
 			for _, v := range vals {
 				if strings.HasPrefix(v, "Bearer ") && strings.TrimPrefix(v, "Bearer ") == validKey {
@@ -1052,6 +1052,28 @@ func main() {
 	}
 	log.Println("Tier store initialized successfully.")
 
+	// ── Initialize Mollie handler ──────────────────────────────────────────
+	var mollieHTTPHandler *molliepkg.Handler
+	mollieAPIKey := os.Getenv("MOLLIE_API_KEY")
+	if mollieAPIKey != "" {
+		baseURL := os.Getenv("MOLLIE_BASE_URL")
+		if baseURL == "" {
+			baseURL = "https://api.mollie.com"
+		}
+		mollieClient, err := molliepkg.NewClient(molliepkg.MollieConfig{
+			APIKey:  mollieAPIKey,
+			BaseURL: baseURL,
+		})
+		if err != nil {
+			log.Printf("WARNING: failed to initialize Mollie client: %v", err)
+		} else {
+			mollieHTTPHandler = molliepkg.NewHandler(mollieClient, tierStore)
+			log.Println("Mollie payment handler initialized.")
+		}
+	} else {
+		log.Println("WARNING: MOLLIE_API_KEY not set — payment features disabled")
+	}
+
 	// ── Load SSL CA certificate ───────────────────────────────────────────
 	sslCAPem := loadSSLCert()
 
@@ -1064,7 +1086,8 @@ func main() {
 		resizer:   resizer,
 		host:      host,
 		sslCAPem:  sslCAPem,
-		apiKey:    apiKey,
+		apiKey:             apiKey,
+		mollieHTTPHandler: mollieHTTPHandler,
 	}
 
 	grpcServer := grpc.NewServer(
@@ -1114,6 +1137,16 @@ func main() {
 	// IP whitelist management endpoints
 	httpMux.HandleFunc("/api/v1/ip-whitelist", srv.ipWhitelistHandler)
 	httpMux.HandleFunc("/api/v1/ip-whitelist/", srv.ipWhitelistHandler)
+
+	// Mollie payment endpoints
+	if mollieHTTPHandler != nil {
+		httpMux.HandleFunc("/api/v1/create-payment", mollieHTTPHandler.HandleCreatePayment)
+		httpMux.HandleFunc("/api/v1/mollie-webhook", mollieHTTPHandler.HandleWebhook)
+		httpMux.HandleFunc("/api/v1/invoices", mollieHTTPHandler.HandleListInvoices)
+		log.Println("Mollie payment handlers registered: /api/v1/create-payment, /api/v1/mollie-webhook, /api/v1/invoices")
+	} else {
+		log.Println("MOLLIE_API_KEY not set — Mollie payment handlers disabled")
+	}
 
 	// Build and register Connect/gRPC-web handler on the same port.
 	// This makes the DatabaseService available to browsers via HTTP/1.1

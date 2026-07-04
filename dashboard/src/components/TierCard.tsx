@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Crown,
   ArrowUpRight,
@@ -18,6 +19,7 @@ import { useResizeStorage } from "@/hooks/useResizeStorage";
 import { useAuth } from "@/lib/auth";
 import UsageBar from "./UsageBar";
 import { useDatabases } from "@/hooks/useDatabases";
+import { useCreatePayment } from "@/hooks/useCreatePayment";
 import toast from "react-hot-toast";
 
 const TIER_LABELS: Record<string, string> = {
@@ -97,6 +99,18 @@ export default function TierCard() {
   const { session } = useAuth();
   const { data: dbs } = useDatabases();
   const resizeMutation = useResizeStorage();
+  const { createPayment, isLoading: paymentLoading } = useCreatePayment();
+  const searchParams = useSearchParams();
+
+  // Mollie redirect detection — show toast when user returns from payment
+  useEffect(() => {
+    const paymentStatus = searchParams.get("payment");
+    if (paymentStatus === "success") {
+      toast.success("Payment successful! Your plan has been updated.");
+    } else if (paymentStatus === "cancelled") {
+      toast.error("Payment was cancelled. Your plan has not been changed.");
+    }
+  }, [searchParams]);
 
   const handleApply = useCallback(() => {
     if (!session?.id) {
@@ -159,16 +173,32 @@ export default function TierCard() {
             Contact sales
           </span>
         ) : showUpgrade ? (
-          <a
-            href="/pricing"
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const result = await createPayment(tier);
+                window.location.href = result.checkout_url;
+              } catch (err: any) {
+                toast.error(err.message ?? "Failed to start payment");
+              }
+            }}
+            disabled={paymentLoading}
             className={cn(
               "inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-semibold text-white",
               "bg-accent hover:bg-accent-hover active:bg-accent-pressed transition-colors",
+              "disabled:opacity-50 disabled:cursor-not-allowed",
             )}
           >
-            Upgrade
-            <ArrowUpRight size={12} />
-          </a>
+            {paymentLoading ? (
+              <><Loader2 size={12} className="animate-spin" /> Loading…</>
+            ) : (
+              <>
+                Upgrade
+                <ArrowUpRight size={12} />
+              </>
+            )}
+          </button>
         ) : (
           <span className="text-xs text-text-muted">Current plan</span>
         )}

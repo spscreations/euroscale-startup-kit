@@ -79,6 +79,11 @@ spec:
                 secretKeyRef:
                   name: euroscale-api-key
                   key: api_key
+            - name: MOLLIE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: euroscale-mollie
+                  key: api_key
           volumeMounts:
             - name: tls-certs
               mountPath: /etc/euroscale/tls

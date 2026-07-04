@@ -1,0 +1,15 @@
+---
+# Secret holding the Mollie API key for payment processing.
+# The API key is a Mollie API token starting with "test_" or "live_".
+# Apply with: kubectl edit secret euroscale-mollie -n euroscale
+apiVersion: v1
+kind: Secret
+metadata:
+  name: euroscale-mollie
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: api
+type: Opaque
+stringData:
+  api_key: ""   # placeholder — set with: kubectl edit secret euroscale-mollie -n euroscale
