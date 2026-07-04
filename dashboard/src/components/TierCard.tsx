@@ -60,6 +60,40 @@ export default function TierCard() {
     }
   }, [searchParams]);
 
+  const handleApply = useCallback(() => {
+    if (!session?.id) {
+      toast.error("Not authenticated");
+      return;
+    }
+    if (storageGB <= 0 && !autoscaleEnabled) {
+      toast.error("No changes to apply");
+      return;
+    }
+    if (storageGB > 0) {
+      // Resize the first database (in production, user selects which DB)
+      const targetDb = dbs?.databases?.[0];
+      if (!targetDb?.databaseId) {
+        toast.error("No databases to resize. Create a database first.");
+        return;
+      }
+      resizeMutation.mutate(
+        { databaseId: targetDb.databaseId, additionalGb: storageGB },
+        {
+          onSuccess: (res) => {
+            toast.success(`Storage resized to ${res.newTotalGb}GB`);
+            setStorageGB(10); // Reset input
+          },
+          onError: (err) => {
+            toast.error(`Failed: ${err.message}`);
+          },
+        },
+      );
+    }
+    if (autoscaleEnabled) {
+      toast.success(`Autoscale set to ${autoscaleCU} CU (billing integration pending)`);
+    }
+  }, [session?.id, storageGB, autoscaleEnabled, autoscaleCU, dbs, resizeMutation]);
+
   // Loading skeleton
   if (isLoading) {
     return (
@@ -111,40 +145,6 @@ export default function TierCard() {
   const cuPricePerHour = limits?.autoscaleCuPrice ?? 0.04;
   const maxAutoscaleCU = limits?.autoscaleMaxCu ?? 0;
   const canAutoscale = maxAutoscaleCU > 0;
-
-  const handleApply = useCallback(() => {
-    if (!session?.id) {
-      toast.error("Not authenticated");
-      return;
-    }
-    if (storageGB <= 0 && !autoscaleEnabled) {
-      toast.error("No changes to apply");
-      return;
-    }
-    if (storageGB > 0) {
-      // Resize the first database (in production, user selects which DB)
-      const targetDb = dbs?.databases?.[0];
-      if (!targetDb?.databaseId) {
-        toast.error("No databases to resize. Create a database first.");
-        return;
-      }
-      resizeMutation.mutate(
-        { databaseId: targetDb.databaseId, additionalGb: storageGB },
-        {
-          onSuccess: (res) => {
-            toast.success(`Storage resized to ${res.newTotalGb}GB`);
-            setStorageGB(10); // Reset input
-          },
-          onError: (err) => {
-            toast.error(`Failed: ${err.message}`);
-          },
-        },
-      );
-    }
-    if (autoscaleEnabled) {
-      toast.success(`Autoscale set to ${autoscaleCU} CU (billing integration pending)`);
-    }
-  }, [session?.id, storageGB, autoscaleEnabled, autoscaleCU, dbs, resizeMutation]);
 
   // Estimated monthly hours (730 hours ≈ 1 month)
   const estimatedMonthlyHours = 730;
