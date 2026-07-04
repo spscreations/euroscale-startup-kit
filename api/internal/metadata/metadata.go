@@ -20,9 +20,9 @@ import (
 // Service implements the MetadataService gRPC service.
 type Service struct {
 	pb.UnimplementedMetadataServiceServer
-	secrets     *secrets.Store
-	vtgateAddr  string
-	apiHost     string
+	secrets    *secrets.Store
+	vtgateAddr string
+	apiHost    string
 }
 
 // NewService creates a new MetadataService.
@@ -130,11 +130,11 @@ func (s *Service) ListTables(ctx context.Context, req *pb.ListTablesRequest) (*p
 	}
 	page := int(req.Page)
 
-	db, conn, err := s.connectForUser(ctx, req.UserId)
+	db, err := s.connectForUser(ctx, req.UserId)
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Close()
+	defer db.Close()
 
 	rows, err := db.QueryContext(ctx,
 		"SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ? ORDER BY TABLE_NAME",
@@ -194,11 +194,11 @@ func (s *Service) ListColumns(ctx context.Context, req *pb.ListColumnsRequest) (
 	}
 	page := int(req.Page)
 
-	db, conn, err := s.connectForUser(ctx, req.UserId)
+	db, err := s.connectForUser(ctx, req.UserId)
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Close()
+	defer db.Close()
 
 	rows, err := db.QueryContext(ctx,
 		`SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, 
@@ -265,11 +265,11 @@ func (s *Service) PreviewTable(ctx context.Context, req *pb.PreviewTableRequest)
 		limit = 10
 	}
 
-	db, conn, err := s.connectForUser(ctx, req.UserId)
+	db, err := s.connectForUser(ctx, req.UserId)
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Close()
+	defer db.Close()
 
 	// Sanitize table name to prevent SQL injection.
 	// Only alphanumeric and underscores are allowed.
@@ -337,8 +337,8 @@ func (s *Service) PreviewTable(ctx context.Context, req *pb.PreviewTableRequest)
 	}
 
 	return &pb.PreviewTableResponse{
-		Columns:         columns,
-		Rows:            pbRows,
+		Columns:          columns,
+		Rows:             pbRows,
 		ApproximateTotal: approxTotal,
 	}, nil
 }
@@ -346,10 +346,10 @@ func (s *Service) PreviewTable(ctx context.Context, req *pb.PreviewTableRequest)
 // connectForUser connects to vtgate using the first available database credential
 // for the given user. The connection's INFORMATION_SCHEMA view is scoped to
 // what that user can see.
-func (s *Service) connectForUser(ctx context.Context, userID string) (*sql.DB, *sql.DB, error) {
+func (s *Service) connectForUser(ctx context.Context, userID string) (*sql.DB, error) {
 	allDBs, err := s.secrets.ListAll(ctx)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to list databases: %w", err)
+		return nil, fmt.Errorf("failed to list databases: %w", err)
 	}
 
 	for _, d := range allDBs {
@@ -358,27 +358,25 @@ func (s *Service) connectForUser(ctx context.Context, userID string) (*sql.DB, *
 			if err != nil {
 				continue
 			}
-			db, conn, err := s.connectAs(ctx, creds.Username, creds.Password)
+			db, err := s.connectAs(ctx, creds.Username, creds.Password)
 			if err != nil {
 				continue
 			}
-			return db, conn, nil
+			return db, nil
 		}
 	}
 
-	return nil, nil, fmt.Errorf("no valid credentials found for user %s", userID)
+	return nil, fmt.Errorf("no valid credentials found for user %s", userID)
 }
 
 // connectAs connects to vtgate as a specific MySQL user.
-// Returns (*sql.DB, *sql.DB, error) where both point to the same pool.
-// The second value is for the caller to defer Close().
-func (s *Service) connectAs(ctx context.Context, username, password string) (*sql.DB, *sql.DB, error) {
+func (s *Service) connectAs(ctx context.Context, username, password string) (*sql.DB, error) {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/?timeout=10s&readTimeout=30s",
 		username, password, s.vtgateAddr)
 
 	conn, err := sql.Open("mysql", dsn)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to open MySQL connection: %w", err)
+		return nil, fmt.Errorf("failed to open MySQL connection: %w", err)
 	}
 
 	conn.SetMaxOpenConns(3)
@@ -386,10 +384,10 @@ func (s *Service) connectAs(ctx context.Context, username, password string) (*sq
 
 	if err := conn.PingContext(ctx); err != nil {
 		conn.Close()
-		return nil, nil, fmt.Errorf("failed to ping vtgate: %w", err)
+		return nil, fmt.Errorf("failed to ping vtgate: %w", err)
 	}
 
-	return conn, conn, nil
+	return conn, nil
 }
 
 // isSafeIdentifier checks that a string is safe to use as a SQL identifier.

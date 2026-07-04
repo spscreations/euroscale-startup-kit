@@ -10,6 +10,7 @@ import {
   LogOut,
   Menu,
   X,
+  Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
@@ -17,6 +18,7 @@ import { useState } from "react";
 
 const navItems = [
   { href: "/dashboard", label: "Databases", icon: Database, exact: true },
+  { href: "/dashboard/browse", label: "Browse Data", icon: Search },
   { href: "/dashboard/create", label: "New database", icon: Plus },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ] as const;

@@ -26,8 +26,8 @@ function isValidCIDR(cidr: string): boolean {
   const parts = cidr.split("/");
   if (parts.length !== 2) return false;
 
-  const ip = parts[0];
-  const prefix = parts[1];
+  const ip = parts[0]!;
+  const prefix = parts[1]!;
 
   // Validate prefix (0-32)
   const prefixNum = parseInt(prefix, 10);
@@ -39,7 +39,7 @@ function isValidCIDR(cidr: string): boolean {
   if (octets.length !== 4) return false;
 
   for (const octet of octets) {
-    const num = parseInt(octet, 10);
+    const num = parseInt(octet!, 10);
     if (isNaN(num) || num < 0 || num > 255) return false;
     if (String(num) !== octet) return false; // no leading zeros
   }

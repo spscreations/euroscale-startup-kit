@@ -15,7 +15,7 @@ function isValidIP(ip: string): boolean {
   if (!IP_REGEX.test(ip)) return false;
 
   // Validate each octet is 0-255.
-  const parts = ip.split("/")[0].split(".");
+  const parts = (ip.split("/")[0] ?? "").split(".");
   for (const part of parts) {
     const n = parseInt(part, 10);
     if (n < 0 || n > 255) return false;
@@ -23,7 +23,7 @@ function isValidIP(ip: string): boolean {
 
   // If CIDR, validate prefix length.
   if (ip.includes("/")) {
-    const prefix = parseInt(ip.split("/")[1], 10);
+    const prefix = parseInt(ip.split("/")[1] ?? "", 10);
     if (prefix < 0 || prefix > 32) return false;
   }
 

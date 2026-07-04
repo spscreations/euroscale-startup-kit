@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
-	"google.golang.org/grpc/metadata"
+	grpcmeta "google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 
@@ -33,7 +33,7 @@ import (
 	"github.com/spscreations/euroscale-startup-kit/api/internal/auth"
 	connectpkg "github.com/spscreations/euroscale-startup-kit/api/internal/connect"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/ipwhitelist"
-	"github.com/spscreations/euroscale-startup-kit/api/internal/metadata"
+	metasvc "github.com/spscreations/euroscale-startup-kit/api/internal/metadata"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/models"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/secrets"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/vitess"
@@ -770,7 +770,7 @@ func authInterceptor(validKey string) grpc.UnaryServerInterceptor {
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (interface{}, error) {
-		md, ok := metadata.FromIncomingContext(ctx)
+		md, ok := grpcmeta.FromIncomingContext(ctx)
 		if !ok {
 			return nil, status.Error(codes.Unauthenticated, "missing metadata")
 		}
@@ -933,7 +933,7 @@ func main() {
 	pb.RegisterDatabaseServiceServer(grpcServer, srv)
 
 	// Register the MetadataService for schema introspection.
-	metaSvc := metadata.NewService(secretsStore, vtgateAddr, host)
+	metaSvc := metasvc.NewService(secretsStore, vtgateAddr, host)
 	pb.RegisterMetadataServiceServer(grpcServer, metaSvc)
 
 	// Enable gRPC reflection for debugging tools.
