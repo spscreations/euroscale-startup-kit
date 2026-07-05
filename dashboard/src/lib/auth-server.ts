@@ -25,49 +25,49 @@ function createDb() {
 
   sqlite.pragma("journal_mode = WAL");
 
-  // Create tables if they don't exist — Kysely adapter doesn't auto-create them
+  // Create tables — Kysely adapter uses camelCase column names matching Better Auth's schema
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS "user" (
       "id" text PRIMARY KEY NOT NULL,
       "name" text NOT NULL,
       "email" text NOT NULL UNIQUE,
-      "email_verified" integer NOT NULL DEFAULT 0,
+      "emailVerified" integer NOT NULL DEFAULT 0,
       "image" text,
-      "created_at" text NOT NULL,
-      "updated_at" text NOT NULL
+      "createdAt" text NOT NULL,
+      "updatedAt" text NOT NULL
     );
     CREATE TABLE IF NOT EXISTS "session" (
       "id" text PRIMARY KEY NOT NULL,
-      "expires_at" integer NOT NULL,
+      "expiresAt" integer NOT NULL,
       "token" text NOT NULL UNIQUE,
-      "created_at" text NOT NULL,
-      "updated_at" text NOT NULL,
-      "ip_address" text,
-      "user_agent" text,
-      "user_id" text NOT NULL REFERENCES "user"("id") ON DELETE CASCADE
+      "createdAt" text NOT NULL,
+      "updatedAt" text NOT NULL,
+      "ipAddress" text,
+      "userAgent" text,
+      "userId" text NOT NULL REFERENCES "user"("id") ON DELETE CASCADE
     );
     CREATE TABLE IF NOT EXISTS "account" (
       "id" text PRIMARY KEY NOT NULL,
-      "account_id" text NOT NULL,
-      "provider_id" text NOT NULL,
-      "user_id" text NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
-      "access_token" text,
-      "refresh_token" text,
-      "id_token" text,
-      "access_token_expires_at" integer,
-      "refresh_token_expires_at" integer,
+      "accountId" text NOT NULL,
+      "providerId" text NOT NULL,
+      "userId" text NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
+      "accessToken" text,
+      "refreshToken" text,
+      "idToken" text,
+      "accessTokenExpiresAt" integer,
+      "refreshTokenExpiresAt" integer,
       "scope" text,
       "password" text,
-      "created_at" text NOT NULL,
-      "updated_at" text NOT NULL
+      "createdAt" text NOT NULL,
+      "updatedAt" text NOT NULL
     );
     CREATE TABLE IF NOT EXISTS "verification" (
       "id" text PRIMARY KEY NOT NULL,
       "identifier" text NOT NULL,
       "value" text NOT NULL,
-      "expires_at" integer NOT NULL,
-      "created_at" text,
-      "updated_at" text
+      "expiresAt" integer NOT NULL,
+      "createdAt" text,
+      "updatedAt" text
     );
   `);
 
