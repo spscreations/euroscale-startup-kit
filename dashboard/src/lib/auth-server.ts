@@ -1,8 +1,9 @@
-import { betterAuth } from "better-auth";
+import { betterAuth, getAuthTables } from "better-auth";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { nextCookies } from "better-auth/next-js";
+import { sqliteTable } from "drizzle-orm/sqlite-core";
 
 const sqlite = new Database("/tmp/euroscale-auth.db");
 const db = drizzle(sqlite);
@@ -18,9 +19,13 @@ if (process.env.MICROSOFT_ENTRA_CLIENT_ID && process.env.MICROSOFT_ENTRA_CLIENT_
   socialProviderConfig.microsoft = { clientId: process.env.MICROSOFT_ENTRA_CLIENT_ID, clientSecret: process.env.MICROSOFT_ENTRA_CLIENT_SECRET, tenantId: process.env.MICROSOFT_ENTRA_TENANT_ID || "common" };
 }
 
+// Generate auth table schemas for SQLite
+const { user, session, account, verification } = getAuthTables(sqliteTable);
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "sqlite",
+    schema: { user, session, account, verification },
   }),
   emailAndPassword: { enabled: true },
   socialProviders: socialProviderConfig as Parameters<typeof betterAuth>[0]["socialProviders"],
