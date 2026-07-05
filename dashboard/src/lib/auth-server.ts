@@ -19,17 +19,18 @@ const poolConfig: Record<string, unknown> = {
   connectionLimit: 5,
 };
 
-// vtgate requires SSL transport. Use the CA cert to verify the server,
-// but skip client cert since the vtgate server cert is for server use only.
-const caPath = process.env.DB_SSL_CA || "/etc/euroscale/tls/ca.crt";
-if (existsSync(caPath)) {
+// Use the dashboard-specific client cert (generated and mounted as a K8s secret)
+const tlsDir = "/etc/euroscale/dash-tls";
+const caPath = `${tlsDir}/ca.crt`;
+const certPath = `${tlsDir}/tls.crt`;
+const keyPath = `${tlsDir}/tls.key`;
+
+if (existsSync(caPath) && existsSync(certPath) && existsSync(keyPath)) {
   poolConfig.ssl = {
     ca: readFileSync(caPath, "utf-8"),
-    rejectUnauthorized: false, // Skip client cert verification
+    cert: readFileSync(certPath, "utf-8"),
+    key: readFileSync(keyPath, "utf-8"),
   };
-} else {
-  // Fallback: use MySQL's default SSL without verification
-  poolConfig.ssl = {};
 }
 
 const socialProviderConfig: Record<string, unknown> = {};
