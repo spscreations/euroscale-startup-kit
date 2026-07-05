@@ -110,14 +110,12 @@ function BackupsContent() {
   // ── Fetch backups ──────────────────────────────────────────────────────
 
   const fetchBackups = useCallback(async () => {
-    if (!selectedDbId || !session?.id || !session?.token) return;
+    if (!selectedDbId || !session?.id) return;
     setBackupsLoading(true);
     setBackupsError(null);
     try {
-      const url = `${API_BASE_URL}/api/v1/backups?database_id=${encodeURIComponent(selectedDbId)}&user_id=${encodeURIComponent(session.id)}`;
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${session.token}` },
-      });
+      const url = `/api/rest/api/v1/backups?database_id=${encodeURIComponent(selectedDbId)}&user_id=${encodeURIComponent(session.id)}`;
+      const res = await fetch(url);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.message ?? `Backups fetch failed (${res.status})`);
@@ -146,13 +144,11 @@ function BackupsContent() {
   // ── Fetch restores ─────────────────────────────────────────────────────
 
   const fetchRestores = useCallback(async () => {
-    if (!selectedDbId || !session?.id || !session?.token) return;
+    if (!selectedDbId || !session?.id) return;
     setRestoresLoading(true);
     try {
-      const url = `${API_BASE_URL}/api/v1/restores?database_id=${encodeURIComponent(selectedDbId)}`;
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${session.token}` },
-      });
+      const url = `/api/rest/api/v1/restores?database_id=${encodeURIComponent(selectedDbId)}`;
+      const res = await fetch(url);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.message ?? `Restores fetch failed (${res.status})`);
@@ -179,15 +175,14 @@ function BackupsContent() {
   // ── PITR Restore ───────────────────────────────────────────────────────
 
   const handleRestore = useCallback(async () => {
-    if (!selectedDbId || !pitrTime || !session?.token) return;
+    if (!selectedDbId || !pitrTime) return;
     setShowConfirm(false);
     setRestoring(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/restore`, {
+      const res = await fetch(`/api/rest/api/v1/restore`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session.token}`,
         },
         body: JSON.stringify({
           database_id: selectedDbId,

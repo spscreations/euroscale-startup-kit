@@ -1,6 +1,5 @@
 import type { Transport } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
-import { RPC_BASE_URL } from "@/lib/constants";
 
 // ── Error Types ─────────────────────────────────────────────────────────────
 
@@ -16,59 +15,22 @@ export class ApiError extends Error {
   }
 }
 
-// ── Auth Interceptor ────────────────────────────────────────────────────────
-
-type TokenGetter = () => string | null;
-type UserIdGetter = () => string | null;
-
-let tokenGetter: TokenGetter | null = null;
-let userIdGetter: UserIdGetter | null = null;
-
-/** Register a function that returns the current auth token. */
-export function setTokenGetter(getToken: TokenGetter): void {
-  tokenGetter = getToken;
-}
-
-/** Register a function that returns the current user ID. */
-export function setUserIdGetter(getUserId: UserIdGetter): void {
-  userIdGetter = getUserId;
-}
-
 // ── Transport ───────────────────────────────────────────────────────────────
 
 /**
- * Creates a Connect transport configured for the EuroScale API.
+ * Creates a Connect transport configured for the EuroScale API
+ * through the BFF proxy at `/api/grpc`.
  *
- * Uses the Connect protocol (application/connect+json) which works
- * over HTTP/1.1 and does not require a gRPC-web proxy. The server
- * serves both auth endpoints and Connect RPCs on the same port.
+ * Instead of the browser calling the API directly, all gRPC/Connect
+ * calls go through Next.js server routes. The server-side proxy adds
+ * the API key and user ID from the Better Auth session.
  *
- * Auth tokens are injected via interceptor, so callers don't need to
- * manage headers manually.
+ * Uses the Connect protocol (application/connect+json) over HTTP/1.1.
  */
 export function createTransport(): Transport {
   return createConnectTransport({
-    baseUrl: RPC_BASE_URL,
-    // Use binary (application/connect+proto) for better performance.
-    // Falls back to JSON when binary is not supported.
+    baseUrl: "/api/grpc",
     useBinaryFormat: false,
-    fetch: (url, init) => {
-      // Add CORS mode for cross-origin requests from the browser.
-      return fetch(url, { ...init, mode: "cors" });
-    },
-    interceptors: [
-      (next) => async (req) => {
-        const token = tokenGetter?.();
-        if (token) {
-          req.header.set("Authorization", `Bearer ${token}`);
-        }
-        const userId = userIdGetter?.();
-        if (userId) {
-          req.header.set("X-User-ID", userId);
-        }
-        return next(req);
-      },
-    ],
   });
 }
 

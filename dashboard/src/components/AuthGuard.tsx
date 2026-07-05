@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { isAuthenticated } from "@/lib/auth";
+import { useAuth } from "@/lib/auth";
 import { Loader2 } from "lucide-react";
 
 interface AuthGuardProps {
@@ -18,24 +18,24 @@ export default function AuthGuard({
 }: AuthGuardProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [checking, setChecking] = useState(true);
+  const { isAuthenticated, isLoading } = useAuth();
+
+  const isPublic = publicPaths.some(
+    (p) => pathname === p || pathname.startsWith(p + "/"),
+  );
 
   useEffect(() => {
-    const isPublic = publicPaths.some(
-      (p) => pathname === p || pathname.startsWith(p + "/"),
-    );
-    if (isPublic) {
-      setChecking(false);
-      return;
-    }
-    if (!isAuthenticated()) {
+    if (isPublic || isLoading) return;
+    if (!isAuthenticated) {
       router.replace(loginPath);
-      return;
     }
-    setChecking(false);
-  }, [pathname, router, loginPath, publicPaths]);
+  }, [isPublic, isLoading, isAuthenticated, router, loginPath]);
 
-  if (checking) {
+  // Public pages render immediately
+  if (isPublic) return <>{children}</>;
+
+  // Show loading spinner while Better Auth resolves the session
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg-primary">
         <div className="text-center space-y-3 animate-fade-in">
@@ -51,10 +51,10 @@ export default function AuthGuard({
     );
   }
 
-  const isPublic = publicPaths.some(
-    (p) => pathname === p || pathname.startsWith(p + "/"),
-  );
-  if (isPublic) return <>{children}</>;
+  // Authenticated — render children
+  if (isAuthenticated) return <>{children}</>;
 
-  return <>{children}</>;
+  // Not authenticated and not loading — this shouldn't render because
+  // the useEffect above will redirect, but return null as a fallback.
+  return null;
 }

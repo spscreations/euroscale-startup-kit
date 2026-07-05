@@ -49,10 +49,9 @@ export default function AllowedIPs() {
   const fetchIPs = useCallback(async () => {
     if (!userId) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/ip-whitelist`, {
+      const res = await fetch(`/api/rest/api/v1/ip-whitelist`, {
         headers: {
           "X-User-ID": userId,
-          Authorization: `Bearer ${session?.token ?? ""}`,
         },
       });
       if (!res.ok) {
@@ -67,7 +66,7 @@ export default function AllowedIPs() {
     } finally {
       setLoading(false);
     }
-  }, [userId, session?.token]);
+  }, [userId]);
 
   // Fetch client's public IP.
   const fetchClientIP = useCallback(async () => {
@@ -100,12 +99,11 @@ export default function AllowedIPs() {
 
     setAdding(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/ip-whitelist`, {
+      const res = await fetch(`/api/rest/api/v1/ip-whitelist`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "X-User-ID": userId ?? "",
-          Authorization: `Bearer ${session?.token ?? ""}`,
         },
         body: JSON.stringify({ ip }),
       });
@@ -122,19 +120,18 @@ export default function AllowedIPs() {
     } finally {
       setAdding(false);
     }
-  }, [newIP, userId, session?.token]);
+  }, [newIP, userId]);
 
   // Remove IP.
   const handleRemove = useCallback(
     async (ip: string) => {
       setRemoving(ip);
       try {
-        const res = await fetch(`${API_BASE_URL}/api/v1/ip-whitelist`, {
+        const res = await fetch(`/api/rest/api/v1/ip-whitelist`, {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
             "X-User-ID": userId ?? "",
-            Authorization: `Bearer ${session?.token ?? ""}`,
           },
           body: JSON.stringify({ ip }),
         });
@@ -151,7 +148,7 @@ export default function AllowedIPs() {
         setRemoving(null);
       }
     },
-    [userId, session?.token],
+    [userId],
   );
 
   // ── Render ───────────────────────────────────────────────────────────────

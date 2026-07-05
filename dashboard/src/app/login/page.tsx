@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -43,6 +44,14 @@ export default function LoginPage() {
       <div className="w-full max-w-sm animate-fade-in">
         {/* Brand */}
         <div className="text-center mb-8">
+          <Image
+            src="/logo.png"
+            alt="EuroScale"
+            width={48}
+            height={48}
+            className="mx-auto mb-3"
+            priority
+          />
           <h1 className="text-2xl font-bold tracking-tight text-text-primary">
             EuroScale
           </h1>

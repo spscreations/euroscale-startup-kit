@@ -1,10 +1,13 @@
 export const APP_NAME = "EuroScale";
 
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.euroscale.app";
+export const API_BASE_URL = "/api/rest";
 
-export const RPC_BASE_URL =
-  process.env.NEXT_PUBLIC_RPC_BASE_URL || "https://api.euroscale.app";
+/**
+ * All gRPC/Connect RPCs are routed through the Next.js BFF proxy
+ * at `/api/grpc` instead of calling the API directly from the browser.
+ * The proxy adds server-side auth headers (API key + user ID).
+ */
+export const RPC_BASE_URL = "/api/grpc";
 
 export const DASHBOARD_URL =
   process.env.NEXT_PUBLIC_DASHBOARD_URL || "https://app.euroscale.io";
