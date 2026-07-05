@@ -17,6 +17,10 @@ export const metadata: Metadata = {
   keywords: ["EuroScale", "cloud", "dashboard", "infrastructure", "scale-up"],
   authors: [{ name: "EuroScale" }],
   robots: "noindex, nofollow",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
