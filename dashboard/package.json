@@ -14,6 +14,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@better-auth/drizzle-adapter": "^1.6.23",
     "@bufbuild/protoc-gen-es": "^2.12.1",
     "@connectrpc/connect": "^2.1.2",
     "@connectrpc/connect-query": "^2.2.0",
@@ -23,9 +24,10 @@
     "@tailwindcss/postcss": "^4.3.2",
     "@tanstack/react-query": "^5.62.0",
     "better-auth": "^1.6.23",
+    "better-sqlite3": "^12.11.1",
     "clsx": "^2.1.1",
+    "drizzle-orm": "^0.45.2",
     "lucide-react": "^0.468.0",
-    "mysql2": "^3.22.5",
     "next": "^16.2.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
@@ -34,6 +36,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
