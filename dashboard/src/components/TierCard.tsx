@@ -85,7 +85,15 @@ export default function TierCard() {
         { databaseId: targetDb.databaseId, additionalGb: storageGB },
         {
           onSuccess: (res) => {
+            if (res.success !== true) {
+              toast.error(res.message || "Storage resize failed unexpectedly.");
+              return;
+            }
             const newGb = bigintToNumber(res.newTotalGb);
+            if (!newGb || newGb <= 0) {
+              toast.error(res.message || "Storage resize returned 0 GB — operation may have failed.");
+              return;
+            }
             toast.success(`Storage resized to ${newGb} GB`);
             setStorageGB(10); // Reset input
           },
