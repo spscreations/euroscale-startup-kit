@@ -9,8 +9,6 @@ const dbUser = process.env.DB_USER || "root";
 const dbPass = process.env.DB_PASS || "";
 const dbName = process.env.DB_NAME || "euroscale_auth";
 
-// Build SSL config if CA cert path is provided
-const sslCaPath = process.env.DB_SSL_CA || "/etc/euroscale/tls/ca.crt";
 const poolConfig: Record<string, unknown> = {
   host: vtgateAddr,
   port: vtgatePort,
@@ -21,10 +19,21 @@ const poolConfig: Record<string, unknown> = {
   connectionLimit: 5,
 };
 
-if (existsSync(sslCaPath)) {
-  poolConfig.ssl = {
-    ca: readFileSync(sslCaPath, "utf-8"),
+// vtgate requires mutual TLS (both CA and client cert)
+const tlsDir = "/etc/euroscale/tls";
+const caPath = process.env.DB_SSL_CA || `${tlsDir}/ca.crt`;
+const certPath = `${tlsDir}/tls.crt`;
+const keyPath = `${tlsDir}/tls.key`;
+
+if (existsSync(caPath)) {
+  const ssl: Record<string, string> = {
+    ca: readFileSync(caPath, "utf-8"),
   };
+  if (existsSync(certPath) && existsSync(keyPath)) {
+    ssl.cert = readFileSync(certPath, "utf-8");
+    ssl.key = readFileSync(keyPath, "utf-8");
+  }
+  poolConfig.ssl = ssl;
 }
 
 // Build social provider config conditionally
