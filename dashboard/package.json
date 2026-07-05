@@ -14,7 +14,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@better-auth/drizzle-adapter": "^1.6.23",
+    "@better-auth/kysely-adapter": "^1.6.23",
     "@bufbuild/protoc-gen-es": "^2.12.1",
     "@connectrpc/connect": "^2.1.2",
     "@connectrpc/connect-query": "^2.2.0",
@@ -26,7 +26,7 @@
     "better-auth": "^1.6.23",
     "better-sqlite3": "^12.11.1",
     "clsx": "^2.1.1",
-    "drizzle-orm": "^0.45.2",
+    "kysely": "^0.29.2",
     "lucide-react": "^0.468.0",
     "next": "^16.2.0",
     "react": "^19.2.7",
