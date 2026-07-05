@@ -306,7 +306,7 @@ func (h *Handler) HandleCreatePayment(w http.ResponseWriter, r *http.Request) {
 
 	// Build Mollie URLs from env or defaults.
 	webhookURL := getEnvOrDefault("MOLLIE_WEBHOOK_URL", "https://api.euroscale.app/api/v1/mollie-webhook")
-	redirectURL := getEnvOrDefault("MOLLIE_REDIRECT_URL", "https://dashboard.euroscale.app/dashboard/billing?payment=success")
+	redirectURL := getEnvOrDefault("MOLLIE_REDIRECT_URL", "https://euroscale.app/dashboard/billing?payment=success")
 
 	description := fmt.Sprintf("EuroScale %s tier — monthly", tierDisplayName(req.Tier))
 

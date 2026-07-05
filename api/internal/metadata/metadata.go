@@ -70,7 +70,28 @@ func (s *Service) ListSchemaDatabases(ctx context.Context, req *pb.ListSchemaDat
 
 	db, err := s.connectForUser(ctx, req.UserId)
 	if err != nil {
-		return nil, err
+		// vtgate connection failed — fall back to database names from K8s secrets.
+		log.Printf("WARN: connectForUser failed for %s, falling back to K8s secrets: %v", req.UserId, err)
+		dbNames := make([]string, len(userDBs))
+		for i, d := range userDBs {
+			dbNames[i] = d.Name
+		}
+		total := len(dbNames)
+		start := page * pageSize
+		end := start + pageSize
+		if start > total {
+			start = total
+		}
+		if end > total {
+			end = total
+		}
+		paginated := dbNames[start:end]
+		return &pb.ListSchemaDatabasesResponse{
+			Databases: paginated,
+			Total:     int32(total),
+			Page:      int32(page),
+			PageSize:  int32(pageSize),
+		}, nil
 	}
 	defer db.Close()
 

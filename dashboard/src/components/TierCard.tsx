@@ -70,17 +70,23 @@ export default function TierCard() {
       return;
     }
     if (storageGB > 0) {
-      // Resize the first database (in production, user selects which DB)
-      const targetDb = dbs?.databases?.[0];
-      if (!targetDb?.databaseId) {
+      // Validate databases exist before resize
+      if (!dbs?.databases?.length) {
         toast.error("No databases to resize. Create a database first.");
+        return;
+      }
+      // Resize the first database (in production, user selects which DB)
+      const targetDb = dbs.databases[0];
+      if (!targetDb?.databaseId) {
+        toast.error("Database has no ID. Please contact support.");
         return;
       }
       resizeMutation.mutate(
         { databaseId: targetDb.databaseId, additionalGb: storageGB },
         {
           onSuccess: (res) => {
-            toast.success(`Storage resized to ${res.newTotalGb}GB`);
+            const newGb = bigintToNumber(res.newTotalGb);
+            toast.success(`Storage resized to ${newGb} GB`);
             setStorageGB(10); // Reset input
           },
           onError: (err) => {
@@ -140,6 +146,12 @@ export default function TierCard() {
   const showUpgrade = tier === "free" || tier === "scale";
   const isEnterprise = tier === "enterprise";
 
+  // Map current tier → target upgrade tier
+  const upgradeTarget: Record<string, string> = {
+    free: "scale",
+    scale: "team",
+  };
+
   // Pricing from limits
   const storagePricePerGB = limits?.additionalStorageGbPrice ?? 0.20;
   const cuPricePerHour = limits?.autoscaleCuPrice ?? 0.04;
@@ -177,7 +189,7 @@ export default function TierCard() {
             type="button"
             onClick={async () => {
               try {
-                const result = await createPayment(tier);
+                const result = await createPayment(upgradeTarget[tier] || tier);
                 window.location.href = result.checkout_url;
               } catch (err: any) {
                 toast.error(err.message ?? "Failed to start payment");
