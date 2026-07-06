@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth-server";
+import { getAuth } from "@/lib/auth-server";
 
 const API_BASE = "https://api.euroscale.app";
 const API_KEY = process.env.EUROSCALE_API_KEY || "";
@@ -13,9 +13,8 @@ export async function POST(
 
   let userId: string | undefined;
   try {
-    const session = await auth.api.getSession({
-      headers: req.headers,
-    });
+    const auth = await getAuth();
+    const session = await auth.api.getSession({ headers: req.headers });
     userId = session?.user?.id;
   } catch {
     // Continue without user ID
