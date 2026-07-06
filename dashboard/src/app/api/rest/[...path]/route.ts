@@ -14,6 +14,10 @@ async function proxy(req: NextRequest, segs: string[]) {
   const headers: Record<string, string> = {};
   const ct = req.headers.get("content-type");
   if (ct) headers["Content-Type"] = ct;
+  // Forward the original Bearer token if present (better-auth session).
+  const auth = req.headers.get("authorization");
+  if (auth) headers["Authorization"] = auth;
+  // Also send x-api-key fallback for older REST endpoints.
   headers["x-api-key"] = API_KEY;
   if (userId) headers["x-user-id"] = userId;
 
