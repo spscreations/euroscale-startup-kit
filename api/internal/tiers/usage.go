@@ -13,6 +13,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,7 +32,30 @@ type Usage struct {
 // ── Secret helpers ──────────────────────────────────────────────────────────
 
 func usageSecretName(userID string) string {
-	return fmt.Sprintf("usage-%s", userID)
+	return fmt.Sprintf("usage-%s", sanitizeForK8sName(userID))
+}
+
+// sanitizeForK8sName converts a string to a valid K8s name (lowercase RFC 1123).
+func sanitizeForK8sName(s string) string {
+	// Convert to lowercase and replace non-alphanumeric chars (except hyphen/dot) with hyphen.
+	var result strings.Builder
+	for _, c := range strings.ToLower(s) {
+		if (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '.' {
+			result.WriteRune(c)
+		} else {
+			result.WriteRune('-')
+		}
+	}
+	name := result.String()
+	// Trim leading/trailing non-alphanumeric chars.
+	name = strings.TrimFunc(name, func(r rune) bool {
+		return !((r >= 'a' && r <= 'z') || (r >= '0' && r <= '9'))
+	})
+	// Ensure minimum length.
+	if name == "" {
+		name = "default"
+	}
+	return name
 }
 
 func (s *Store) getOrCreateUsageSecret(ctx context.Context, userID string) (*corev1.Secret, error) {

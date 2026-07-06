@@ -32,6 +32,18 @@ spec:
             - containerPort: 3000
               name: http
           env:
+            - name: BETTER_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: euroscale-auth-secret
+                  key: better_auth_secret
+            - name: BETTER_AUTH_URL
+              value: "https://euroscale.app"
+            - name: EUROSCALE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: euroscale-api-key
+                  key: api_key
             - name: NEXT_PUBLIC_API_BASE_URL
               value: "https://api.euroscale.app"
             - name: NEXT_PUBLIC_RPC_BASE_URL
@@ -51,7 +63,9 @@ spec:
                 secretKeyRef:
                   name: db-56ef192d-1af1-47b2-a8e5-d47176eba77f-creds
                   key: password
+            - name: DB_SSL_CERT
               value: "/etc/euroscale/tls/tls.crt"
+            - name: DB_SSL_KEY
               value: "/etc/euroscale/tls/tls.key"
           securityContext:
             allowPrivilegeEscalation: false

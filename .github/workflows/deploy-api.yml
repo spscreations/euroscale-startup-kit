@@ -54,8 +54,8 @@ jobs:
           tags: |
             type=sha,prefix=,format=long
             type=raw,value=latest
+            type=raw,value=v1.3
             type=raw,value=v1.2
-            type=raw,value=v1.1
             type=raw,value=${{ inputs.image_tag }},enable=${{ inputs.image_tag != '' }}
           labels:
             org.opencontainers.image.title=EuroScale API
@@ -148,8 +148,8 @@ jobs:
           tags: |
             type=sha,prefix=,format=long
             type=raw,value=latest
+            type=raw,value=v1.3
             type=raw,value=v1.2
-            type=raw,value=v1.1
           labels:
             org.opencontainers.image.title=EuroScale Dashboard
             org.opencontainers.image.description=Customer dashboard for EuroScale database platform
