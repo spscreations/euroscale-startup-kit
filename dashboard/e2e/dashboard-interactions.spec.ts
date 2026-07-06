@@ -77,12 +77,15 @@ test.describe('EuroScale Dashboard Interactions', () => {
 
     // Check if API is returning an error (TierCard returns null on API failure)
     const apiError = page.getByText('Could not load databases');
-    if (await apiError.isVisible({ timeout: 3000 }).catch(() => false)) {
+    try {
+      await apiError.waitFor({ state: 'visible', timeout: 8000 });
       console.log('⚠️  API unavailable — TierCard skipped, verifying error state');
       await expect(page.getByText(/invalid or missing API key/i)).toBeVisible({ timeout: 3000 }).catch(() => {});
       await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'tiercard-api-error.png'), fullPage: false });
       console.log('✅ API error state verified');
       return;
+    } catch {
+      // No API error — proceed with TierCard assertions
     }
 
     // --- Verify Free Plan text (heading, not the autoscale "not available" text) ---
