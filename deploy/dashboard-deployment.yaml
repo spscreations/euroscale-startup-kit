@@ -39,7 +39,7 @@ spec:
             - name: HOST
               value: "0.0.0.0"
             - name: AUTH_DB_HOST
-              value: "euroscale-vtgate-208e47d6.euroscale"
+              value: "euroscale-auth-db"
             - name: AUTH_DB_PORT
               value: "3306"
             - name: AUTH_DB_USER
@@ -51,10 +51,8 @@ spec:
                 secretKeyRef:
                   name: db-56ef192d-1af1-47b2-a8e5-d47176eba77f-creds
                   key: password
-            - name: DB_SSL_CERT
-              value: "/etc/euroscale/dash-tls/tls.crt"
-            - name: DB_SSL_KEY
-              value: "/etc/euroscale/dash-tls/tls.key"
+              value: "/etc/euroscale/tls/tls.crt"
+              value: "/etc/euroscale/tls/tls.key"
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
