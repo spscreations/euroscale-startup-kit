@@ -13,16 +13,10 @@ function requireEnv(name: string): string {
   return val;
 }
 
-const DB_HOST = requireEnv("AUTH_DB_HOST");
-const DB_PORT = parseInt(requireEnv("AUTH_DB_PORT"), 10);
-const DB_USER = requireEnv("AUTH_DB_USER");
-const DB_PASS = requireEnv("AUTH_DB_PASS");
-const DB_NAME = requireEnv("AUTH_DB_NAME");
-
-const pool = mysql.createPool({
-  host: DB_HOST, port: DB_PORT, user: DB_USER, password: DB_PASS, database: DB_NAME,
-  waitForConnections: true, connectionLimit: 5, connectTimeout: 10000,
-});
+// Lazy auth initializer — avoids crashing during `next build` when DB env
+// vars aren't available yet. Created on first use.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _auth: any = null;
 
 // Define auth tables for Better Auth using Drizzle ORM
 const user = mysqlTable("user", {
@@ -71,22 +65,41 @@ const verification = mysqlTable("verification", {
   updatedAt: datetime("updatedAt"),
 });
 
-const db = drizzle(pool);
+function getAuth() {
+  if (_auth) return _auth;
 
-const socialProviderConfig: Record<string, unknown> = {};
-if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-  socialProviderConfig.google = { clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET };
-}
-if (process.env.APPLE_CLIENT_ID && process.env.APPLE_CLIENT_SECRET) {
-  socialProviderConfig.apple = { clientId: process.env.APPLE_CLIENT_ID, clientSecret: process.env.APPLE_CLIENT_SECRET };
-}
-if (process.env.MICROSOFT_ENTRA_CLIENT_ID && process.env.MICROSOFT_ENTRA_CLIENT_SECRET) {
-  socialProviderConfig.microsoft = { clientId: process.env.MICROSOFT_ENTRA_CLIENT_ID, clientSecret: process.env.MICROSOFT_ENTRA_CLIENT_SECRET, tenantId: process.env.MICROSOFT_ENTRA_TENANT_ID || "common" };
+  const DB_HOST = requireEnv("AUTH_DB_HOST");
+  const DB_PORT = parseInt(requireEnv("AUTH_DB_PORT"), 10);
+  const DB_USER = requireEnv("AUTH_DB_USER");
+  const DB_PASS = requireEnv("AUTH_DB_PASS");
+  const DB_NAME = requireEnv("AUTH_DB_NAME");
+
+  const pool = mysql.createPool({
+    host: DB_HOST, port: DB_PORT, user: DB_USER, password: DB_PASS, database: DB_NAME,
+    waitForConnections: true, connectionLimit: 5, connectTimeout: 10000,
+  });
+
+  const db = drizzle(pool);
+
+  const socialProviderConfig: Record<string, unknown> = {};
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    socialProviderConfig.google = { clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET };
+  }
+  if (process.env.APPLE_CLIENT_ID && process.env.APPLE_CLIENT_SECRET) {
+    socialProviderConfig.apple = { clientId: process.env.APPLE_CLIENT_ID, clientSecret: process.env.APPLE_CLIENT_SECRET };
+  }
+  if (process.env.MICROSOFT_ENTRA_CLIENT_ID && process.env.MICROSOFT_ENTRA_CLIENT_SECRET) {
+    socialProviderConfig.microsoft = { clientId: process.env.MICROSOFT_ENTRA_CLIENT_ID, clientSecret: process.env.MICROSOFT_ENTRA_CLIENT_SECRET, tenantId: process.env.MICROSOFT_ENTRA_TENANT_ID || "common" };
+  }
+
+  _auth = betterAuth({
+    database: drizzleAdapter(db, { provider: "mysql", schema: { user, session, account, verification } }),
+    emailAndPassword: { enabled: true },
+    socialProviders: socialProviderConfig as Parameters<typeof betterAuth>[0]["socialProviders"],
+    plugins: [nextCookies()],
+  });
+
+  return _auth;
 }
 
-export const auth = betterAuth({
-  database: drizzleAdapter(db, { provider: "mysql", schema: { user, session, account, verification } }),
-  emailAndPassword: { enabled: true },
-  socialProviders: socialProviderConfig as Parameters<typeof betterAuth>[0]["socialProviders"],
-  plugins: [nextCookies()],
-});
+export { getAuth };

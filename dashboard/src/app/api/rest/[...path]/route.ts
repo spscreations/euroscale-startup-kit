@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth-server";
+import { getAuth } from "@/lib/auth-server";
 
 const API_BASE = "https://api.euroscale.app";
 const API_KEY = process.env.EUROSCALE_API_KEY || "";
@@ -9,7 +9,7 @@ async function proxy(req: NextRequest, segs: string[]) {
   const url = `${API_BASE}/${segs.join("/")}${qs ? "?" + qs : ""}`;
 
   let userId: string | undefined;
-  try { const ses = await auth.api.getSession({ headers: req.headers }); userId = ses?.user?.id; } catch {}
+  try { const ses = await getAuth()!.api.getSession({ headers: req.headers }); userId = ses?.user?.id; } catch {}
 
   const headers: Record<string, string> = {};
   const ct = req.headers.get("content-type");

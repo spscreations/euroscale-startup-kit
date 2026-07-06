@@ -1,3 +1,12 @@
-import { auth } from "@/lib/auth-server";
-import { toNextJsHandler } from "better-auth/next-js";
-export const { GET, POST } = toNextJsHandler(auth);
+import { getAuth } from "@/lib/auth-server";
+
+// Lazy auth handler — resolves Better Auth instance on each request.
+// Prevents crashing during `next build` when DB env vars aren't set.
+export async function GET(req: Request) {
+  const auth = getAuth()!;
+  return auth.handler(req);
+}
+export async function POST(req: Request) {
+  const auth = getAuth()!;
+  return auth.handler(req);
+}
