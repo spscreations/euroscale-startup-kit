@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: euroscale-auth-db
+  namespace: euroscale
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: euroscale-auth-db
+  template:
+    metadata:
+      labels:
+        app: euroscale-auth-db
+    spec:
+      containers:
+      - name: mariadb
+        image: mariadb:11.4
+        env:
+        - name: MARIADB_ROOT_PASSWORD
+          value: euroscale-auth
+        - name: MARIADB_DATABASE
+          value: euroscale_auth
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: euroscale-auth-db
+  namespace: euroscale
+spec:
+  ports:
+  - port: 3306
+    targetPort: 3306
+  selector:
+    app: euroscale-auth-db

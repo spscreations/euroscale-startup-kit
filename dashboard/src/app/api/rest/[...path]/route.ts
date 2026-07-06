@@ -1,25 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuth } from "@/lib/auth-server";
+import { auth } from "@/lib/auth-server";
 
 const API_BASE = "https://api.euroscale.app";
 const API_KEY = process.env.EUROSCALE_API_KEY || "";
 
-/**
- * BFF proxy for REST API calls.
- *
- * Browser → GET|POST|PUT|DELETE /api/rest/api/v1/backups?...
- *   → This handler looks up the Better Auth session, adds the
- *     server-side API key + user ID, and forwards to the real API.
- */
 async function proxyRequest(req: NextRequest, pathSegments: string[]) {
   const apiPath = "/" + pathSegments.join("/");
   const queryString = req.nextUrl.searchParams.toString();
   const url = `${API_BASE}${apiPath}${queryString ? "?" + queryString : ""}`;
 
-  // Look up the Better Auth session
   let userId: string | undefined;
   try {
-    const auth = await getAuth();
     const session = await auth.api.getSession({ headers: req.headers });
     userId = session?.user?.id;
   } catch {
@@ -62,34 +53,19 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]) {
   });
 }
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> },
-) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params;
   return proxyRequest(req, path);
 }
-
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> },
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params;
   return proxyRequest(req, path);
 }
-
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> },
-) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params;
   return proxyRequest(req, path);
 }
-
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> },
-) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params;
   return proxyRequest(req, path);
 }

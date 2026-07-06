@@ -1,19 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuth } from "@/lib/auth-server";
+import { auth } from "@/lib/auth-server";
 
 const API_BASE = "https://api.euroscale.app";
 const API_KEY = process.env.EUROSCALE_API_KEY || "";
 
-/**
- * BFF proxy for gRPC/Connect API calls.
- *
- * Browser → POST /api/grpc/{service}/{method}
- *   → This handler looks up the Better Auth session, adds the
- *     server-side API key + user ID, and forwards to the real API.
- *
- * Supports both JSON (application/connect+json) and binary
- * (application/connect+proto) request/response formats.
- */
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> },
@@ -21,20 +11,16 @@ export async function POST(
   const { path } = await params;
   const servicePath = path.join("/");
 
-  // ── Look up the Better Auth session ──────────────────────────────────
   let userId: string | undefined;
   try {
-    const auth = await getAuth();
     const session = await auth.api.getSession({
       headers: req.headers,
     });
     userId = session?.user?.id;
   } catch {
-    // Session lookup failed — continue without a user ID.
-    // The real API will reject unauthenticated requests if required.
+    // Continue without user ID
   }
 
-  // ── Forward the request ─────────────────────────────────────────────
   const headers: Record<string, string> = {};
   const ct = req.headers.get("content-type");
   if (ct) headers["Content-Type"] = ct;
