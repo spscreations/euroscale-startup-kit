@@ -14,6 +14,10 @@ import { cn } from "@/lib/utils";
 import { useDatabase } from "@/hooks/useDatabase";
 import type { Database as DatabaseType } from "@/lib/proto/euroscale/v1/database_pb";
 import { formatDate, formatBytes } from "@/lib/utils";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -132,6 +136,12 @@ function BackupRow({ backup }: { backup: Backup }) {
     failed: "bg-error",
   };
 
+  const badgeVariant: Record<string, "default" | "secondary" | "destructive"> = {
+    success: "default",
+    running: "secondary",
+    failed: "destructive",
+  };
+
   return (
     <div className="flex items-center justify-between rounded-lg bg-surface-2 px-3 py-2">
       <div className="flex items-center gap-2.5">
@@ -142,9 +152,14 @@ function BackupRow({ backup }: { backup: Backup }) {
           )}
         />
         <div>
-          <p className="text-xs text-text-primary capitalize">
-            {backup.status}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-text-primary capitalize">
+              {backup.status}
+            </p>
+            <Badge variant={badgeVariant[backup.status]} className="text-[10px]">
+              {backup.status}
+            </Badge>
+          </div>
           <p className="text-[11px] text-text-muted">
             {formatDate(backup.createdAt)}
           </p>
@@ -171,16 +186,11 @@ function BranchRow({ branch }: { branch: Branch }) {
           </p>
         </div>
       </div>
-      <span
-        className={cn(
-          "rounded-full px-2 py-0.5 text-[10px] font-medium",
-          branch.status === "active"
-            ? "bg-success-subtle text-success-text"
-            : "bg-surface-3 text-text-disabled",
-        )}
+      <Badge
+        variant={branch.status === "active" ? "default" : "secondary"}
       >
         {branch.status}
-      </span>
+      </Badge>
     </div>
   );
 }
@@ -197,26 +207,28 @@ export default function DBStats({ databaseId }: DBStatsProps) {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-border-subtle bg-surface-1 animate-fade-in p-5">
-        <div className="space-y-3">
-          <div className="skeleton h-4 w-24" />
+      <Card className="animate-fade-in">
+        <CardContent className="space-y-3 pt-5">
+          <Skeleton className="h-4 w-24" />
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="skeleton h-14 rounded-lg" />
+              <Skeleton key={i} className="h-14 rounded-lg" />
             ))}
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (isError || !database) {
     return (
-      <div className="rounded-xl border border-border-subtle bg-surface-1 p-5 text-center">
-        <p className="text-xs text-text-muted">
-          Unable to load database stats.
-        </p>
-      </div>
+      <Card>
+        <CardContent className="p-5 text-center">
+          <p className="text-xs text-text-muted">
+            Unable to load database stats.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -225,72 +237,70 @@ export default function DBStats({ databaseId }: DBStatsProps) {
   return (
     <div className="space-y-4">
       {/* Usage Stats */}
-      <div className="rounded-xl border border-border-subtle bg-surface-1 animate-slide-up overflow-hidden">
-        <div className="border-b border-border-subtle px-5 py-3.5">
+      <Card className="animate-slide-up overflow-hidden">
+        <CardHeader className="border-b border-border-subtle px-5 py-3.5">
           <div className="flex items-center gap-2">
             <Activity size={15} className="text-text-muted" />
-            <h2 className="text-sm font-semibold text-text-primary">Usage</h2>
+            <CardTitle className="text-sm font-semibold">Usage</CardTitle>
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-2 p-5 sm:grid-cols-2 lg:grid-cols-3">
-          <StatCard
-            icon={HardDrive}
-            label="Storage"
-            value={`${formatBytes(usage.storageUsed)} / ${formatBytes(usage.storageLimit)}`}
-            subtext={`${Math.round((usage.storageUsed / usage.storageLimit) * 100)}% used`}
-          />
-          <StatCard
-            icon={Database}
-            label="Active Connections"
-            value={usage.connections}
-            subtext="Current pool size"
-          />
-          <StatCard
-            icon={Activity}
-            label="Queries / sec"
-            value={usage.queriesPerSecond.toLocaleString()}
-            subtext="Average QPS"
-          />
-          <StatCard
-            icon={Calendar}
-            label="Uptime"
-            value={`${uptimeDays} day${uptimeDays !== 1 ? "s" : ""}`}
-            subtext={`Created ${formatDate(database.createdAt)}`}
-          />
-          <StatCard
-            icon={Globe}
-            label="Region"
-            value={
-              database.region.charAt(0).toUpperCase() +
-              database.region.slice(1)
-            }
-            subtext={database.engine.toUpperCase()}
-          />
-          <StatCard
-            icon={Shield}
-            label="Status"
-            value={
-              database.status.charAt(0).toUpperCase() +
-              database.status.slice(1)
-            }
-            subtext={database.status === "ready" ? "Healthy" : "Pending"}
-          />
-        </div>
-      </div>
+        </CardHeader>
+        <CardContent className="p-5 pt-0">
+          <div className="grid grid-cols-1 gap-2 pt-5 sm:grid-cols-2 lg:grid-cols-3">
+            <StatCard
+              icon={HardDrive}
+              label="Storage"
+              value={`${formatBytes(usage.storageUsed)} / ${formatBytes(usage.storageLimit)}`}
+              subtext={`${Math.round((usage.storageUsed / usage.storageLimit) * 100)}% used`}
+            />
+            <StatCard
+              icon={Database}
+              label="Active Connections"
+              value={usage.connections}
+              subtext="Current pool size"
+            />
+            <StatCard
+              icon={Activity}
+              label="Queries / sec"
+              value={usage.queriesPerSecond.toLocaleString()}
+              subtext="Average QPS"
+            />
+            <StatCard
+              icon={Calendar}
+              label="Uptime"
+              value={`${uptimeDays} day${uptimeDays !== 1 ? "s" : ""}`}
+              subtext={`Created ${formatDate(database.createdAt)}`}
+            />
+            <StatCard
+              icon={Globe}
+              label="Region"
+              value={
+                database.region.charAt(0).toUpperCase() +
+                database.region.slice(1)
+              }
+              subtext={database.engine.toUpperCase()}
+            />
+            <StatCard
+              icon={Shield}
+              label="Status"
+              value={
+                database.status.charAt(0).toUpperCase() +
+                database.status.slice(1)
+              }
+              subtext={database.status === "ready" ? "Healthy" : "Pending"}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Backups */}
-      <div className="rounded-xl border border-border-subtle bg-surface-1 animate-slide-up overflow-hidden">
-        <div className="border-b border-border-subtle px-5 py-3.5">
+      <Card className="animate-slide-up overflow-hidden">
+        <CardHeader className="border-b border-border-subtle px-5 py-3.5">
           <div className="flex items-center gap-2">
             <Shield size={15} className="text-success" />
-            <h2 className="text-sm font-semibold text-text-primary">
-              Backups
-            </h2>
+            <CardTitle className="text-sm font-semibold">Backups</CardTitle>
           </div>
-        </div>
-
-        <div className="p-5 pt-3.5">
+        </CardHeader>
+        <CardContent className="p-5 pt-3.5">
           {backups.length === 0 ? (
             <p className="text-xs text-text-muted">
               No backups available yet.
@@ -302,21 +312,18 @@ export default function DBStats({ databaseId }: DBStatsProps) {
               ))}
             </div>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Branches */}
-      <div className="rounded-xl border border-border-subtle bg-surface-1 animate-slide-up overflow-hidden">
-        <div className="border-b border-border-subtle px-5 py-3.5">
+      <Card className="animate-slide-up overflow-hidden">
+        <CardHeader className="border-b border-border-subtle px-5 py-3.5">
           <div className="flex items-center gap-2">
             <GitBranch size={15} className="text-accent-text" />
-            <h2 className="text-sm font-semibold text-text-primary">
-              Branches
-            </h2>
+            <CardTitle className="text-sm font-semibold">Branches</CardTitle>
           </div>
-        </div>
-
-        <div className="p-5 pt-3.5">
+        </CardHeader>
+        <CardContent className="p-5 pt-3.5">
           {branches.length === 0 ? (
             <p className="text-xs text-text-muted">
               No branches created yet.
@@ -328,8 +335,8 @@ export default function DBStats({ databaseId }: DBStatsProps) {
               ))}
             </div>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

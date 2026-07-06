@@ -20,7 +20,36 @@ import { API_BASE_URL } from "@/lib/constants";
 import { useAuth } from "@/lib/auth";
 import { useDatabases } from "@/hooks/useDatabases";
 import AuthGuard from "@/components/AuthGuard";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -226,26 +255,21 @@ function BackupsContent() {
             </h1>
           </div>
           {selectedDbId && (
-            <button
+            <Button
               onClick={() => {
                 fetchBackups();
                 fetchRestores();
               }}
               disabled={backupsLoading}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-medium",
-                "text-text-secondary hover:text-text-primary hover:bg-surface-2",
-                "transition-colors border border-border-subtle min-h-[44px]",
-                backupsLoading && "opacity-50 cursor-not-allowed",
-              )}
-              aria-label="Refresh backups"
+              variant="outline"
+              size="sm"
             >
               <RefreshCw
                 size={13}
                 className={cn(backupsLoading && "animate-spin")}
               />
               Refresh
-            </button>
+            </Button>
           )}
         </div>
       </header>
@@ -264,40 +288,32 @@ function BackupsContent() {
           <label className="block text-xs font-medium text-text-secondary uppercase tracking-wider">
             Database
           </label>
-          <div className="relative w-full max-w-xs">
-            <select
-              value={selectedDbId}
-              onChange={(e) => setSelectedDbId(e.target.value)}
-              disabled={dbsLoading || databases.length === 0}
-              className={cn(
-                "w-full appearance-none rounded-lg border border-border-subtle bg-surface-1",
-                "px-3 py-2.5 pr-9 text-sm text-text-primary",
-                "focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent",
-                "transition-colors cursor-pointer",
-                "disabled:opacity-50 disabled:cursor-not-allowed",
-              )}
-            >
-              {dbsLoading ? (
-                <option>Loading databases…</option>
-              ) : databases.length === 0 ? (
-                <option>No databases available</option>
-              ) : (
-                databases.map((db) => (
-                  <option key={db.databaseId} value={db.databaseId}>
-                    {db.name} ({db.databaseId})
-                  </option>
-                ))
-              )}
-            </select>
-            <ChevronDown
-              size={14}
-              className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted"
-            />
-          </div>
+          <Select
+            value={selectedDbId}
+            onValueChange={(value) => { if (value) setSelectedDbId(value); }}
+            disabled={dbsLoading || databases.length === 0}
+          >
+            <SelectTrigger className="w-full max-w-xs">
+              <SelectValue placeholder={
+                dbsLoading
+                  ? "Loading databases…"
+                  : databases.length === 0
+                    ? "No databases available"
+                    : "Select a database"
+              } />
+            </SelectTrigger>
+            <SelectContent>
+              {databases.map((db) => (
+                <SelectItem key={db.databaseId} value={db.databaseId}>
+                  {db.name} ({db.databaseId})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Separator when DB is selected */}
-        {selectedDbId && <hr className="border-border-subtle" />}
+        {selectedDbId && <Separator />}
 
         {/* Backup timeline */}
         {selectedDbId && (
@@ -316,49 +332,50 @@ function BackupsContent() {
 
             {/* Error state */}
             {backupsError && (
-              <div className="rounded-lg border border-border-subtle bg-surface-1 p-6 text-center space-y-3">
-                <AlertTriangle size={24} className="mx-auto text-error-text" />
+              <Card className="text-center space-y-3 p-6">
+                <AlertTriangle size={24} className="mx-auto text-destructive" />
                 <div>
-                  <p className="text-sm font-medium text-text-primary">
+                  <p className="text-sm font-medium">
                     Could not load backups
                   </p>
                   <p className="text-xs text-text-muted mt-1">{backupsError}</p>
                 </div>
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={fetchBackups}
-                  className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-accent-text hover:text-accent-hover hover:bg-accent-subtle transition-colors"
                 >
                   <RefreshCw size={13} />
                   Retry
-                </button>
-              </div>
+                </Button>
+              </Card>
             )}
 
             {/* Loading skeleton */}
             {backupsLoading && (
-              <div className="rounded-lg border border-border-subtle bg-surface-1 overflow-hidden">
+              <Card className="overflow-hidden">
                 <div className="animate-pulse">
                   {[1, 2, 3, 4, 5].map((i) => (
                     <div
                       key={i}
                       className="flex items-center gap-4 px-4 py-3 border-b border-border-subtle last:border-b-0"
                     >
-                      <div className="skeleton h-3.5 w-36" />
-                      <div className="skeleton h-3.5 w-12" />
-                      <div className="skeleton h-3.5 w-16" />
-                      <div className="skeleton h-3.5 w-14" />
-                      <div className="skeleton h-3.5 w-20 ml-auto" />
+                      <Skeleton className="h-3.5 w-36" />
+                      <Skeleton className="h-3.5 w-12" />
+                      <Skeleton className="h-3.5 w-16" />
+                      <Skeleton className="h-3.5 w-14" />
+                      <Skeleton className="h-3.5 w-20 ml-auto" />
                     </div>
                   ))}
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* Empty state */}
             {!backupsLoading && !backupsError && backups.length === 0 && (
-              <div className="rounded-lg border border-border-subtle bg-surface-1 py-10 px-6 text-center space-y-2">
+              <Card className="py-10 px-6 text-center space-y-2">
                 <Database size={28} className="mx-auto text-text-disabled" />
-                <p className="text-sm font-medium text-text-primary">
+                <p className="text-sm font-medium">
                   No backups available
                 </p>
                 <p className="text-xs text-text-muted max-w-sm mx-auto">
@@ -366,83 +383,58 @@ function BackupsContent() {
                   appear here and you can restore to any point within the retention
                   window.
                 </p>
-              </div>
+              </Card>
             )}
 
             {/* Backup table */}
             {!backupsLoading && !backupsError && backups.length > 0 && (
-              <div className="rounded-lg border border-border-subtle bg-surface-1 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b border-border-subtle bg-surface-2">
-                        <th className="text-left px-4 py-2.5 font-medium text-text-secondary whitespace-nowrap">
-                          Date / Time
-                        </th>
-                        <th className="text-left px-4 py-2.5 font-medium text-text-secondary whitespace-nowrap">
-                          Type
-                        </th>
-                        <th className="text-left px-4 py-2.5 font-medium text-text-secondary whitespace-nowrap hidden sm:table-cell">
-                          Keyspace
-                        </th>
-                        <th className="text-left px-4 py-2.5 font-medium text-text-secondary whitespace-nowrap hidden md:table-cell">
-                          Size
-                        </th>
-                        <th className="text-left px-4 py-2.5 font-medium text-text-secondary whitespace-nowrap">
-                          Status
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border-subtle">
-                      {backups.map((b) => (
-                        <tr
-                          key={b.id}
-                          className="hover:bg-surface-2/50 transition-colors"
-                        >
-                          <td className="px-4 py-3 text-text-primary font-mono whitespace-nowrap">
-                            {formatDateTime(b.time)}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span
-                              className={cn(
-                                "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium",
-                                b.type === "full"
-                                  ? "bg-blue-500/10 text-blue-400"
-                                  : "bg-surface-3 text-text-muted",
-                              )}
-                            >
-                              {b.type === "full" ? "FULL" : "INCR"}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-text-secondary whitespace-nowrap font-mono hidden sm:table-cell">
-                            {b.keyspace}
-                          </td>
-                          <td className="px-4 py-3 text-text-secondary whitespace-nowrap font-mono hidden md:table-cell">
-                            {formatBytes(b.size)}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span
-                              className={cn(
-                                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
-                                b.status === "completed"
-                                  ? "bg-success-subtle text-success-text"
-                                  : b.status === "failed"
-                                    ? "bg-error-subtle text-error-text"
-                                    : "bg-warning-subtle text-warning-text",
-                              )}
-                            >
-                              {b.status === "completed" && (
-                                <Check size={10} className="shrink-0" />
-                              )}
-                              {b.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <Card className="overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-surface-2">
+                      <TableHead>Date / Time</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="hidden sm:table-cell">Keyspace</TableHead>
+                      <TableHead className="hidden md:table-cell">Size</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {backups.map((b) => (
+                      <TableRow key={b.id}>
+                        <TableCell className="font-mono">
+                          {formatDateTime(b.time)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={b.type === "full" ? "default" : "secondary"}>
+                            {b.type === "full" ? "FULL" : "INCR"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-mono hidden sm:table-cell">
+                          {b.keyspace}
+                        </TableCell>
+                        <TableCell className="font-mono hidden md:table-cell">
+                          {formatBytes(b.size)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              b.status === "completed"
+                                ? "default"
+                                : b.status === "failed"
+                                  ? "destructive"
+                                  : "secondary"
+                            }
+                          >
+                            {b.status === "completed" && <Check size={10} className="shrink-0 mr-1" />}
+                            {b.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Card>
             )}
 
             {/* Coverage indicator */}
@@ -474,136 +466,125 @@ function BackupsContent() {
               </h2>
             </div>
 
-            <div className="rounded-lg border border-border-subtle bg-surface-1 p-5 space-y-4">
-              <p className="text-xs text-text-muted">
-                Select a date and time within the backup coverage range to restore
-                the database to that exact point.
-              </p>
+            <Card>
+              <CardContent className="p-5 space-y-4">
+                <p className="text-xs text-text-muted">
+                  Select a date and time within the backup coverage range to restore
+                  the database to that exact point.
+                </p>
 
-              <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-                <div className="flex-1 max-w-xs">
-                  <label
-                    htmlFor="pitr-datetime"
-                    className="block text-xs font-medium text-text-secondary mb-1.5"
-                  >
-                    Restore point
-                  </label>
-                  <input
-                    id="pitr-datetime"
-                    type="datetime-local"
-                    value={pitrTime}
-                    onChange={(e) => setPitrTime(e.target.value)}
-                    min={
-                      coverage
-                        ? coverage.earliest.toISOString().slice(0, 16)
-                        : undefined
-                    }
-                    max={
-                      coverage
-                        ? coverage.latest.toISOString().slice(0, 16)
-                        : undefined
-                    }
-                    className={cn(
-                      "w-full rounded-lg bg-surface-2 border border-border-subtle",
-                      "px-3 py-2.5 text-sm text-text-primary",
-                      "focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent",
-                      "transition-colors",
-                      "disabled:opacity-50 disabled:cursor-not-allowed",
-                      "[color-scheme:dark]",
+                <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+                  <div className="flex-1 max-w-xs">
+                    <label
+                      htmlFor="pitr-datetime"
+                      className="block text-xs font-medium text-text-secondary mb-1.5"
+                    >
+                      Restore point
+                    </label>
+                    <Input
+                      id="pitr-datetime"
+                      type="datetime-local"
+                      value={pitrTime}
+                      onChange={(e) => setPitrTime(e.target.value)}
+                      min={
+                        coverage
+                          ? coverage.earliest.toISOString().slice(0, 16)
+                          : undefined
+                      }
+                      max={
+                        coverage
+                          ? coverage.latest.toISOString().slice(0, 16)
+                          : undefined
+                      }
+                      className="[color-scheme:dark]"
+                    />
+                    {coverage && (
+                      <p className="mt-1 text-[11px] text-text-muted">
+                        Available:{" "}
+                        {coverage.earliest.toLocaleString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}{" "}
+                        —{" "}
+                        {coverage.latest.toLocaleString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
                     )}
-                  />
-                  {coverage && (
-                    <p className="mt-1 text-[11px] text-text-muted">
-                      Available:{" "}
-                      {coverage.earliest.toLocaleString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}{" "}
-                      —{" "}
-                      {coverage.latest.toLocaleString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  )}
+                  </div>
+
+                  <Button
+                    onClick={() => setShowConfirm(true)}
+                    disabled={!pitrTime || restoring}
+                  >
+                    {restoring ? (
+                      <>
+                        <Loader2 size={15} className="animate-spin" />
+                        Restoring…
+                      </>
+                    ) : (
+                      <>
+                        <RotateCcw size={15} />
+                        Restore to this point
+                      </>
+                    )}
+                  </Button>
                 </div>
 
-                <button
-                  onClick={() => setShowConfirm(true)}
-                  disabled={!pitrTime || restoring}
-                  className={cn(
-                    "inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold",
-                    "bg-accent text-white hover:bg-accent-hover active:bg-accent-pressed",
-                    "transition-colors min-h-[44px]",
-                    "disabled:opacity-50 disabled:cursor-not-allowed",
-                  )}
-                >
-                  {restoring ? (
-                    <>
-                      <Loader2 size={15} className="animate-spin" />
-                      Restoring…
-                    </>
-                  ) : (
-                    <>
-                      <RotateCcw size={15} />
-                      Restore to this point
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {/* Coverage bar */}
-              {coverage && (
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[11px] text-text-muted">
-                    <span>
-                      {coverage.earliest.toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </span>
-                    <span>
-                      {coverage.latest.toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </span>
-                  </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-surface-3">
-                    {(() => {
-                      const range = coverage.latest.getTime() - coverage.earliest.getTime();
-                      const pos = pitrTime
-                        ? Math.max(
-                            0,
-                            Math.min(
-                              100,
-                              ((new Date(pitrTime).getTime() - coverage.earliest.getTime()) /
-                                range) *
+                {/* Coverage bar */}
+                {coverage && (
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px] text-text-muted">
+                      <span>
+                        {coverage.earliest.toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                      <span>
+                        {coverage.latest.toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-surface-3">
+                      {(() => {
+                        const range = coverage.latest.getTime() - coverage.earliest.getTime();
+                        const pos = pitrTime
+                          ? Math.max(
+                              0,
+                              Math.min(
                                 100,
-                            ),
-                          )
-                        : 50; // default to middle
-                      return (
-                        <>
-                          <div
-                            className="h-full rounded-full bg-accent/70"
-                            style={{ width: "100%" }}
-                          />
-                          <div
-                            className="relative -top-1.5 w-2.5 h-2.5 rounded-full bg-accent border-2 border-bg-primary mx-auto"
-                            style={{ marginLeft: `${pos}%` }}
-                          />
-                        </>
-                      );
-                    })()}
+                                ((new Date(pitrTime).getTime() - coverage.earliest.getTime()) /
+                                  range) *
+                                  100,
+                              ),
+                            )
+                          : 50;
+                        return (
+                          <>
+                            <div
+                              className="h-full rounded-full bg-accent/70"
+                              style={{ width: "100%" }}
+                            />
+                            <div
+                              className="relative -top-1.5 w-2.5 h-2.5 rounded-full bg-accent border-2 border-bg-primary mx-auto"
+                              style={{ marginLeft: `${pos}%` }}
+                            />
+                          </>
+                        );
+                      })()}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </CardContent>
+            </Card>
           </section>
         )}
 
@@ -624,167 +605,129 @@ function BackupsContent() {
 
             {/* Loading skeleton */}
             {restoresLoading && (
-              <div className="rounded-lg border border-border-subtle bg-surface-1 overflow-hidden">
+              <Card className="overflow-hidden">
                 <div className="animate-pulse">
                   {[1, 2, 3].map((i) => (
                     <div
                       key={i}
                       className="flex items-center gap-4 px-4 py-3 border-b border-border-subtle last:border-b-0"
                     >
-                      <div className="skeleton h-3.5 w-36" />
-                      <div className="skeleton h-3.5 w-36" />
-                      <div className="skeleton h-3.5 w-20 ml-auto" />
+                      <Skeleton className="h-3.5 w-36" />
+                      <Skeleton className="h-3.5 w-36" />
+                      <Skeleton className="h-3.5 w-20 ml-auto" />
                     </div>
                   ))}
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* Empty state */}
             {!restoresLoading && restores.length === 0 && (
-              <div className="rounded-lg border border-border-subtle bg-surface-1 py-8 px-6 text-center">
+              <Card className="py-8 px-6 text-center">
                 <p className="text-xs text-text-muted">
                   No restore operations yet. Use the Point-in-Time Recovery tool
                   above to initiate a restore.
                 </p>
-              </div>
+              </Card>
             )}
 
             {/* Restore table */}
             {!restoresLoading && restores.length > 0 && (
-              <div className="rounded-lg border border-border-subtle bg-surface-1 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b border-border-subtle bg-surface-2">
-                        <th className="text-left px-4 py-2.5 font-medium text-text-secondary whitespace-nowrap">
-                          Date requested
-                        </th>
-                        <th className="text-left px-4 py-2.5 font-medium text-text-secondary whitespace-nowrap">
-                          Target time
-                        </th>
-                        <th className="text-left px-4 py-2.5 font-medium text-text-secondary whitespace-nowrap">
-                          Status
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border-subtle">
-                      {restores.map((r) => (
-                        <tr
-                          key={r.id}
-                          className="hover:bg-surface-2/50 transition-colors"
-                        >
-                          <td className="px-4 py-3 text-text-primary font-mono whitespace-nowrap">
-                            {formatDateTime(r.created_at)}
-                          </td>
-                          <td className="px-4 py-3 text-text-primary font-mono whitespace-nowrap">
-                            {formatDateTime(r.restore_timestamp)}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span
-                              className={cn(
-                                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
-                                r.status === "completed"
-                                  ? "bg-success-subtle text-success-text"
-                                  : r.status === "failed"
-                                    ? "bg-error-subtle text-error-text"
-                                    : "bg-warning-subtle text-warning-text",
-                              )}
-                            >
-                              {r.status === "in-progress" && (
-                                <Loader2
-                                  size={10}
-                                  className="animate-spin shrink-0"
-                                />
-                              )}
-                              {r.status === "completed" && (
-                                <Check size={10} className="shrink-0" />
-                              )}
-                              {r.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <Card className="overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-surface-2">
+                      <TableHead>Date requested</TableHead>
+                      <TableHead>Target time</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {restores.map((r) => (
+                      <TableRow key={r.id}>
+                        <TableCell className="font-mono">
+                          {formatDateTime(r.created_at)}
+                        </TableCell>
+                        <TableCell className="font-mono">
+                          {formatDateTime(r.restore_timestamp)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              r.status === "completed"
+                                ? "default"
+                                : r.status === "failed"
+                                  ? "destructive"
+                                  : "secondary"
+                            }
+                          >
+                            {r.status === "in-progress" && (
+                              <Loader2
+                                size={10}
+                                className="animate-spin shrink-0 mr-1"
+                              />
+                            )}
+                            {r.status === "completed" && (
+                              <Check size={10} className="shrink-0 mr-1" />
+                            )}
+                            {r.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Card>
             )}
           </section>
         )}
       </main>
 
       {/* Confirmation dialog */}
-      {showConfirm && selectedDb && pitrTime && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/60"
-            onClick={() => setShowConfirm(false)}
-          />
-          <div className="relative w-full max-w-sm rounded-xl border border-border-subtle bg-surface-1 p-6 shadow-2xl animate-slide-up">
-            <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-warning-subtle">
-                <AlertTriangle size={18} className="text-warning-text" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-text-primary">
-                  Confirm Point-in-Time Recovery
-                </h3>
-                <p className="mt-2 text-xs text-text-secondary leading-relaxed">
-                  This will restore{" "}
-                  <span className="font-medium text-text-primary">
-                    {selectedDb.name}
-                  </span>{" "}
-                  to{" "}
-                  <span className="font-medium text-text-primary font-mono">
-                    {formatDateTime(new Date(pitrTime).toISOString())}
-                  </span>
-                  .
-                </p>
-                <p className="mt-1.5 text-xs text-error-text font-medium">
-                  Current data will be lost. This action cannot be undone.
-                </p>
-                <p className="mt-3 text-xs text-text-muted">
-                  Are you sure you want to proceed?
-                </p>
-              </div>
-            </div>
-            <div className="mt-5 flex items-center justify-end gap-2">
-              <button
-                onClick={() => setShowConfirm(false)}
-                disabled={restoring}
-                className={cn(
-                  "rounded-lg border border-border-subtle px-4 py-2 text-xs font-medium",
-                  "text-text-secondary hover:text-text-primary hover:bg-surface-2",
-                  "transition-colors min-h-[44px]",
-                  "disabled:opacity-50 disabled:cursor-not-allowed",
-                )}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleRestore}
-                disabled={restoring}
-                className={cn(
-                  "rounded-lg px-4 py-2 text-xs font-semibold text-white",
-                  "bg-accent hover:bg-accent-hover active:bg-accent-pressed",
-                  "transition-colors min-h-[44px] inline-flex items-center gap-2",
-                  "disabled:opacity-50 disabled:cursor-not-allowed",
-                )}
-              >
-                {restoring ? (
-                  <>
-                    <Loader2 size={14} className="animate-spin" />
-                    Restoring…
-                  </>
-                ) : (
-                  "Proceed"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Dialog open={showConfirm} onOpenChange={(v) => !v && setShowConfirm(false)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Confirm Point-in-Time Recovery</DialogTitle>
+            <DialogDescription>
+              This will restore{" "}
+              <span className="font-medium">{selectedDb?.name}</span>{" "}
+              to{" "}
+              <span className="font-medium font-mono">
+                {pitrTime ? formatDateTime(new Date(pitrTime).toISOString()) : ""}
+              </span>
+              .
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-xs text-destructive font-medium">
+            Current data will be lost. This action cannot be undone.
+          </p>
+          <p className="text-xs text-text-muted">
+            Are you sure you want to proceed?
+          </p>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirm(false)}
+              disabled={restoring}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleRestore}
+              disabled={restoring}
+            >
+              {restoring ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Restoring…
+                </>
+              ) : (
+                "Proceed"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

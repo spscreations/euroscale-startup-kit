@@ -29,9 +29,9 @@ async function loginToDashboard(page: import('@playwright/test').Page): Promise<
   // Wait for login page
   await page.waitForURL(/\/login/, { timeout: 10_000 });
 
-  // Fill credentials
+  // Fill credentials — shadcn/ui inputs use data-slot="input"
   const emailInput = page.locator(
-    'input[type="email"], input[name="email"], input[placeholder*="email" i], input[placeholder*="Email"]'
+    'input[type="email"], input[name="email"], input[placeholder*="email" i], input[placeholder*="Email"], [data-slot="input"][type="email"]'
   );
   await emailInput.waitFor({ state: 'visible', timeout: 10_000 });
   await emailInput.fill(CREDS.email);
@@ -79,11 +79,11 @@ test.describe('EuroScale Dashboard Interactions', () => {
     const freePlanText = page.getByRole('heading', { name: 'Free Plan' });
     await expect(freePlanText).toBeVisible({ timeout: 10_000 });
 
-    // --- Verify Upgrade button ---
+    // --- Verify Upgrade button (shadcn/ui Button component, data-slot="button") ---
     const upgradeBtn = page.locator('button:has-text("Upgrade")');
     await expect(upgradeBtn).toBeVisible({ timeout: 5_000 });
 
-    // --- Verify UsageBar labels ---
+    // --- Verify UsageBar labels (now shadcn/ui Progress component with role="progressbar") ---
     const usageBarLabels = ['Databases', 'Storage', 'Read Units', 'Write Units'];
     for (const label of usageBarLabels) {
       await expect(
@@ -96,6 +96,7 @@ test.describe('EuroScale Dashboard Interactions', () => {
     await expect(addonsHeading).toBeVisible({ timeout: 5_000 });
 
     // --- Verify Additional Storage input exists with default 10 ---
+    // shadcn/ui input uses data-slot="input"; type="number" still works
     const storageInput = page.locator('input[type="number"]');
     await expect(storageInput).toBeVisible({ timeout: 5_000 });
     await expect(storageInput).toHaveValue('10');
@@ -105,6 +106,7 @@ test.describe('EuroScale Dashboard Interactions', () => {
     await expect(applyBtn).toBeVisible({ timeout: 5_000 });
 
     // --- Verify Autoscale not available on Free plan ---
+    // shadcn/ui Switch uses role="switch" with data-slot="switch"
     const autoscaleMsg = page.getByText('Autoscale not available');
     await expect(autoscaleMsg).toBeVisible({ timeout: 5_000 });
 
@@ -145,6 +147,7 @@ test.describe('EuroScale Dashboard Interactions', () => {
     const pageErrors = await loginToDashboard(page);
 
     // Click Upgrade button and wait for Mollie redirect
+    // shadcn/ui Button component (data-slot="button"), same locator works
     const upgradeBtn = page.locator('button:has-text("Upgrade")');
     await upgradeBtn.waitFor({ state: 'visible', timeout: 5_000 });
 
@@ -217,6 +220,7 @@ test.describe('EuroScale Dashboard Interactions', () => {
     const pageErrors = await loginToDashboard(page);
 
     // --- Verify Additional Storage input is present with default 10 ---
+    // shadcn/ui input uses data-slot="input"; type="number" still works
     const storageInput = page.locator('input[type="number"]');
     await expect(storageInput).toBeVisible({ timeout: 5_000 });
     await expect(storageInput).toHaveValue('10');
@@ -236,7 +240,9 @@ test.describe('EuroScale Dashboard Interactions', () => {
     await page.waitForTimeout(2000);
 
     // Check for expected error toast text
-    const toastContainer = page.locator('[role="status"], [role="alert"], .toast, div')
+    // sonner Toast uses <li data-sonner-toast> with role="status"
+    // Also check shadcn/ui toast patterns and generic role-based selectors
+    const toastContainer = page.locator('[data-sonner-toast], [role="status"], [role="alert"], .toast, div')
       .filter({ hasText: /No databases|resize|database|Create a database/i })
       .first();
     const toastVisible = await toastContainer.isVisible().catch(() => false);
@@ -247,6 +253,7 @@ test.describe('EuroScale Dashboard Interactions', () => {
     await expect(autoscaleSection).toBeVisible({ timeout: 5_000 });
 
     // On Free plan, should show "Autoscale not available"
+    // shadcn/ui Switch component uses role="switch" with data-slot="switch"
     const autoscaleUnavailable = page.getByText('Autoscale not available');
     await expect(autoscaleUnavailable).toBeVisible({ timeout: 5_000 });
 
@@ -270,19 +277,25 @@ test.describe('EuroScale Dashboard Interactions', () => {
     const pageErrors = await loginToDashboard(page);
 
     // --- Click "+ New database" button ---
+    // shadcn/ui Button component (data-slot="button")
     const newDbBtn = page.locator('button:has-text("New database")');
     await newDbBtn.waitFor({ state: 'visible', timeout: 5_000 });
     await newDbBtn.click();
 
-    // Wait for dialog animation
+    // Wait for dialog animation — shadcn/ui Dialog uses data-slot="dialog"
     await page.waitForTimeout(500);
 
+    // --- Verify dialog content is visible ---
+    // shadcn/ui Dialog content wrapper uses data-slot="dialog-content"
+    const dialogContent = page.locator('[data-slot="dialog-content"], [role="dialog"]');
+    await expect(dialogContent).toBeVisible({ timeout: 5_000 });
+
     // --- Verify dialog heading ---
-    const dialogHeading = page.getByText('New database');
-    // There might be the button text and the dialog heading — use the one in the dialog
-    const dialogHeadings = page.locator('h2:has-text("New database")');
-    const headingCount = await dialogHeadings.count();
-    console.log(`   Found ${headingCount} "New database" heading(s) in dialog`);
+    // shadcn/ui Dialog title uses data-slot="dialog-title"
+    const dialogHeading = page.locator('[data-slot="dialog-title"], h2:has-text("New database")').first();
+    await expect(dialogHeading).toBeVisible({ timeout: 5_000 });
+    const headingText = await dialogHeading.textContent();
+    console.log(`   Dialog heading: "${headingText}"`);
 
     // --- Verify database name input ---
     const dbNameInput = page.locator('#db-name');
@@ -301,8 +314,8 @@ test.describe('EuroScale Dashboard Interactions', () => {
     const createBtn = page.locator('button:has-text("Create database")');
     await expect(createBtn).toBeVisible({ timeout: 5_000 });
 
-    // --- Close dialog via X button ---
-    const closeBtn = page.locator('button[aria-label="Close dialog"]');
+    // --- Close dialog: try data-slot="dialog-close" first (shadcn/ui), then aria-label fallback ---
+    const closeBtn = page.locator('[data-slot="dialog-close"], button[aria-label="Close dialog"]').first();
     await closeBtn.waitFor({ state: 'visible', timeout: 5_000 });
     await closeBtn.click();
 
@@ -332,6 +345,7 @@ test.describe('EuroScale Dashboard Interactions', () => {
     const pageErrors = await loginToDashboard(page);
 
     // --- Verify Total Databases card ---
+    // shadcn/ui Card uses data-slot="card" with data-slot="card-title" inside
     const totalDbCard = page.getByText('Total Databases');
     await expect(totalDbCard).toBeVisible({ timeout: 10_000 });
 

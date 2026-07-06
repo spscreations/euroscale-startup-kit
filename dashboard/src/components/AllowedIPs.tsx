@@ -5,7 +5,10 @@ import { Globe, Plus, Trash2, Shield, AlertTriangle, Loader2, Wifi } from "lucid
 import { cn } from "@/lib/utils";
 import { API_BASE_URL } from "@/lib/constants";
 import { useAuth } from "@/lib/auth";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 // ── Validation ─────────────────────────────────────────────────────────────
 
@@ -162,9 +165,9 @@ export default function AllowedIPs() {
         {fetchingIP ? (
           <Loader2 size={12} className="animate-spin text-text-disabled" />
         ) : clientIP ? (
-          <span className="text-xs font-mono font-medium text-accent-text">
+          <Badge variant="outline" className="font-mono text-xs">
             {clientIP}
-          </span>
+          </Badge>
         ) : (
           <span className="text-xs text-text-disabled">Unknown</span>
         )}
@@ -184,25 +187,20 @@ export default function AllowedIPs() {
             size={14}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
           />
-          <input
+          <Input
             type="text"
             value={newIP}
             onChange={(e) => setNewIP(e.target.value)}
             placeholder="e.g. 192.168.1.100 or 10.0.0.0/24"
-            className="w-full rounded-lg border border-border-subtle bg-surface-2 pl-9 pr-3 py-2 text-sm text-text-primary placeholder:text-text-disabled outline-none transition-colors focus:border-accent focus:ring-1 focus:ring-accent"
+            className="pl-9"
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             disabled={adding}
           />
         </div>
-        <button
+        <Button
           onClick={handleAdd}
           disabled={!newIP.trim() || adding}
-          className={cn(
-            "flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-medium transition-colors shrink-0 min-h-[44px]",
-            newIP.trim() && !adding
-              ? "bg-accent text-white hover:bg-accent-hover"
-              : "bg-surface-3 text-text-disabled cursor-not-allowed",
-          )}
+          size="sm"
         >
           {adding ? (
             <Loader2 size={14} className="animate-spin" />
@@ -210,7 +208,7 @@ export default function AllowedIPs() {
             <Plus size={14} />
           )}
           Add IP
-        </button>
+        </Button>
       </div>
 
       {/* Validation hint */}
@@ -237,12 +235,14 @@ export default function AllowedIPs() {
             <AlertTriangle size={14} className="text-error-text shrink-0" />
             <p className="text-xs text-error-text">{error}</p>
           </div>
-          <button
+          <Button
+            variant="link"
+            size="sm"
             onClick={fetchIPs}
-            className="mt-2 text-xs font-medium text-accent-text hover:underline"
+            className="mt-2 h-auto p-0"
           >
             Try again
-          </button>
+          </Button>
         </div>
       )}
 
@@ -277,15 +277,15 @@ export default function AllowedIPs() {
                   {ip}
                 </span>
                 {clientIP === ip && (
-                  <span className="shrink-0 rounded-full bg-success-subtle px-1.5 py-0.5 text-[10px] font-medium text-success-text">
-                    You
-                  </span>
+                  <Badge variant="default">You</Badge>
                 )}
               </div>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => handleRemove(ip)}
                 disabled={removing === ip}
-                className="rounded-lg p-2 text-text-muted transition-colors hover:bg-error-subtle hover:text-error-text min-w-[44px] min-h-[44px] flex items-center justify-center disabled:opacity-50"
+                className="text-text-muted hover:text-error-text hover:bg-error-subtle min-w-[44px] min-h-[44px]"
                 title={`Remove ${ip}`}
               >
                 {removing === ip ? (
@@ -293,7 +293,7 @@ export default function AllowedIPs() {
                 ) : (
                   <Trash2 size={14} />
                 )}
-              </button>
+              </Button>
             </div>
           ))}
         </div>

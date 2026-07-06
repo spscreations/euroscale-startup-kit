@@ -14,7 +14,21 @@ import {
 } from "lucide-react";
 import { cn, copyToClipboard, formatDate } from "@/lib/utils";
 import { useIPWhitelist } from "@/hooks/useIPWhitelist";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 // ── CIDR Validation ────────────────────────────────────────────────────────
 
@@ -53,21 +67,21 @@ interface IPWhitelistProps {
   databaseId: string;
 }
 
-// ── Add Entry Modal ─────────────────────────────────────────────────────────
+// ── Add Entry Dialog ─────────────────────────────────────────────────────────
 
-interface AddEntryModalProps {
+interface AddEntryDialogProps {
   open: boolean;
   onClose: () => void;
   onAdd: (cidr: string, description: string) => Promise<void>;
   isAdding: boolean;
 }
 
-function AddEntryModal({
+function AddEntryDialog({
   open,
   onClose,
   onAdd,
   isAdding,
-}: AddEntryModalProps) {
+}: AddEntryDialogProps) {
   const [cidr, setCidr] = useState("");
   const [description, setDescription] = useState("");
   const [cidrError, setCidrError] = useState<string | null>(null);
@@ -108,117 +122,87 @@ function AddEntryModal({
     onClose();
   }, [onClose]);
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60" onClick={handleClose} />
-      <div className="relative w-full max-w-md animate-slide-up">
-        <div className="rounded-xl border border-border-subtle bg-surface-1 p-5 shadow-2xl">
-          <div className="mb-5 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent-subtle">
-                <Shield size={16} className="text-accent-text" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-text-primary">
-                  Add IP to Whitelist
-                </h3>
-                <p className="text-xs text-text-muted">
-                  Allow connections from a specific IP or range
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={handleClose}
-              className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-surface-2 hover:text-text-primary"
+    <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add IP to Whitelist</DialogTitle>
+          <DialogDescription>
+            Allow connections from a specific IP or range
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label
+              htmlFor="cidr-input"
+              className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-text-muted"
             >
-              <X size={16} />
-            </button>
+              CIDR Range
+            </label>
+            <Input
+              id="cidr-input"
+              type="text"
+              value={cidr}
+              onChange={(e) => validateAndSetCidr(e.target.value)}
+              placeholder="e.g. 192.168.1.0/24, 10.0.0.1/32"
+              className={cn(
+                cidrError && "border-error-subtle focus:border-error focus:ring-error",
+              )}
+              autoFocus
+              disabled={isAdding}
+            />
+            {cidrError && (
+              <p className="mt-1 text-[11px] text-error-text">{cidrError}</p>
+            )}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label
-                htmlFor="cidr-input"
-                className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-text-muted"
-              >
-                CIDR Range
-              </label>
-              <input
-                id="cidr-input"
-                type="text"
-                value={cidr}
-                onChange={(e) => validateAndSetCidr(e.target.value)}
-                placeholder="e.g. 192.168.1.0/24, 10.0.0.1/32"
-                className={cn(
-                  "w-full rounded-lg border bg-surface-2 px-3 py-2 text-sm text-text-primary placeholder:text-text-disabled outline-none transition-colors",
-                  cidrError
-                    ? "border-error-subtle focus:border-error focus:ring-1 focus:ring-error"
-                    : "border-border-subtle focus:border-accent focus:ring-1 focus:ring-accent",
-                )}
-                autoFocus
-                disabled={isAdding}
-              />
-              {cidrError && (
-                <p className="mt-1 text-[11px] text-error-text">{cidrError}</p>
+          <div>
+            <label
+              htmlFor="desc-input"
+              className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-text-muted"
+            >
+              Description
+            </label>
+            <Input
+              id="desc-input"
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="e.g. Office VPN, Production server"
+              disabled={isAdding}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              disabled={isAdding}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={!cidr.trim() || !!cidrError || isAdding}
+            >
+              {isAdding ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <Plus size={14} />
+                  Add Entry
+                </>
               )}
-            </div>
-
-            <div>
-              <label
-                htmlFor="desc-input"
-                className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-text-muted"
-              >
-                Description
-              </label>
-              <input
-                id="desc-input"
-                type="text"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="e.g. Office VPN, Production server"
-                className="w-full rounded-lg border border-border-subtle bg-surface-2 px-3 py-2 text-sm text-text-primary placeholder:text-text-disabled outline-none transition-colors focus:border-accent focus:ring-1 focus:ring-accent"
-                disabled={isAdding}
-              />
-            </div>
-
-            <div className="flex justify-end gap-2.5 pt-1">
-              <button
-                type="button"
-                onClick={handleClose}
-                disabled={isAdding}
-                className="rounded-lg border border-border-subtle px-3.5 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-border-default hover:text-text-primary disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={!cidr.trim() || !!cidrError || isAdding}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-medium transition-colors",
-                  cidr.trim() && !cidrError && !isAdding
-                    ? "bg-accent text-white hover:bg-accent-hover"
-                    : "bg-surface-3 text-text-disabled cursor-not-allowed",
-                )}
-              >
-                {isAdding ? (
-                  <>
-                    <Loader2 size={14} className="animate-spin" />
-                    Adding...
-                  </>
-                ) : (
-                  <>
-                    <Plus size={14} />
-                    Add Entry
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -232,72 +216,55 @@ interface RemoveConfirmProps {
   isRemoving: boolean;
 }
 
-function RemoveConfirm({
+function RemoveConfirmDialog({
   open,
   cidr,
   onConfirm,
   onCancel,
   isRemoving,
 }: RemoveConfirmProps) {
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60" onClick={onCancel} />
-      <div className="relative w-full max-w-sm animate-slide-up">
-        <div className="rounded-xl border border-error-subtle bg-surface-1 p-5 shadow-2xl">
-          <div className="mb-4 flex items-start gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-error-subtle">
-              <Trash2 size={16} className="text-error-text" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-text-primary">
-                Remove Whitelist Entry
-              </h3>
-              <p className="mt-1 text-xs text-text-muted">
-                Connections from{" "}
-                <code className="font-mono text-text-secondary bg-surface-2 px-1 py-0.5 rounded text-[11px]">
-                  {cidr}
-                </code>{" "}
-                will be blocked. This action can be undone by re-adding the
-                entry.
-              </p>
-            </div>
-          </div>
-          <div className="flex justify-end gap-2.5">
-            <button
-              onClick={onCancel}
-              disabled={isRemoving}
-              className="rounded-lg border border-border-subtle px-3.5 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-border-default hover:text-text-primary disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={onConfirm}
-              disabled={isRemoving}
-              className={cn(
-                "flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-medium text-white transition-colors",
-                isRemoving
-                  ? "bg-surface-3 text-text-disabled cursor-not-allowed"
-                  : "bg-error hover:bg-error/90",
-              )}
-            >
-              {isRemoving ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" />
-                  Removing...
-                </>
-              ) : (
-                <>
-                  <Trash2 size={14} />
-                  Remove Entry
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <Dialog open={open} onOpenChange={(v) => !v && onCancel()}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Remove Whitelist Entry</DialogTitle>
+          <DialogDescription>
+            Connections from{" "}
+            <code className="font-mono text-text-secondary bg-surface-2 px-1 py-0.5 rounded text-[11px]">
+              {cidr}
+            </code>{" "}
+            will be blocked. This action can be undone by re-adding the
+            entry.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={onCancel}
+            disabled={isRemoving}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={onConfirm}
+            disabled={isRemoving}
+          >
+            {isRemoving ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                Removing...
+              </>
+            ) : (
+              <>
+                <Trash2 size={14} />
+                Remove Entry
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -351,9 +318,10 @@ function WhitelistEntryRow({
       </div>
 
       <div className="flex items-center gap-0.5 shrink-0">
-        <button
+        <Button
+          variant="ghost"
+          size="icon-xs"
           onClick={handleCopy}
-          className="rounded p-1.5 text-text-muted transition-colors hover:text-accent-text hover:bg-surface-3"
           title="Copy CIDR"
         >
           {copied ? (
@@ -361,14 +329,16 @@ function WhitelistEntryRow({
           ) : (
             <Copy size={13} />
           )}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-xs"
           onClick={onRemove}
-          className="rounded p-1.5 text-text-muted transition-colors hover:text-error-text hover:bg-error-subtle"
+          className="text-text-muted hover:text-error-text hover:bg-error-subtle"
           title="Remove entry"
         >
           <Trash2 size={13} />
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -423,61 +393,59 @@ export default function IPWhitelist({ databaseId }: IPWhitelistProps) {
   // ── Loading skeleton ──────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-border-subtle bg-surface-1 overflow-hidden">
-        <div className="border-b border-border-subtle px-5 py-3.5">
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b border-border-subtle px-5 py-3.5">
           <div className="flex items-center gap-2">
             <Shield size={16} className="text-text-disabled" />
-            <div className="skeleton h-4 w-24 rounded" />
+            <Skeleton className="h-4 w-24 rounded" />
           </div>
-        </div>
-        <div className="p-5 space-y-1.5">
+        </CardHeader>
+        <CardContent className="space-y-1.5 pt-5">
           {[1, 2].map((i) => (
-            <div key={i} className="skeleton h-10 w-full rounded-lg" />
+            <Skeleton key={i} className="h-10 w-full rounded-lg" />
           ))}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   // ── Error state ───────────────────────────────────────────────────────────
   if (error) {
     return (
-      <div className="rounded-xl border border-border-subtle bg-surface-1 overflow-hidden">
-        <div className="border-b border-border-subtle px-5 py-3.5">
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b border-border-subtle px-5 py-3.5">
           <div className="flex items-center gap-2">
             <AlertTriangle size={16} className="text-warning-text" />
-            <h2 className="text-sm font-semibold text-text-primary">
-              IP Whitelist
-            </h2>
+            <CardTitle className="text-sm font-semibold">IP Whitelist</CardTitle>
           </div>
-        </div>
-        <div className="p-5 text-center">
+        </CardHeader>
+        <CardContent className="p-5 text-center">
           <p className="text-xs text-text-muted">
             Could not load IP whitelist.
           </p>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="rounded-xl border border-border-subtle bg-surface-1 overflow-hidden">
+    <Card className="overflow-hidden">
       {/* Section header */}
-      <div className="border-b border-border-subtle px-5 py-3.5">
+      <CardHeader className="border-b border-border-subtle px-5 py-3.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield size={16} className="text-accent-text" />
-            <h2 className="text-sm font-semibold text-text-primary">
+            <CardTitle className="text-sm font-semibold">
               IP Whitelist
-            </h2>
+            </CardTitle>
           </div>
-          <button
+          <Button
             onClick={() => setShowAdd(true)}
-            className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-accent-hover"
+            size="sm"
           >
             <Plus size={14} />
             Add IP
-          </button>
+          </Button>
         </div>
         <p className="mt-1 text-xs text-text-muted">
           Only IPs listed here can connect to this database.{" "}
@@ -485,11 +453,11 @@ export default function IPWhitelist({ databaseId }: IPWhitelistProps) {
             ? `${entries.length} entr${entries.length !== 1 ? "ies" : "y"} configured`
             : "No entries — all IPs are blocked."}
         </p>
-      </div>
+      </CardHeader>
 
       {/* Warning when no entries */}
       {entries.length === 0 && (
-        <div className="p-5">
+        <CardContent>
           <div className="rounded-lg border border-warning-subtle bg-warning-subtle/30 p-4">
             <div className="flex items-start gap-2.5">
               <AlertTriangle
@@ -507,12 +475,12 @@ export default function IPWhitelist({ databaseId }: IPWhitelistProps) {
               </div>
             </div>
           </div>
-        </div>
+        </CardContent>
       )}
 
       {/* Entry list */}
       {entries.length > 0 && (
-        <div className="p-5 space-y-1.5">
+        <CardContent className="space-y-1.5 pt-5">
           {entries.map((entry) => (
             <WhitelistEntryRow
               key={entry.cidr}
@@ -522,7 +490,7 @@ export default function IPWhitelist({ databaseId }: IPWhitelistProps) {
               onRemove={() => setRemovingCidr(entry.cidr)}
             />
           ))}
-        </div>
+        </CardContent>
       )}
 
       {/* Footer hint */}
@@ -533,20 +501,20 @@ export default function IPWhitelist({ databaseId }: IPWhitelistProps) {
         </p>
       </div>
 
-      {/* Modals */}
-      <AddEntryModal
+      {/* Dialogs */}
+      <AddEntryDialog
         open={showAdd}
         onClose={() => setShowAdd(false)}
         onAdd={handleAdd}
         isAdding={isAdding}
       />
-      <RemoveConfirm
+      <RemoveConfirmDialog
         open={removingCidr !== null}
         cidr={removingCidr ?? ""}
         onConfirm={handleRemove}
         onCancel={() => setRemovingCidr(null)}
         isRemoving={isRemoving}
       />
-    </div>
+    </Card>
   );
 }

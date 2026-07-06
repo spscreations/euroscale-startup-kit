@@ -10,9 +10,9 @@ const CREDS = {
 
 /**
  * Helper: log in and return to dashboard.
- * Uses the same robust login flow as login.spec.ts.
+ * Uses the same robust login flow as auth-nav.spec.ts.
  */
-async function login(page: any) {
+async function login(page: import('@playwright/test').Page) {
   await page.goto('https://euroscale.app', { waitUntil: 'networkidle' });
 
   const signInLink = page
@@ -23,6 +23,7 @@ async function login(page: any) {
 
   await page.waitForURL(/\/login/, { timeout: 10_000 });
 
+  // shadcn/ui inputs use data-slot="input"
   const emailInput = page.locator(
     'input[type="email"], input[name="email"], input[placeholder*="email" i], input[placeholder*="Email"]'
   );
@@ -67,7 +68,8 @@ test.describe('Billing Page', () => {
     await page.waitForTimeout(3000);
 
     // ── Verify "Current Plan: Free" ────────────────────────────────────────
-    const currentPlanText = page.locator('h2, p, span').filter({
+    // shadcn/ui Card component uses data-slot="card" with data-slot="card-title"
+    const currentPlanText = page.locator('[data-slot="card-title"], h2, p, span').filter({
       hasText: /Current Plan/i,
     }).first();
     await currentPlanText.waitFor({ state: 'visible', timeout: 10_000 });
@@ -77,21 +79,23 @@ test.describe('Billing Page', () => {
     expect(planTextContent, 'Should mention Free plan').toMatch(/Free/i);
 
     // ── Verify available plan cards ────────────────────────────────────────
+    // Each plan is a shadcn/ui Card with a heading (data-slot="card-title") inside
     // Scale plan
-    const scaleCard = page.locator('h3:has-text("Scale")').first();
+    const scaleCard = page.locator('[data-slot="card-title"]:has-text("Scale"), h3:has-text("Scale")').first();
     await scaleCard.waitFor({ state: 'visible', timeout: 5_000 });
     const scalePrice = page.locator('text=€29/mo').first();
     await expect(scalePrice, 'Scale plan should show €29/mo').toBeVisible({ timeout: 5000 });
 
     // Team plan
-    const teamCard = page.locator('h3:has-text("Team")').first();
+    const teamCard = page.locator('[data-slot="card-title"]:has-text("Team"), h3:has-text("Team")').first();
     await expect(teamCard, 'Team plan should be visible').toBeVisible({ timeout: 5000 });
 
     // Business plan
-    const businessCard = page.locator('h3:has-text("Business")').first();
+    const businessCard = page.locator('[data-slot="card-title"]:has-text("Business"), h3:has-text("Business")').first();
     await expect(businessCard, 'Business plan should be visible').toBeVisible({ timeout: 5000 });
 
     // ── Verify "Upgrade" buttons exist ─────────────────────────────────────
+    // shadcn/ui Button component (data-slot="button")
     const upgradeButtons = page.locator('button:has-text("Upgrade")');
     const upgradeCount = await upgradeButtons.count();
     console.log(`Found ${upgradeCount} Upgrade buttons on billing page`);
@@ -126,11 +130,12 @@ test.describe('Billing Page', () => {
 
     // ── Click Upgrade on Scale plan ────────────────────────────────────────
     // Find the Upgrade button inside the Scale plan card
-    // The Scale card has an Upgrade button when on Free tier
-    const scaleSection = page.locator('h3:has-text("Scale")').first();
+    // shadcn/ui Card component (data-slot="card" / data-slot="card-title")
+    const scaleSection = page.locator('[data-slot="card-title"]:has-text("Scale"), h3:has-text("Scale")').first();
     await scaleSection.waitFor({ state: 'visible', timeout: 5_000 });
 
     // Click the Upgrade button — there should be one for Scale since user is on Free
+    // shadcn/ui Button component (data-slot="button")
     const upgradeBtn = page
       .locator('button:has-text("Upgrade")')
       .first();
@@ -200,6 +205,7 @@ test.describe('Mollie Payment Flows', () => {
     await page.waitForTimeout(3000);
 
     // ── Click Upgrade (first button) ───────────────────────────────────────
+    // shadcn/ui Button component (data-slot="button")
     const upgradeBtn = page.locator('button:has-text("Upgrade")').first();
     await upgradeBtn.waitFor({ state: 'visible', timeout: 5_000 });
     await upgradeBtn.click();
@@ -334,6 +340,7 @@ test.describe('Mollie Payment Flows', () => {
     await page.waitForTimeout(3000);
 
     // ── Click Upgrade ──────────────────────────────────────────────────────
+    // shadcn/ui Button component (data-slot="button")
     const upgradeBtn = page.locator('button:has-text("Upgrade")').first();
     await upgradeBtn.waitFor({ state: 'visible', timeout: 5_000 });
     await upgradeBtn.click();

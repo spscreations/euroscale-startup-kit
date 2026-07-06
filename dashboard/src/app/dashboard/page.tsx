@@ -7,7 +7,6 @@ import {
   RefreshCw,
   Loader2,
   Database,
-  X,
   Server,
   MapPin,
   WifiOff,
@@ -22,7 +21,19 @@ import { useDeleteDatabase } from "@/hooks/useDeleteDatabase";
 import { useCreateDatabase } from "@/hooks/useCreateDatabase";
 import { useUsage } from "@/hooks/useUsage";
 import { useAuth } from "@/lib/auth";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 /**
  * Format raw storage bytes into a human-readable string.
@@ -68,35 +79,41 @@ function DashboardContent() {
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const handleDelete = useCallback(
+  // Delete confirmation dialog state
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    databaseId: string;
+    name: string;
+  } | null>(null);
+
+  const handleDeleteRequest = useCallback(
     (databaseId: string) => {
       const db = databases.find((d) => d.databaseId === databaseId);
       const name = db?.name ?? databaseId;
-
-      if (
-        !window.confirm(
-          `Are you sure you want to delete "${name}"?\n\nThis action cannot be undone. All data in this database will be permanently lost.`,
-        )
-      )
-        return;
-
-      setDeletingId(databaseId);
-      deleteMutation.mutate(
-        { databaseId },
-        {
-          onSuccess: () => {
-            toast.success(`Database "${name}" deleted`);
-            setDeletingId(null);
-          },
-          onError: (err: Error) => {
-            toast.error(err.message || "Failed to delete database");
-            setDeletingId(null);
-          },
-        },
-      );
+      setDeleteConfirm({ databaseId, name });
     },
-    [databases, deleteMutation],
+    [databases],
   );
+
+  const handleDeleteConfirm = useCallback(() => {
+    if (!deleteConfirm) return;
+    const { databaseId } = deleteConfirm;
+    setDeletingId(databaseId);
+    deleteMutation.mutate(
+      { databaseId },
+      {
+        onSuccess: () => {
+          toast.success(`Database "${deleteConfirm.name}" deleted`);
+          setDeletingId(null);
+          setDeleteConfirm(null);
+        },
+        onError: (err: Error) => {
+          toast.error(err.message || "Failed to delete database");
+          setDeletingId(null);
+          setDeleteConfirm(null);
+        },
+      },
+    );
+  }, [deleteConfirm, deleteMutation]);
 
   const handleView = useCallback(
     (databaseId: string) => {
@@ -150,15 +167,12 @@ function DashboardContent() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => refetch()}
               disabled={isLoading}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-medium",
-                "text-text-secondary hover:text-text-primary hover:bg-surface-2",
-                "transition-colors border border-border-subtle min-h-[44px]",
-                isLoading && "opacity-50 cursor-not-allowed",
-              )}
+              className="text-text-secondary hover:text-text-primary"
               aria-label="Refresh databases"
             >
               <RefreshCw
@@ -166,15 +180,16 @@ function DashboardContent() {
                 className={cn(isLoading && "animate-spin")}
               />
               Refresh
-            </button>
+            </Button>
 
-            <button
+            <Button
+              size="sm"
               onClick={() => setShowCreate(true)}
-              className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold text-white bg-accent hover:bg-accent-hover active:bg-accent-pressed transition-colors min-h-[44px]"
+              className="text-white"
             >
               <Plus size={14} />
               New database
-            </button>
+            </Button>
           </div>
         </div>
       </header>
@@ -206,13 +221,15 @@ function DashboardContent() {
                   : "Failed to load databases. The API may be unreachable."}
               </p>
             </div>
-            <button
+            <Button
+              variant="link"
+              size="sm"
               onClick={() => refetch()}
-              className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-accent-text hover:text-accent-hover hover:bg-accent-subtle transition-colors"
+              className="text-accent-text hover:text-accent-hover"
             >
               <RefreshCw size={13} />
               Retry
-            </button>
+            </Button>
           </div>
         )}
 
@@ -222,19 +239,19 @@ function DashboardContent() {
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="rounded-lg border border-border-subtle bg-surface-1 p-4 animate-pulse space-y-3"
+                className="rounded-lg border border-border-subtle bg-surface-1 p-4 space-y-3"
               >
                 <div className="flex items-center gap-3">
-                  <div className="skeleton w-8 h-8 rounded-md" />
+                  <Skeleton className="w-8 h-8 rounded-md" />
                   <div className="space-y-2 flex-1">
-                    <div className="skeleton h-3.5 w-28" />
-                    <div className="skeleton h-2.5 w-16" />
+                    <Skeleton className="h-3.5 w-28" />
+                    <Skeleton className="h-2.5 w-16" />
                   </div>
                 </div>
-                <div className="skeleton h-2.5 w-40" />
+                <Skeleton className="h-2.5 w-40" />
                 <div className="border-t border-border-subtle pt-3 flex justify-between">
-                  <div className="skeleton h-2.5 w-14" />
-                  <div className="skeleton h-2.5 w-20" />
+                  <Skeleton className="h-2.5 w-14" />
+                  <Skeleton className="h-2.5 w-20" />
                 </div>
               </div>
             ))}
@@ -254,13 +271,14 @@ function DashboardContent() {
                 MySQL on sovereign EU infrastructure.
               </p>
             </div>
-            <button
+            <Button
+              size="sm"
               onClick={() => setShowCreate(true)}
-              className="inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-semibold text-white bg-accent hover:bg-accent-hover active:bg-accent-pressed transition-colors"
+              className="text-white"
             >
               <Plus size={14} />
               Create your first database
-            </button>
+            </Button>
           </div>
         )}
 
@@ -271,16 +289,16 @@ function DashboardContent() {
               <h2 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
                 All databases
               </h2>
-              <span className="text-[11px] text-text-muted font-mono">
+              <Badge variant="outline" className="text-[11px] font-mono">
                 {totalDatabases} total
-              </span>
+              </Badge>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {databases.map((db) => (
                 <DatabaseCard
                   key={db.databaseId}
                   database={db}
-                  onDelete={handleDelete}
+                  onDelete={handleDeleteRequest}
                   onView={handleView}
                   isDeleting={deletingId === db.databaseId}
                 />
@@ -291,97 +309,82 @@ function DashboardContent() {
       </main>
 
       {/* Create Database Dialog */}
-      {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/60"
-            onClick={() => !createMutation.isPending && setShowCreate(false)}
-          />
+      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>New database</DialogTitle>
+            <DialogDescription>
+              Create a Vitess-powered MySQL database on sovereign EU
+              infrastructure.
+            </DialogDescription>
+          </DialogHeader>
 
-          <div className="relative w-full max-w-full sm:max-w-sm rounded-none sm:rounded-xl border border-border-subtle bg-surface-1 p-5 sm:p-5 shadow-2xl animate-slide-up sm:my-4 min-h-[100dvh] sm:min-h-0 flex flex-col justify-center">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-text-primary">
-                New database
-              </h2>
-              <button
-                onClick={() => setShowCreate(false)}
-                disabled={createMutation.isPending}
-                className="p-2 -mr-2 text-text-muted hover:text-text-primary transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-                aria-label="Close dialog"
+          <form onSubmit={handleCreate} className="space-y-4">
+            <div>
+              <label
+                htmlFor="db-name"
+                className="block text-xs font-medium text-text-secondary mb-1.5"
               >
-                <X size={20} />
-              </button>
+                Database name
+              </label>
+              <Input
+                id="db-name"
+                type="text"
+                value={newDbName}
+                onChange={(e) => setNewDbName(e.target.value)}
+                placeholder="my_database"
+                required
+                disabled={createMutation.isPending}
+              />
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Letters, numbers, and underscores only.
+              </p>
             </div>
 
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div>
-                <label
-                  htmlFor="db-name"
-                  className="block text-xs font-medium text-text-secondary mb-1.5"
-                >
-                  Database name
-                </label>
-                <input
-                  id="db-name"
-                  type="text"
-                  value={newDbName}
-                  onChange={(e) => setNewDbName(e.target.value)}
-                  placeholder="my_database"
-                  required
-                  disabled={createMutation.isPending}
-                  className={cn(
-                    "w-full rounded-lg bg-surface-2 border border-border-subtle",
-                    "px-3 py-2 text-sm text-text-primary",
-                    "placeholder:text-text-disabled",
-                    "focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent",
-                    "transition-colors",
-                    "disabled:opacity-50 disabled:cursor-not-allowed",
-                  )}
-                />
-                <p className="mt-1 text-[11px] text-text-muted">
-                  Letters, numbers, and underscores only.
-                </p>
+            <div>
+              <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                Region
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: "nuremberg", label: "Nuremberg" },
+                  { value: "helsinki", label: "Helsinki" },
+                ].map((r) => (
+                  <button
+                    key={r.value}
+                    type="button"
+                    onClick={() => setNewDbRegion(r.value)}
+                    disabled={createMutation.isPending}
+                    className={cn(
+                      "flex items-center gap-2 rounded-lg border px-3 py-2.5 text-xs transition-colors min-h-[44px]",
+                      newDbRegion === r.value
+                        ? "border-accent bg-accent-subtle text-accent-text"
+                        : "border-border-subtle bg-surface-2 text-text-secondary hover:border-border-default hover:text-text-primary",
+                      createMutation.isPending &&
+                        "cursor-not-allowed opacity-50",
+                    )}
+                  >
+                    <MapPin size={13} className="shrink-0" />
+                    {r.label}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1.5">
-                  Region
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { value: "nuremberg", label: "Nuremberg" },
-                    { value: "helsinki", label: "Helsinki" },
-                  ].map((r) => (
-                    <button
-                      key={r.value}
-                      type="button"
-                      onClick={() => setNewDbRegion(r.value)}
-                      disabled={createMutation.isPending}
-                      className={cn(
-                        "flex items-center gap-2 rounded-lg border px-3 py-2.5 text-xs transition-colors min-h-[44px]",
-                        newDbRegion === r.value
-                          ? "border-accent bg-accent-subtle text-accent-text"
-                          : "border-border-subtle bg-surface-2 text-text-secondary hover:border-border-default hover:text-text-primary",
-                        createMutation.isPending &&
-                          "cursor-not-allowed opacity-50",
-                      )}
-                    >
-                      <MapPin size={13} className="shrink-0" />
-                      {r.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <button
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCreate(false)}
+                disabled={createMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
                 type="submit"
+                size="sm"
                 disabled={!newDbName.trim() || createMutation.isPending}
-                className={cn(
-                  "w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white",
-                  "bg-accent hover:bg-accent-hover active:bg-accent-pressed",
-                  "transition-colors min-h-[44px]",
-                  "disabled:opacity-50 disabled:cursor-not-allowed",
-                )}
               >
                 {createMutation.isPending ? (
                   <>
@@ -394,11 +397,56 @@ function DashboardContent() {
                     Create database
                   </>
                 )}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteConfirm !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteConfirm(null);
+        }}
+      >
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Delete database</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &ldquo;{deleteConfirm?.name}
+              &rdquo;? This action cannot be undone. All data in this database
+              will be permanently lost.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDeleteConfirm(null)}
+              disabled={deletingId !== null}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleDeleteConfirm}
+              disabled={deletingId !== null}
+            >
+              {deletingId === deleteConfirm?.databaseId ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Deleting…
+                </>
+              ) : (
+                "Delete"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

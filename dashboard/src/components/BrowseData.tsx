@@ -17,6 +17,25 @@ import { useSchemaDatabases } from "@/hooks/useSchemaDatabases";
 import { useTables } from "@/hooks/useTables";
 import { useColumns } from "@/hooks/useColumns";
 import { usePreviewTable } from "@/hooks/usePreviewTable";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table as ShadTable,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface BrowseDataProps {
   userId: string;
@@ -24,14 +43,6 @@ interface BrowseDataProps {
 
 type PageSize = 10 | 25 | 50;
 const PAGE_SIZE_OPTIONS: PageSize[] = [10, 25, 50];
-
-// ── Reusable Skeleton ────────────────────────────────────────────────────────
-
-function Skeleton({ className }: { className?: string }) {
-  return (
-    <div className={cn("animate-pulse rounded-md bg-surface-2", className)} />
-  );
-}
 
 // ── Inline Table Detail (columns + preview) ──────────────────────────────────
 
@@ -81,69 +92,50 @@ function TableDetail({
           <p className="text-xs text-text-muted">No columns found.</p>
         ) : (
           <div className="overflow-x-auto rounded-md border border-border-subtle">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="bg-surface-2">
-                  <th className="text-left px-3 py-1.5 font-medium text-text-secondary">
-                    Name
-                  </th>
-                  <th className="text-left px-3 py-1.5 font-medium text-text-secondary">
-                    Type
-                  </th>
-                  <th className="text-left px-3 py-1.5 font-medium text-text-secondary">
-                    Nullable
-                  </th>
-                  <th className="text-left px-3 py-1.5 font-medium text-text-secondary">
-                    Key
-                  </th>
-                  <th className="text-left px-3 py-1.5 font-medium text-text-secondary">
-                    Default
-                  </th>
-                  <th className="text-left px-3 py-1.5 font-medium text-text-secondary">
-                    Extra
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-subtle">
+            <ShadTable>
+              <TableHeader>
+                <TableRow className="bg-surface-2">
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Nullable</TableHead>
+                  <TableHead>Key</TableHead>
+                  <TableHead>Default</TableHead>
+                  <TableHead>Extra</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {columnsData.columns.map((col) => (
-                  <tr
-                    key={col.name}
-                    className="hover:bg-surface-2/50 transition-colors"
-                  >
-                    <td className="px-3 py-1.5 font-mono text-text-primary">
+                  <TableRow key={col.name}>
+                    <TableCell className="font-mono text-text-primary">
                       {col.name}
-                    </td>
-                    <td className="px-3 py-1.5 text-text-secondary">
+                    </TableCell>
+                    <TableCell className="text-text-secondary">
                       {col.dataType}
-                    </td>
-                    <td className="px-3 py-1.5 text-text-muted">
+                    </TableCell>
+                    <TableCell className="text-text-muted">
                       {col.isNullable}
-                    </td>
-                    <td className="px-3 py-1.5">
+                    </TableCell>
+                    <TableCell>
                       {col.columnKey ? (
-                        <span className="inline-flex items-center rounded-full bg-accent-subtle px-1.5 py-px text-[10px] font-medium text-accent-text">
-                          {col.columnKey}
-                        </span>
+                        <Badge variant="secondary">{col.columnKey}</Badge>
                       ) : (
                         <span className="text-text-disabled">—</span>
                       )}
-                    </td>
-                    <td className="px-3 py-1.5 text-text-muted font-mono text-[11px] max-w-[120px] truncate">
+                    </TableCell>
+                    <TableCell className="text-text-muted font-mono text-[11px] max-w-[120px] truncate">
                       {col.columnDefault || (
-                        <span className="text-text-disabled italic">
-                          NULL
-                        </span>
+                        <span className="text-text-disabled italic">NULL</span>
                       )}
-                    </td>
-                    <td className="px-3 py-1.5 text-text-muted">
+                    </TableCell>
+                    <TableCell className="text-text-muted">
                       {col.extra || (
                         <span className="text-text-disabled">—</span>
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </ShadTable>
           </div>
         )}
       </div>
@@ -170,29 +162,23 @@ function TableDetail({
           </p>
         ) : (
           <div className="overflow-x-auto rounded-md border border-border-subtle">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="bg-surface-2">
+            <ShadTable>
+              <TableHeader>
+                <TableRow className="bg-surface-2">
                   {previewData.columns.map((col) => (
-                    <th
-                      key={col}
-                      className="text-left px-3 py-1.5 font-mono font-medium text-text-secondary whitespace-nowrap"
-                    >
+                    <TableHead key={col} className="font-mono">
                       {col}
-                    </th>
+                    </TableHead>
                   ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-subtle">
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {previewData.rows.map((row, ri) => (
-                  <tr
-                    key={ri}
-                    className="hover:bg-surface-2/50 transition-colors"
-                  >
+                  <TableRow key={ri}>
                     {row.values.map((val, ci) => (
-                      <td
+                      <TableCell
                         key={ci}
-                        className="px-3 py-1.5 text-text-primary font-mono text-[11px] max-w-[200px] truncate"
+                        className="font-mono text-[11px] max-w-[200px] truncate"
                         title={val}
                       >
                         {val === "" ? (
@@ -206,12 +192,12 @@ function TableDetail({
                         ) : (
                           val
                         )}
-                      </td>
+                      </TableCell>
                     ))}
-                  </tr>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </ShadTable>
           </div>
         )}
         {previewData?.approximateTotal !== undefined && (
@@ -244,35 +230,27 @@ function PaginationBar({
 }) {
   return (
     <div className="flex items-center justify-center gap-2 py-2">
-      <button
+      <Button
+        variant="ghost"
+        size="icon-xs"
         onClick={() => onPageChange(page - 1)}
         disabled={page <= 0}
-        className={cn(
-          "flex items-center justify-center w-7 h-7 rounded-md transition-colors",
-          page <= 0
-            ? "text-text-disabled cursor-not-allowed"
-            : "text-text-secondary hover:text-text-primary hover:bg-surface-2",
-        )}
         aria-label="Previous page"
       >
         <ChevronLeft size={16} />
-      </button>
+      </Button>
       <span className="text-xs text-text-muted tabular-nums min-w-[60px] text-center">
         {page + 1} / {totalPages}
       </span>
-      <button
+      <Button
+        variant="ghost"
+        size="icon-xs"
         onClick={() => onPageChange(page + 1)}
         disabled={page >= totalPages - 1}
-        className={cn(
-          "flex items-center justify-center w-7 h-7 rounded-md transition-colors",
-          page >= totalPages - 1
-            ? "text-text-disabled cursor-not-allowed"
-            : "text-text-secondary hover:text-text-primary hover:bg-surface-2",
-        )}
         aria-label="Next page"
       >
         <ChevronRightIcon size={16} />
-      </button>
+      </Button>
     </div>
   );
 }
@@ -287,17 +265,18 @@ function PageSizeSelector({
   onChange: (size: PageSize) => void;
 }) {
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(Number(e.target.value) as PageSize)}
-      className="text-xs rounded-md border border-border-subtle bg-surface-1 text-text-secondary px-2 py-1 focus:outline-none focus:border-accent hover:border-border-default transition-colors cursor-pointer"
-    >
-      {PAGE_SIZE_OPTIONS.map((size) => (
-        <option key={size} value={size}>
-          {size} per page
-        </option>
-      ))}
-    </select>
+    <Select value={String(value)} onValueChange={(v) => onChange(Number(v) as PageSize)}>
+      <SelectTrigger className="w-32">
+        <SelectValue placeholder="Page size" />
+      </SelectTrigger>
+      <SelectContent>
+        {PAGE_SIZE_OPTIONS.map((size) => (
+          <SelectItem key={size} value={String(size)}>
+            {size} per page
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
@@ -334,7 +313,6 @@ export default function BrowseData({ userId }: BrowseDataProps) {
       const next = new Set(prev);
       if (next.has(db)) {
         next.delete(db);
-        // Clear selected table if it was in this database
         setSelectedTable((cur) =>
           cur?.database === db ? null : cur,
         );
@@ -362,7 +340,6 @@ export default function BrowseData({ userId }: BrowseDataProps) {
 
   const handleDbPageChange = useCallback((page: number) => {
     setDbPage(page);
-    // Close all expanded databases and reset selections on page change
     setExpandedDbs(new Set());
     setSelectedTable(null);
     setTablePages({});
@@ -398,43 +375,39 @@ export default function BrowseData({ userId }: BrowseDataProps) {
       {dbLoading && (
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div
-              key={i}
-              className="rounded-lg border border-border-subtle bg-surface-1 p-4"
-            >
-              <Skeleton className="h-5 w-48" />
-              <Skeleton className="h-3 w-32 mt-2" />
-            </div>
+            <Card key={i}>
+              <CardContent className="pt-5">
+                <Skeleton className="h-5 w-48" />
+                <Skeleton className="h-3 w-32 mt-2" />
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
 
       {/* Error state */}
       {dbError && !dbLoading && (
-        <div className="rounded-lg border border-error-subtle bg-error-subtle/10 p-6 text-center">
+        <Card className="border-destructive p-6 text-center">
           <AlertCircle
             size={32}
-            className="mx-auto mb-3 text-error-text"
+            className="mx-auto mb-3 text-destructive"
           />
-          <p className="text-sm font-medium text-error-text mb-1">
+          <p className="text-sm font-medium text-destructive mb-1">
             Failed to load databases
           </p>
           <p className="text-xs text-text-muted mb-3">
             {dbError?.message ?? "An unexpected error occurred."}
           </p>
-          <button
-            onClick={() => refetchDbs()}
-            className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover transition-colors"
-          >
+          <Button onClick={() => refetchDbs()}>
             <Loader2 size={12} className="animate-spin hidden" />
             Try again
-          </button>
-        </div>
+          </Button>
+        </Card>
       )}
 
       {/* Empty state */}
       {!dbLoading && !dbError && databases.length === 0 && (
-        <div className="rounded-lg border border-border-subtle bg-surface-1 p-8 text-center">
+        <Card className="p-8 text-center">
           <Database
             size={32}
             className="mx-auto mb-3 text-text-disabled"
@@ -445,7 +418,7 @@ export default function BrowseData({ userId }: BrowseDataProps) {
           <p className="text-xs text-text-muted">
             No databases are accessible through vtgate for this user.
           </p>
-        </div>
+        </Card>
       )}
 
       {/* Database list */}
@@ -466,10 +439,7 @@ export default function BrowseData({ userId }: BrowseDataProps) {
               const tablePage = tablePages[db] ?? 0;
 
               return (
-                <div
-                  key={db}
-                  className="rounded-lg border border-border-subtle bg-surface-1 overflow-hidden"
-                >
+                <Card key={db} className="overflow-hidden">
                   {/* Database header (accordion trigger) */}
                   <button
                     onClick={() => toggleDb(db)}
@@ -499,7 +469,7 @@ export default function BrowseData({ userId }: BrowseDataProps) {
                       onSelectTable={handleSelectTable}
                     />
                   )}
-                </div>
+                </Card>
               );
             })}
           </div>
@@ -577,12 +547,14 @@ function TablesPanel({
         <div className="flex items-center gap-2 text-sm text-error-text bg-error-subtle rounded-md px-3 py-2">
           <AlertCircle size={14} />
           <span>Failed to load tables</span>
-          <button
+          <Button
+            variant="link"
+            size="sm"
             onClick={() => refetchTables()}
-            className="ml-auto text-xs underline hover:no-underline"
+            className="ml-auto text-xs h-auto p-0"
           >
             Retry
-          </button>
+          </Button>
         </div>
       )}
 

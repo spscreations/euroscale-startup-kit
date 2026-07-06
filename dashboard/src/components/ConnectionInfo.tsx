@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import {
   Copy,
   Eye,
@@ -17,6 +17,10 @@ import { cn, copyToClipboard } from "@/lib/utils";
 import { useRotateCredentials } from "@/hooks/useRotateCredentials";
 import type { Database } from "@/lib/proto/euroscale/v1/database_pb";
 import type { LucideIcon } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -62,9 +66,10 @@ function CopyButton({ value, label }: { value: string; label: string }) {
   }, [value, label]);
 
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="icon-xs"
       onClick={handleCopy}
-      className="rounded p-1 text-text-muted transition-all hover:bg-surface-3 hover:text-accent-text"
       aria-label={`Copy ${label}`}
       title={`Copy ${label}`}
     >
@@ -73,7 +78,7 @@ function CopyButton({ value, label }: { value: string; label: string }) {
       ) : (
         <Copy size={13} />
       )}
-    </button>
+    </Button>
   );
 }
 
@@ -112,14 +117,15 @@ function FieldRow({
       <div className="flex shrink-0 items-center gap-0.5">
         {copyValue && <CopyButton value={copyValue} label={label} />}
         {secret && onToggle && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon-xs"
             onClick={onToggle}
-            className="rounded p-1 text-text-muted transition-all hover:bg-surface-3 hover:text-accent-text"
             aria-label={masked ? "Show" : "Hide"}
             title={masked ? "Show" : "Hide"}
           >
             {masked ? <EyeOff size={13} /> : <Eye size={13} />}
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -195,17 +201,17 @@ export default function ConnectionInfo({
   }, [rotateMutation, database.databaseId]);
 
   return (
-    <div className="rounded-xl border border-border-subtle bg-surface-1 animate-slide-up overflow-hidden">
+    <Card className="animate-slide-up overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border-subtle px-5 py-3.5">
+      <CardHeader className="flex-row items-center justify-between border-b border-border-subtle px-5 py-3.5">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent-subtle">
             <Server size={16} className="text-accent-text" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-text-primary">
+            <CardTitle className="text-sm font-semibold">
               Connection Details
-            </h2>
+            </CardTitle>
             <p className="text-xs text-text-muted">
               {hasCredentials
                 ? "Credentials are visible — copy them now"
@@ -214,25 +220,22 @@ export default function ConnectionInfo({
           </div>
         </div>
 
-        <button
+        <Button
           onClick={handleRotate}
           disabled={rotateMutation.isPending}
-          className={cn(
-            "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
-            "bg-accent-subtle text-accent-text hover:bg-accent/20",
-            "disabled:cursor-not-allowed disabled:opacity-50",
-          )}
+          size="sm"
+          variant="secondary"
         >
           <RotateCcw
             size={13}
             className={cn(rotateMutation.isPending && "animate-spin")}
           />
           {rotateMutation.isPending ? "Rotating…" : "Rotate Credentials"}
-        </button>
-      </div>
+        </Button>
+      </CardHeader>
 
       {/* Connection String */}
-      <div className="px-5 pt-4">
+      <CardContent className="space-y-4 px-5 pt-4">
         <div className="flex items-center justify-between rounded-lg border border-border-subtle bg-surface-2 px-3 py-2.5">
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-medium uppercase tracking-wider text-text-muted">
@@ -244,10 +247,10 @@ export default function ConnectionInfo({
           </div>
           <CopyButton value={connString} label="Connection string" />
         </div>
-      </div>
+      </CardContent>
 
       {/* Fields */}
-      <div className="space-y-1.5 p-5 pt-4">
+      <CardContent className="space-y-1.5 px-5 pt-0">
         <FieldRow
           icon={Globe}
           label="Host"
@@ -289,7 +292,7 @@ export default function ConnectionInfo({
         />
 
         {displaySslCaPem && <SslCaSection pem={displaySslCaPem} />}
-      </div>
+      </CardContent>
 
       {/* Footer */}
       {!hasCredentials && (
@@ -302,6 +305,6 @@ export default function ConnectionInfo({
           </p>
         </div>
       )}
-    </div>
+    </Card>
   );
 }

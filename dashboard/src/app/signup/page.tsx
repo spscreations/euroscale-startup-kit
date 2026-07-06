@@ -18,6 +18,10 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 
 function getPasswordChecks(pw: string) {
   return {
@@ -70,7 +74,7 @@ export default function SignupPage() {
       setError(
         err instanceof Error
           ? err.message
-          : "Something went wrong. Please try again.",
+          : "Something went wrong. Please try again."
       );
     } finally {
       setLoading(false);
@@ -97,231 +101,201 @@ export default function SignupPage() {
         </div>
 
         {/* Card */}
-        <div className="rounded-xl border border-border-subtle bg-surface-1 p-6">
-          {/* Error */}
-          {error && (
-            <div
-              className="mb-5 rounded-lg border border-error-subtle bg-error-subtle px-3 py-2.5 text-sm text-error-text flex items-start gap-2"
-              role="alert"
-            >
-              <AlertCircle size={15} className="shrink-0 mt-0.5" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-            {/* Full Name */}
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-xs font-medium text-text-secondary mb-1.5"
+        <Card className="border-border-subtle bg-surface-1">
+          <CardContent className="space-y-4">
+            {/* Error */}
+            {error && (
+              <div
+                className="rounded-lg border border-error-subtle bg-error-subtle px-3 py-2.5 text-sm text-error-text flex items-start gap-2"
+                role="alert"
               >
-                Full name
-              </label>
-              <div className="relative">
-                <User
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled pointer-events-none"
-                />
-                <input
-                  id="name"
-                  type="text"
-                  autoComplete="name"
-                  placeholder="Alex Johnson"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  disabled={loading}
-                  className={cn(
-                    "w-full rounded-lg bg-surface-2 border border-border-subtle pl-9 pr-4 py-2",
-                    "text-sm text-text-primary placeholder:text-text-disabled",
-                    "focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent",
-                    "transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
-                  )}
-                />
+                <AlertCircle size={15} className="shrink-0 mt-0.5" />
+                <span>{error}</span>
               </div>
-            </div>
+            )}
 
-            {/* Email */}
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-xs font-medium text-text-secondary mb-1.5"
-              >
-                Email address
-              </label>
-              <div className="relative">
-                <Mail
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled pointer-events-none"
-                />
-                <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="alex@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={loading}
-                  className={cn(
-                    "w-full rounded-lg bg-surface-2 border border-border-subtle pl-9 pr-4 py-2",
-                    "text-sm text-text-primary placeholder:text-text-disabled",
-                    "focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent",
-                    "transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
-                  )}
-                />
-              </div>
-            </div>
-
-            {/* Password */}
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-xs font-medium text-text-secondary mb-1.5"
-              >
-                Password
-              </label>
-              <div className="relative">
-                <Lock
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled pointer-events-none"
-                />
-                <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  placeholder="Min. 8 characters"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
-                  className={cn(
-                    "w-full rounded-lg bg-surface-2 border border-border-subtle pl-9 pr-9 py-2",
-                    "text-sm text-text-primary placeholder:text-text-disabled",
-                    "focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent",
-                    "transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
-                  )}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-text-muted hover:text-text-secondary transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-                  tabIndex={-1}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-              {password.length > 0 && (
-                <div className="mt-2 space-y-1 rounded-lg bg-surface-2 border border-border-subtle p-3 animate-fade-in">
-                  <Req met={checks.minLength} label="At least 8 characters" />
-                  <Req met={checks.hasUpper} label="One uppercase letter" />
-                  <Req met={checks.hasNumber} label="One number" />
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+              {/* Full Name */}
+              <div className="space-y-1.5">
+                <Label htmlFor="name" className="text-xs font-medium text-text-secondary">
+                  Full name
+                </Label>
+                <div className="relative">
+                  <User
+                    size={16}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled pointer-events-none z-10"
+                  />
+                  <Input
+                    id="name"
+                    type="text"
+                    autoComplete="name"
+                    placeholder="Alex Johnson"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    disabled={loading}
+                    className="pl-9 h-9"
+                  />
                 </div>
-              )}
-            </div>
-
-            {/* Confirm Password */}
-            <div>
-              <label
-                htmlFor="confirm"
-                className="block text-xs font-medium text-text-secondary mb-1.5"
-              >
-                Confirm password
-              </label>
-              <div className="relative">
-                <Lock
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled pointer-events-none"
-                />
-                <input
-                  id="confirm"
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder="Repeat your password"
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  disabled={loading}
-                  className={cn(
-                    "w-full rounded-lg bg-surface-2 border border-border-subtle pl-9 pr-9 py-2",
-                    "text-sm text-text-primary placeholder:text-text-disabled",
-                    "focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent",
-                    "transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
-                  )}
-                />
-                {confirm.length > 0 &&
-                  (passwordsMatch ? (
-                    <Check
-                      size={16}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-success"
-                    />
-                  ) : (
-                    <X
-                      size={16}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-error"
-                    />
-                  ))}
               </div>
-            </div>
 
-            {/* Terms */}
-            <div className="flex items-start gap-3">
-              <input
-                id="terms"
-                type="checkbox"
-                checked={agreedToTerms}
-                onChange={(e) => setAgreedToTerms(e.target.checked)}
+              {/* Email */}
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-xs font-medium text-text-secondary">
+                  Email address
+                </Label>
+                <div className="relative">
+                  <Mail
+                    size={16}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled pointer-events-none z-10"
+                  />
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="alex@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
+                    className="pl-9 h-9"
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div className="space-y-1.5">
+                <Label htmlFor="password" className="text-xs font-medium text-text-secondary">
+                  Password
+                </Label>
+                <div className="relative">
+                  <Lock
+                    size={16}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled pointer-events-none z-10"
+                  />
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    placeholder="Min. 8 characters"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
+                    className="pl-9 pr-9 h-9"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary"
+                    tabIndex={-1}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </Button>
+                </div>
+                {password.length > 0 && (
+                  <div className="mt-2 space-y-1 rounded-lg bg-surface-2 border border-border-subtle p-3 animate-fade-in">
+                    <Req met={checks.minLength} label="At least 8 characters" />
+                    <Req met={checks.hasUpper} label="One uppercase letter" />
+                    <Req met={checks.hasNumber} label="One number" />
+                  </div>
+                )}
+              </div>
+
+              {/* Confirm Password */}
+              <div className="space-y-1.5">
+                <Label htmlFor="confirm" className="text-xs font-medium text-text-secondary">
+                  Confirm password
+                </Label>
+                <div className="relative">
+                  <Lock
+                    size={16}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled pointer-events-none z-10"
+                  />
+                  <Input
+                    id="confirm"
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Repeat your password"
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    disabled={loading}
+                    className="pl-9 pr-9 h-9"
+                  />
+                  {confirm.length > 0 &&
+                    (passwordsMatch ? (
+                      <Check
+                        size={16}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-success"
+                      />
+                    ) : (
+                      <X
+                        size={16}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-error"
+                      />
+                    ))}
+                </div>
+              </div>
+
+              {/* Terms */}
+              <div className="flex items-start gap-3">
+                <input
+                  id="terms"
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  disabled={loading}
+                  className="mt-0.5 h-5 w-5 min-w-[44px] min-h-[44px] rounded border-border-default bg-surface-2 accent-accent cursor-pointer"
+                />
+                <label
+                  htmlFor="terms"
+                  className="text-xs text-text-muted leading-relaxed cursor-pointer select-none"
+                >
+                  I agree to the{" "}
+                  <span className="text-accent-text hover:text-accent-hover underline underline-offset-2 transition-colors">
+                    Terms of Service
+                  </span>{" "}
+                  and{" "}
+                  <span className="text-accent-text hover:text-accent-hover underline underline-offset-2 transition-colors">
+                    Privacy Policy
+                  </span>
+                </label>
+              </div>
+
+              {/* Submit */}
+              <Button
+                type="submit"
                 disabled={loading}
-                className="mt-0.5 h-5 w-5 min-w-[44px] min-h-[44px] rounded border-border-default bg-surface-2 accent-accent cursor-pointer"
-              />
-              <label
-                htmlFor="terms"
-                className="text-xs text-text-muted leading-relaxed cursor-pointer select-none"
+                size="lg"
+                className="w-full min-h-[44px]"
               >
-                I agree to the{" "}
-                <span className="text-accent-text hover:text-accent-hover underline underline-offset-2 transition-colors">
-                  Terms of Service
-                </span>{" "}
-                and{" "}
-                <span className="text-accent-text hover:text-accent-hover underline underline-offset-2 transition-colors">
-                  Privacy Policy
-                </span>
-              </label>
-            </div>
+                {loading ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Creating account…
+                  </>
+                ) : (
+                  <>
+                    Create account
+                    <ArrowRight size={16} />
+                  </>
+                )}
+              </Button>
+            </form>
 
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={loading}
-              className={cn(
-                "w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white",
-                "bg-accent hover:bg-accent-hover active:bg-accent-pressed",
-                "focus:outline-none transition-colors min-h-[44px]",
-                "disabled:opacity-50 disabled:cursor-not-allowed",
-              )}
-            >
-              {loading ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" />
-                  Creating account…
-                </>
-              ) : (
-                <>
-                  Create account
-                  <ArrowRight size={16} />
-                </>
-              )}
-            </button>
-          </form>
-
-          <p className="mt-5 text-center text-sm text-text-muted">
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              className="text-accent-text hover:text-accent-hover underline underline-offset-4 transition-colors font-medium"
-            >
-              Sign in
-            </Link>
-          </p>
-        </div>
+            <p className="text-center text-sm text-text-muted">
+              Already have an account?{" "}
+              <Link
+                href="/login"
+                className="text-accent-text hover:text-accent-hover underline underline-offset-4 transition-colors font-medium"
+              >
+                Sign in
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
 
         <p className="text-center text-xs text-text-disabled mt-6">
           EU sovereign infrastructure · GDPR by architecture
@@ -342,7 +316,7 @@ function Req({ met, label }: { met: boolean; label: string }) {
       <span
         className={cn(
           "transition-colors",
-          met ? "text-success-text" : "text-text-muted",
+          met ? "text-success-text" : "text-text-muted"
         )}
       >
         {label}

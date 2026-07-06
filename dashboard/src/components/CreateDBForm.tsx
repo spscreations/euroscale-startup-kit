@@ -17,6 +17,12 @@ import { useCreateDatabase } from "@/hooks/useCreateDatabase";
 import { useAuth } from "@/lib/auth";
 import type { CreateDatabaseResponse } from "@/lib/proto/euroscale/v1/database_pb";
 
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+
 // ── Types ───────────────────────────────────────────────────────────────────
 
 type Engine = "mysql" | "postgres";
@@ -132,69 +138,73 @@ function CredentialCard({
       </div>
 
       {/* ⚠️ ONCE-ONLY WARNING */}
-      <div className="rounded-lg border border-warning-subtle bg-warning-subtle p-3.5 space-y-1.5">
-        <div className="flex items-start gap-2.5">
-          <AlertTriangle
-            size={18}
-            className="text-warning-text shrink-0 mt-0.5"
-          />
-          <div>
-            <p className="text-xs font-semibold text-warning-text">
-              Save these credentials — shown once only
-            </p>
-            <p className="text-xs text-text-muted mt-0.5 leading-relaxed">
-              This is the only time you will see the password. Store them
-              securely. You can rotate credentials from the database detail page
-              if needed.
-            </p>
+      <Card className="border-warning-subtle bg-warning-subtle">
+        <CardContent className="p-3.5 space-y-1.5">
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle
+              size={18}
+              className="text-warning-text shrink-0 mt-0.5"
+            />
+            <div>
+              <p className="text-xs font-semibold text-warning-text">
+                Save these credentials — shown once only
+              </p>
+              <p className="text-xs text-text-muted mt-0.5 leading-relaxed">
+                This is the only time you will see the password. Store them
+                securely. You can rotate credentials from the database detail page
+                if needed.
+              </p>
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Connection string */}
-      <div className="rounded-lg border border-border-subtle bg-surface-2 p-4 space-y-2">
-        <label className="block text-xs font-medium text-text-secondary">
-          Connection string
-        </label>
-        <div className="relative">
-          <input
-            ref={inputRef}
-            readOnly
-            value={
-              showFullString
-                ? response.connectionString
-                : response.connectionString.replace(
-                    /\/\/[^@]+@/,
-                    "//••••••••:••••••••@",
-                  )
-            }
-            className="w-full rounded-md bg-bg-primary border border-border-subtle px-3 py-2 text-xs font-mono text-text-primary pr-16 focus:outline-none focus:border-accent select-all"
-          />
-          <div className="absolute right-1 top-1/2 -translate-y-1/2 flex gap-0.5">
-            <button
-              type="button"
-              onClick={() => setShowFullString((v) => !v)}
-              className="p-1.5 rounded text-text-muted hover:text-text-primary hover:bg-surface-3 transition-colors"
-              title={showFullString ? "Hide credentials" : "Show credentials"}
-            >
-              {showFullString ? <EyeOff size={14} /> : <Eye size={14} />}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleCopy(response.connectionString)}
-              className={cn(
-                "p-1.5 rounded transition-colors",
-                copied
-                  ? "text-success bg-success-subtle"
-                  : "text-text-muted hover:text-text-primary hover:bg-surface-3",
-              )}
-              title="Copy connection string"
-            >
-              {copied ? <Check size={14} /> : <Copy size={14} />}
-            </button>
+      <Card>
+        <CardContent className="p-4 space-y-2">
+          <Label className="text-xs font-medium text-text-secondary">
+            Connection string
+          </Label>
+          <div className="relative">
+            <Input
+              ref={inputRef}
+              readOnly
+              value={
+                showFullString
+                  ? response.connectionString
+                  : response.connectionString.replace(
+                      /\/\/[^@]+@/,
+                      "//••••••••:••••••••@",
+                    )
+              }
+              className="font-mono text-xs pr-16 select-all"
+            />
+            <div className="absolute right-1 top-1/2 -translate-y-1/2 flex gap-0.5">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => setShowFullString((v) => !v)}
+                title={showFullString ? "Hide credentials" : "Show credentials"}
+              >
+                {showFullString ? <EyeOff size={14} /> : <Eye size={14} />}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => handleCopy(response.connectionString)}
+                className={cn(
+                  copied && "text-success bg-success-subtle",
+                )}
+                title="Copy connection string"
+              >
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+              </Button>
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Credentials detail grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -224,28 +234,34 @@ function CredentialCard({
       </div>
 
       {/* SSL info */}
-      <div className="flex items-start gap-2.5 rounded-lg bg-surface-2 border border-border-subtle p-3">
-        <Shield size={16} className="text-accent-text shrink-0 mt-0.5" />
-        <p className="text-xs text-text-muted leading-relaxed">
-          <span className="text-text-secondary font-medium">TLS required.</span>{" "}
-          Connections are encrypted by default. Connect with:{" "}
-          <code className="text-accent-text bg-surface-3 px-1 py-0.5 rounded text-[11px]">
-            mysql --ssl-ca=ca.pem -u {response.username} -p -h {response.host}{" "}
-            -P {response.port}
-          </code>
-        </p>
-      </div>
+      <Card>
+        <CardContent className="p-3">
+          <div className="flex items-start gap-2.5">
+            <Shield size={16} className="text-accent-text shrink-0 mt-0.5" />
+            <p className="text-xs text-text-muted leading-relaxed">
+              <span className="text-text-secondary font-medium">TLS required.</span>{" "}
+              Connections are encrypted by default. Connect with:{" "}
+              <code className="text-accent-text bg-surface-3 px-1 py-0.5 rounded text-[11px]">
+                mysql --ssl-ca=ca.pem -u {response.username} -p -h {response.host}{" "}
+                -P {response.port}
+              </code>
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Actions */}
       <div className="flex items-center justify-center pt-1">
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={onBack}
-          className="flex items-center gap-1.5 rounded-md px-4 py-2.5 text-xs font-medium text-text-secondary hover:text-text-primary border border-border-subtle hover:border-border-default bg-surface-2 hover:bg-surface-3 transition-colors min-h-[44px]"
+          className="min-h-[44px]"
         >
           <ChevronLeft size={14} />
           Create another
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -278,48 +294,48 @@ function CredField({
   }
 
   return (
-    <div className="rounded-lg border border-border-subtle bg-surface-2 p-2.5 space-y-0.5">
-      <p className="text-xs text-text-muted font-medium uppercase tracking-wider">
-        {label}
-      </p>
-      <div className="flex items-center justify-between gap-2">
-        <p
-          className={cn(
-            "text-xs truncate",
-            mono ? "font-mono text-text-primary" : "text-text-secondary",
-          )}
-        >
-          {displayValue}
+    <Card>
+      <CardContent className="p-2.5 space-y-0.5">
+        <p className="text-xs text-text-muted font-medium uppercase tracking-wider">
+          {label}
         </p>
-        <div className="flex gap-0.5 shrink-0">
-          {secret && (
-            <button
-              type="button"
-              onClick={() => setRevealed((v) => !v)}
-              className="p-1.5 rounded text-text-muted hover:text-text-primary transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-              title={revealed ? "Hide" : "Show"}
-            >
-              {revealed ? <EyeOff size={14} /> : <Eye size={14} />}
-            </button>
-          )}
-          {copyable && (
-            <button
-              type="button"
-              onClick={handleCopy}
-              className={cn(
-                "p-1.5 rounded transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center",
-                copied
-                  ? "text-success"
-                  : "text-text-muted hover:text-text-primary",
-              )}
-              title="Copy"
-            >
-              {copied ? <Check size={14} /> : <Copy size={14} />}
-            </button>
-          )}
+        <div className="flex items-center justify-between gap-2">
+          <p
+            className={cn(
+              "text-xs truncate",
+              mono ? "font-mono text-text-primary" : "text-text-secondary",
+            )}
+          >
+            {displayValue}
+          </p>
+          <div className="flex gap-0.5 shrink-0">
+            {secret && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => setRevealed((v) => !v)}
+                title={revealed ? "Hide" : "Show"}
+              >
+                {revealed ? <EyeOff size={14} /> : <Eye size={14} />}
+              </Button>
+            )}
+            {copyable && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                onClick={handleCopy}
+                className={cn(copied && "text-success")}
+                title="Copy"
+              >
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -417,151 +433,150 @@ export default function CreateDBForm({
         )}
 
         {/* Database name */}
-        <div className="rounded-lg border border-border-subtle bg-surface-1 p-4 space-y-3">
-          <label
-            htmlFor="db-name"
-            className="block text-sm font-medium text-text-primary"
-          >
-            Database name
-          </label>
-          <div className="relative">
-            <Database
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled pointer-events-none"
-            />
-            <input
-              id="db-name"
-              type="text"
-              autoComplete="off"
-              autoFocus
-              placeholder="my_production_db"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={isSubmitting}
-              className={cn(
-                "w-full rounded-lg bg-surface-2 border pl-9 pr-10 py-2.5",
-                "text-sm text-text-primary placeholder:text-text-disabled font-mono",
-                "focus:outline-none focus:ring-1 transition-colors",
-                "disabled:opacity-50 disabled:cursor-not-allowed",
-                nameError
-                  ? "border-error focus:ring-error"
-                  : "border-border-subtle focus:border-accent focus:ring-accent",
-              )}
-            />
-            {name && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                {nameError ? (
-                  <Check size={14} className="text-error" />
-                ) : (
-                  <Check size={14} className="text-success" />
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <Label htmlFor="db-name" className="text-sm font-medium">
+              Database name
+            </Label>
+            <div className="relative">
+              <Database
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled pointer-events-none z-10"
+              />
+              <Input
+                id="db-name"
+                type="text"
+                autoComplete="off"
+                autoFocus
+                placeholder="my_production_db"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={isSubmitting}
+                className={cn(
+                  "pl-9 pr-10 font-mono",
+                  nameError
+                    ? "border-error focus-visible:ring-error"
+                    : "border-border-subtle focus-visible:border-accent focus-visible:ring-accent",
                 )}
-              </div>
+              />
+              {name && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  {nameError ? (
+                    <AlertTriangle size={14} className="text-error" />
+                  ) : (
+                    <Check size={14} className="text-success" />
+                  )}
+                </div>
+              )}
+            </div>
+            {nameError && (
+              <p className="text-xs text-error-text">{nameError}</p>
             )}
-          </div>
-          {nameError && (
-            <p className="text-xs text-error-text">{nameError}</p>
-          )}
-          <p className="text-xs text-text-muted">
-            2–63 characters: letters, numbers, and underscores. Must start with a
-            letter.
-          </p>
-        </div>
+            <p className="text-xs text-text-muted">
+              2–63 characters: letters, numbers, and underscores. Must start with a
+              letter.
+            </p>
+          </CardContent>
+        </Card>
 
         {/* Engine selector */}
         <div className="space-y-2.5">
-          <p className="text-sm font-medium text-text-primary">
-            Database engine
-          </p>
+          <Label className="text-sm font-medium">Database engine</Label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {ENGINES.map((e) => (
-              <button
-                key={e.value}
-                type="button"
-                disabled={e.value === "postgres"}
-                onClick={() => setEngine(e.value)}
-                className={cn(
-                  "rounded-lg border p-3.5 text-left transition-colors cursor-pointer",
-                  engine === e.value
-                    ? "border-accent bg-accent-subtle"
-                    : "border-border-subtle bg-surface-1 hover:border-border-default",
-                  e.value === "postgres" && "opacity-50 cursor-not-allowed",
-                )}
-              >
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-sm font-semibold text-text-primary">
-                    {e.label}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full",
-                      e.value === "mysql"
-                        ? "bg-success-subtle text-success-text border border-success-subtle"
-                        : "bg-warning-subtle text-warning-text border border-warning-subtle",
-                    )}
-                  >
-                    {e.badge}
-                  </span>
-                </div>
-                <p className="text-xs text-text-muted">{e.description}</p>
-              </button>
-            ))}
+            {ENGINES.map((e) => {
+              const isSelected = engine === e.value;
+              const isDisabled = e.value === "postgres";
+
+              return (
+                <Button
+                  key={e.value}
+                  type="button"
+                  variant="outline"
+                  disabled={isDisabled}
+                  onClick={() => setEngine(e.value)}
+                  className={cn(
+                    "h-auto flex-col items-start gap-1 p-3.5",
+                    isSelected
+                      ? "border-accent bg-accent-subtle hover:bg-accent-subtle"
+                      : "border-border-subtle bg-surface-1 hover:border-border-default",
+                    isDisabled && "opacity-50 cursor-not-allowed",
+                  )}
+                >
+                  <div className="flex items-center justify-between w-full mb-1.5">
+                    <span className="text-sm font-semibold text-text-primary">
+                      {e.label}
+                    </span>
+                    <Badge
+                      variant={e.value === "mysql" ? "default" : "secondary"}
+                      className="text-[10px] font-semibold uppercase tracking-wider"
+                    >
+                      {e.badge}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-text-muted text-left">{e.description}</p>
+                </Button>
+              );
+            })}
           </div>
         </div>
 
         {/* Region selector */}
         <div className="space-y-2.5">
-          <p className="text-sm font-medium text-text-primary">Region</p>
+          <Label className="text-sm font-medium">Region</Label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {REGIONS.map((r) => (
-              <button
-                key={r.value}
-                type="button"
-                onClick={() => setRegion(r.value)}
-                className={cn(
-                  "rounded-lg border p-3.5 text-left transition-colors cursor-pointer",
-                  region === r.value
-                    ? "border-accent bg-accent-subtle"
-                    : "border-border-subtle bg-surface-1 hover:border-border-default",
-                )}
-              >
-                <div className="flex items-center gap-3 mb-1">
-                  <span className="text-lg">{r.flag}</span>
-                  <div>
-                    <p className="text-sm font-semibold text-text-primary">
-                      {r.label}
-                    </p>
-                    <p className="text-xs text-accent-text">{r.provider}</p>
+            {REGIONS.map((r) => {
+              const isSelected = region === r.value;
+
+              return (
+                <Button
+                  key={r.value}
+                  type="button"
+                  variant="outline"
+                  onClick={() => setRegion(r.value)}
+                  className={cn(
+                    "h-auto flex-col items-start gap-0 p-3.5",
+                    isSelected
+                      ? "border-accent bg-accent-subtle hover:bg-accent-subtle"
+                      : "border-border-subtle bg-surface-1 hover:border-border-default",
+                  )}
+                >
+                  <div className="flex items-center gap-3 mb-1">
+                    <span className="text-lg">{r.flag}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-text-primary">
+                        {r.label}
+                      </p>
+                      <p className="text-xs text-accent-text">{r.provider}</p>
+                    </div>
                   </div>
-                </div>
-                <p className="text-xs text-text-muted mt-1">{r.description}</p>
-              </button>
-            ))}
+                  <p className="text-xs text-text-muted mt-1 text-left">{r.description}</p>
+                </Button>
+              );
+            })}
           </div>
         </div>
 
         {/* Cost hint */}
-        <div className="rounded-lg bg-surface-1 border border-border-subtle p-3.5 space-y-1">
-          <p className="text-xs font-medium text-accent-text uppercase tracking-wider">
-            Estimated cost
-          </p>
-          <p className="text-sm text-text-secondary">
-            Free for the first 100 MB of storage.{" "}
-            <span className="text-text-primary">€0.10/GB/month</span> after
-            that. No hidden fees.
-          </p>
-        </div>
+        <Card>
+          <CardContent className="p-3.5 space-y-1">
+            <p className="text-xs font-medium text-accent-text uppercase tracking-wider">
+              Estimated cost
+            </p>
+            <p className="text-sm text-text-secondary">
+              Free for the first 100 MB of storage.{" "}
+              <span className="text-text-primary">€0.10/GB/month</span> after
+              that. No hidden fees.
+            </p>
+          </CardContent>
+        </Card>
 
         {/* Submit */}
         <div className="flex items-center justify-end gap-3">
-          <button
+          <Button
             type="submit"
+            size="lg"
             disabled={isSubmitting}
-            className={cn(
-              "flex items-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold text-white",
-              "bg-accent hover:bg-accent-hover active:bg-accent-pressed",
-              "focus:outline-none transition-colors min-h-[44px]",
-              "disabled:opacity-50 disabled:cursor-not-allowed",
-            )}
+            className="min-h-[44px]"
           >
             {isSubmitting ? (
               <>
@@ -574,7 +589,7 @@ export default function CreateDBForm({
                 Create database
               </>
             )}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

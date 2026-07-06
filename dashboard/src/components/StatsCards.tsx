@@ -1,7 +1,8 @@
 "use client";
 
 import { Database, Activity, HardDrive } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface StatsCardsProps {
   totalDatabases?: number;
@@ -35,13 +36,10 @@ export default function StatsCards(props: StatsCardsProps) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="rounded-lg border border-border-subtle bg-surface-1 p-4 animate-pulse"
-          >
-            <div className="skeleton h-3 w-20 mb-3" />
-            <div className="skeleton h-6 w-12" />
-          </div>
+          <Card key={i} className="p-4">
+            <Skeleton className="h-3 w-20 mb-3" />
+            <Skeleton className="h-6 w-12" />
+          </Card>
         ))}
       </div>
     );
@@ -52,20 +50,19 @@ export default function StatsCards(props: StatsCardsProps) {
       {statConfigs.map((cfg) => {
         const Icon = cfg.icon;
         return (
-          <div
-            key={cfg.label}
-            className="rounded-lg border border-border-subtle bg-surface-1 p-4"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-text-muted uppercase tracking-wider">
-                {cfg.label}
-              </span>
-              <Icon size={16} className="text-text-muted" />
-            </div>
-            <p className="text-2xl font-semibold text-text-primary tabular-nums">
-              {cfg.getValue(props)}
-            </p>
-          </div>
+          <Card key={cfg.label} className="p-4">
+            <CardContent className="p-0">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-text-muted uppercase tracking-wider">
+                  {cfg.label}
+                </span>
+                <Icon size={16} className="text-text-muted" />
+              </div>
+              <p className="text-2xl font-semibold text-text-primary tabular-nums">
+                {cfg.getValue(props)}
+              </p>
+            </CardContent>
+          </Card>
         );
       })}
     </div>

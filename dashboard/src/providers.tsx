@@ -2,7 +2,8 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TransportProvider } from "@connectrpc/connect-query";
-import { Toaster } from "react-hot-toast";
+import { Toaster } from "sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { createTransport } from "@/lib/api";
 import { useState } from "react";
 
@@ -26,26 +27,24 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <TransportProvider transport={transport}>
-        {children}
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            style: {
-              background: "#141414",
-              color: "#fafafa",
-              border: "1px solid #262626",
-              borderRadius: "8px",
-              fontSize: "13px",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
-            },
-            success: {
-              iconTheme: { primary: "#10b981", secondary: "#141414" },
-            },
-            error: {
-              iconTheme: { primary: "#ef4444", secondary: "#141414" },
-            },
-          }}
-        />
+        <TooltipProvider>
+          {children}
+          <Toaster
+            richColors
+            closeButton
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: "#141414",
+                color: "#fafafa",
+                border: "1px solid #262626",
+                borderRadius: "8px",
+                fontSize: "13px",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+              },
+            }}
+          />
+        </TooltipProvider>
       </TransportProvider>
     </QueryClientProvider>
   );

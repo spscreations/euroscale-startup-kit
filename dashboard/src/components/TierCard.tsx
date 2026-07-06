@@ -7,20 +7,26 @@ import {
   ArrowUpRight,
   Building2,
   Loader2,
-  AlertTriangle,
   HardDrive,
   Cpu,
   Zap,
-  Check,
 } from "lucide-react";
-import { cn, formatBytes } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { useUsage } from "@/hooks/useUsage";
 import { useResizeStorage } from "@/hooks/useResizeStorage";
 import { useAuth } from "@/lib/auth";
 import UsageBar from "./UsageBar";
 import { useDatabases } from "@/hooks/useDatabases";
 import { useCreatePayment } from "@/hooks/useCreatePayment";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
 
 const TIER_LABELS: Record<string, string> = {
   free: "Free",
@@ -36,21 +42,20 @@ function bigintToNumber(n: number | bigint | undefined | null): number {
 }
 
 export default function TierCard() {
+  // ── ALL hooks must stay above early returns ──
   const { data, isLoading, isError, error } = useUsage();
-
-  // Add-on state
-  const [storageGB, setStorageGB] = useState<number>(10);
-  const [autoscaleEnabled, setAutoscaleEnabled] = useState(false);
-  const [autoscaleCU, setAutoscaleCU] = useState(1);
-
-  // Auth + databases for resize target
   const { session } = useAuth();
   const { data: dbs } = useDatabases();
   const resizeMutation = useResizeStorage();
   const { createPayment, isLoading: paymentLoading } = useCreatePayment();
   const searchParams = useSearchParams();
 
-  // Mollie redirect detection — show toast when user returns from payment
+  // Add-on state
+  const [storageGB, setStorageGB] = useState<number>(10);
+  const [autoscaleEnabled, setAutoscaleEnabled] = useState(false);
+  const [autoscaleCU, setAutoscaleCU] = useState(1);
+
+  // Mollie redirect detection — show dialog when user returns from payment
   useEffect(() => {
     const paymentStatus = searchParams.get("payment");
     if (paymentStatus === "success") {
@@ -91,7 +96,10 @@ export default function TierCard() {
             }
             const newGb = bigintToNumber(res.newTotalGb);
             if (!newGb || newGb <= 0) {
-              toast.error(res.message || "Storage resize returned 0 GB — operation may have failed.");
+              toast.error(
+                res.message ||
+                  "Storage resize returned 0 GB — operation may have failed.",
+              );
               return;
             }
             toast.success(`Storage resized to ${newGb} GB`);
@@ -104,34 +112,43 @@ export default function TierCard() {
       );
     }
     if (autoscaleEnabled) {
-      toast.success(`Autoscale set to ${autoscaleCU} CU (billing integration pending)`);
+      toast.success(
+        `Autoscale set to ${autoscaleCU} CU (billing integration pending)`,
+      );
     }
-  }, [session?.id, storageGB, autoscaleEnabled, autoscaleCU, dbs, resizeMutation]);
+  }, [
+    session?.id,
+    storageGB,
+    autoscaleEnabled,
+    autoscaleCU,
+    dbs,
+    resizeMutation,
+  ]);
 
-  // Loading skeleton
+  // ── Loading skeleton ──
   if (isLoading) {
     return (
-      <div className="rounded-lg border border-border-subtle bg-surface-1 p-4 animate-pulse space-y-4">
+      <Card className="p-4 space-y-4">
         <div className="flex items-center justify-between">
-          <div className="skeleton h-5 w-24" />
-          <div className="skeleton h-8 w-20 rounded-md" />
+          <Skeleton className="h-5 w-24" />
+          <Skeleton className="h-8 w-20 rounded-md" />
         </div>
         <div className="space-y-3">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="space-y-1.5">
               <div className="flex justify-between">
-                <div className="skeleton h-3 w-16" />
-                <div className="skeleton h-3 w-20" />
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-3 w-20" />
               </div>
-              <div className="skeleton h-2 w-full rounded-full" />
+              <Skeleton className="h-2 w-full rounded-full" />
             </div>
           ))}
         </div>
-      </div>
+      </Card>
     );
   }
 
-  // Error state — silently hidden, just don't show the card
+  // ── Error state — silently hidden ──
   if (isError || !data) {
     return null;
   }
@@ -161,7 +178,7 @@ export default function TierCard() {
   };
 
   // Pricing from limits
-  const storagePricePerGB = limits?.additionalStorageGbPrice ?? 0.20;
+  const storagePricePerGB = limits?.additionalStorageGbPrice ?? 0.2;
   const cuPricePerHour = limits?.autoscaleCuPrice ?? 0.04;
   const maxAutoscaleCU = limits?.autoscaleMaxCu ?? 0;
   const canAutoscale = maxAutoscaleCU > 0;
@@ -177,7 +194,7 @@ export default function TierCard() {
   const totalAddonCost = storageCost + autoscaleCost;
 
   return (
-    <div className="rounded-lg border border-border-subtle bg-surface-1 p-4 space-y-4">
+    <Card className="p-4 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -188,13 +205,13 @@ export default function TierCard() {
         </div>
 
         {isEnterprise ? (
-          <span className="inline-flex items-center gap-1.5 rounded-md bg-accent-subtle px-2.5 py-1 text-xs font-medium text-accent-text">
+          <Badge variant="secondary">
             <Building2 size={12} />
             Contact sales
-          </span>
+          </Badge>
         ) : showUpgrade ? (
-          <button
-            type="button"
+          <Button
+            size="sm"
             onClick={async () => {
               try {
                 const result = await createPayment(upgradeTarget[tier] || tier);
@@ -204,28 +221,27 @@ export default function TierCard() {
               }
             }}
             disabled={paymentLoading}
-            className={cn(
-              "inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-semibold text-white",
-              "bg-accent hover:bg-accent-hover active:bg-accent-pressed transition-colors",
-              "disabled:opacity-50 disabled:cursor-not-allowed",
-            )}
+            className="text-white"
           >
             {paymentLoading ? (
-              <><Loader2 size={12} className="animate-spin" /> Loading…</>
+              <>
+                <Loader2 size={12} className="animate-spin" />
+                Loading…
+              </>
             ) : (
               <>
                 Upgrade
                 <ArrowUpRight size={12} />
               </>
             )}
-          </button>
+          </Button>
         ) : (
-          <span className="text-xs text-text-muted">Current plan</span>
+          <span className="text-xs text-muted-foreground">Current plan</span>
         )}
       </div>
 
       {/* Usage bars */}
-      <div className="space-y-3">
+      <CardContent className="p-0 space-y-3">
         <UsageBar
           label="Databases"
           used={dbCount}
@@ -250,10 +266,11 @@ export default function TierCard() {
           limit={maxWrites}
           unit="writes"
         />
-      </div>
+      </CardContent>
 
       {/* ── Add-ons Section ── */}
-      <div className="border-t border-border-subtle pt-4 space-y-4">
+      <Separator />
+      <div className="space-y-4">
         <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-1.5">
           <Zap size={12} />
           Add-ons
@@ -266,13 +283,13 @@ export default function TierCard() {
             <span className="text-xs font-medium text-text-primary">
               Additional Storage
             </span>
-            <span className="text-[11px] text-text-muted ml-auto">
+            <span className="text-[11px] text-muted-foreground ml-auto">
               €{storagePricePerGB.toFixed(2)}/GB/mo
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <input
+            <Input
               type="number"
               min={1}
               max={1000}
@@ -281,15 +298,10 @@ export default function TierCard() {
                 const v = parseInt(e.target.value, 10);
                 if (!isNaN(v) && v >= 0) setStorageGB(v);
               }}
-              className={cn(
-                "w-20 rounded-md bg-surface-1 border border-border-subtle",
-                "px-2.5 py-1.5 text-xs text-text-primary text-center",
-                "focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent",
-                "transition-colors tabular-nums",
-              )}
+              className="w-20 text-center tabular-nums"
             />
-            <span className="text-xs text-text-muted">GB</span>
-            <span className="text-xs text-text-muted ml-auto">
+            <span className="text-xs text-muted-foreground">GB</span>
+            <span className="text-xs text-muted-foreground ml-auto">
               +€{storageCost.toFixed(2)}/mo
             </span>
           </div>
@@ -302,7 +314,7 @@ export default function TierCard() {
             <span className="text-xs font-medium text-text-primary">
               Autoscale Compute
             </span>
-            <span className="text-[11px] text-text-muted ml-auto">
+            <span className="text-[11px] text-muted-foreground ml-auto">
               €{cuPricePerHour.toFixed(2)}/CU-hr
             </span>
           </div>
@@ -310,30 +322,16 @@ export default function TierCard() {
           {canAutoscale ? (
             <>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={autoscaleEnabled}
-                  onClick={() => setAutoscaleEnabled(!autoscaleEnabled)}
-                  className={cn(
-                    "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
-                    "focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-surface-2",
-                    autoscaleEnabled ? "bg-accent" : "bg-surface-1 border-border-default",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform ring-0 transition-transform",
-                      autoscaleEnabled ? "translate-x-4" : "translate-x-0",
-                    )}
-                  />
-                </button>
+                <Switch
+                  checked={autoscaleEnabled}
+                  onCheckedChange={setAutoscaleEnabled}
+                />
                 <span
                   className={cn(
                     "text-xs font-medium",
                     autoscaleEnabled
                       ? "text-accent-text"
-                      : "text-text-muted",
+                      : "text-muted-foreground",
                   )}
                 >
                   {autoscaleEnabled ? "ON" : "OFF"}
@@ -343,42 +341,48 @@ export default function TierCard() {
               {autoscaleEnabled && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-[11px] text-text-muted">
-                      Max CU: <span className="text-text-primary font-mono">{autoscaleCU} CU</span>
+                    <label className="text-[11px] text-muted-foreground">
+                      Max CU:{" "}
+                      <span className="text-text-primary font-mono">
+                        {autoscaleCU} CU
+                      </span>
                     </label>
-                    <span className="text-xs text-text-muted tabular-nums">
+                    <span className="text-xs text-muted-foreground tabular-nums">
                       ≈ €{autoscaleCost.toFixed(2)}/mo
                     </span>
                   </div>
-                  <input
-                    type="range"
-                    min={1}
-                    max={maxAutoscaleCU > 0 && maxAutoscaleCU < 100 ? maxAutoscaleCU : 4}
-                    value={autoscaleCU}
-                    onChange={(e) =>
-                      setAutoscaleCU(parseInt(e.target.value, 10))
+                  <Slider
+                    value={[autoscaleCU]}
+                    onValueChange={(value: number | readonly number[]) =>
+                      setAutoscaleCU(Array.isArray(value) ? value[0] : value)
                     }
-                    className="w-full h-1.5 rounded-full appearance-none bg-surface-1 cursor-pointer
-                      [&::-webkit-slider-thumb]:appearance-none
-                      [&::-webkit-slider-thumb]:w-3.5
-                      [&::-webkit-slider-thumb]:h-3.5
-                      [&::-webkit-slider-thumb]:rounded-full
-                      [&::-webkit-slider-thumb]:bg-accent
-                      [&::-webkit-slider-thumb]:cursor-pointer
-                      [&::-webkit-slider-thumb]:shadow-sm
-                      accent-accent"
+                    min={1}
+                    max={
+                      maxAutoscaleCU > 0 && maxAutoscaleCU < 100
+                        ? maxAutoscaleCU
+                        : 4
+                    }
+                    step={1}
                   />
-                  <div className="flex justify-between text-[10px] text-text-muted">
+                  <div className="flex justify-between text-[10px] text-muted-foreground">
                     <span>1 CU</span>
-                    <span>{maxAutoscaleCU > 0 && maxAutoscaleCU < 100 ? maxAutoscaleCU : 4} CU</span>
+                    <span>
+                      {maxAutoscaleCU > 0 && maxAutoscaleCU < 100
+                        ? maxAutoscaleCU
+                        : 4}{" "}
+                      CU
+                    </span>
                   </div>
                 </div>
               )}
             </>
           ) : (
-            <p className="text-xs text-text-muted italic">
+            <p className="text-xs text-muted-foreground italic">
               Autoscale not available on the {tierLabel} plan.
-              <a href="/pricing" className="ml-1 text-accent-text hover:underline">
+              <a
+                href="/pricing"
+                className="ml-1 text-accent-text hover:underline"
+              >
                 Upgrade →
               </a>
             </p>
@@ -398,24 +402,21 @@ export default function TierCard() {
         )}
 
         {/* Apply button */}
-        <button
-          type="button"
+        <Button
           onClick={handleApply}
           disabled={resizeMutation.isPending}
-          className={cn(
-            "w-full rounded-md px-4 py-2 text-xs font-semibold transition-colors",
-            "bg-accent text-white hover:bg-accent-hover active:bg-accent-pressed",
-            "disabled:opacity-50 disabled:cursor-not-allowed",
-            "min-h-[44px] flex items-center justify-center gap-1.5",
-          )}
+          className="w-full"
         >
           {resizeMutation.isPending ? (
-            <><Loader2 size={14} className="animate-spin" /> Resizing...</>
+            <>
+              <Loader2 size={14} className="animate-spin" />
+              Resizing...
+            </>
           ) : (
-            <>Apply Changes</>
+            "Apply Changes"
           )}
-        </button>
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 }

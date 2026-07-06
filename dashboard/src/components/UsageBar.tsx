@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
 
 interface UsageBarProps {
   /** Display label for the resource */
@@ -28,12 +29,12 @@ export default function UsageBar({ label, used, limit, unit }: UsageBarProps) {
   const isUnlimited = limit <= 0;
   const pct = isUnlimited ? 0 : Math.min((used / limit) * 100, 100);
 
-  const barColor =
+  const barColorClass =
     pct >= 85
-      ? "bg-error"
+      ? "[&_[data-slot=progress-indicator]]:bg-destructive"
       : pct >= 60
-        ? "bg-warning"
-        : "bg-success";
+        ? "[&_[data-slot=progress-indicator]]:bg-warning"
+        : "[&_[data-slot=progress-indicator]]:bg-success";
 
   return (
     <div className="space-y-1.5">
@@ -47,7 +48,7 @@ export default function UsageBar({ label, used, limit, unit }: UsageBarProps) {
             isUnlimited
               ? "text-text-muted"
               : pct >= 85
-                ? "text-error-text"
+                ? "text-destructive"
                 : "text-text-secondary",
           )}
         >
@@ -56,12 +57,10 @@ export default function UsageBar({ label, used, limit, unit }: UsageBarProps) {
             : `${formatNumber(used)} / ${formatNumber(limit)} ${unit}`}
         </span>
       </div>
-      <div className="h-2 w-full rounded-full bg-surface-2 overflow-hidden">
-        <div
-          className={cn("h-full rounded-full transition-all duration-500", barColor)}
-          style={{ width: `${isUnlimited ? 100 : pct}%` }}
-        />
-      </div>
+      <Progress
+        value={isUnlimited ? 100 : pct}
+        className={cn("flex-col gap-0", barColorClass)}
+      />
     </div>
   );
 }

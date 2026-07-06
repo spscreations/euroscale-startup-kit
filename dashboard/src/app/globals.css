@@ -1,41 +1,76 @@
 /* ============================================
-   EuroScale Design System — Precision Dev-Tool
-   Inspired by Linear, Supabase, Vercel
+   EuroScale Design System — shadcn/ui + BaseUI
+   Linear/Vercel dev-tool aesthetic with full
+   accessibility via @base-ui/react primitives
    ============================================ */
 
 /* Tailwind base styles */
 @import "tailwindcss";
 
-/* Design tokens — registered with Tailwind v4 @theme */
-@theme {
-  /* Surfaces — near-black dev-tool palette */
-  --color-bg-primary: #0a0a0a;
+@custom-variant dark (&:is(.dark *));
+
+/* ── Design Tokens ──────────────────────────────
+   Merge EuroScale custom tokens with shadcn's CSS
+   variable system for full component compatibility.
+   shadcn v4+ uses @base-ui/react primitives and
+   expects CSS variables via @theme inline.
+*/
+
+@theme inline {
+  /* ── Surfaces ─────────────────────────────── */
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  /* ── Semantic ─────────────────────────────── */
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  /* ── Borders & Ring ───────────────────────── */
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  /* ── Radius ───────────────────────────────── */
+  --radius: 0.5rem;
+  --radius-lg: 0.5rem;
+  --radius-md: 0.375rem;
+  --radius-sm: 0.25rem;
+
+  /* ── EuroScale Custom Tokens (override/add) ── */
+  --color-bg-primary: hsl(var(--background));
   --color-bg-secondary: #0d0d0d;
-  --color-surface-1: #141414;
-  --color-surface-2: #1a1a1a;
+  --color-surface-1: hsl(var(--card));
+  --color-surface-2: hsl(var(--muted));
   --color-surface-3: #222222;
 
-  /* Borders */
-  --color-border-subtle: #262626;
+  --color-border-subtle: hsl(var(--border));
   --color-border-default: #333333;
   --color-border-strong: #404040;
   --color-border-hover: #525252;
 
-  /* Text */
-  --color-text-primary: #fafafa;
-  --color-text-secondary: #a3a3a3;
+  --color-text-primary: hsl(var(--foreground));
+  --color-text-secondary: hsl(var(--muted-foreground));
   --color-text-muted: #737373;
   --color-text-disabled: #525252;
 
-  /* Accent — EuroScale indigo brand */
-  --color-accent: #6366f1;
   --color-accent-hover: #4f46e5;
   --color-accent-pressed: #4338ca;
   --color-accent-subtle: rgba(99, 102, 241, 0.1);
   --color-accent-border: rgba(99, 102, 241, 0.25);
   --color-accent-text: #818cf8;
 
-  /* Semantic */
   --color-success: #10b981;
   --color-success-subtle: rgba(16, 185, 129, 0.12);
   --color-success-text: #34d399;
@@ -46,17 +81,91 @@
   --color-warning-subtle: rgba(245, 158, 11, 0.12);
   --color-warning-text: #fbbf24;
 
-  /* Font */
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
 
-  /* Animations */
   --animate-fade-in: fade-in 0.3s ease-out;
   --animate-slide-up: slide-up 0.2s ease-out;
   --animate-skeleton-pulse: skeleton-pulse 1.5s ease-in-out infinite;
 }
 
-/* Base reset */
+/* ── CSS Variable Definitions ─────────────────
+   Dark theme only — matches EuroScale's dark
+   dev-tool aesthetic.
+*/
+
+:root {
+  --background: 0 0% 4%;      /* #0a0a0a */
+  --foreground: 0 0% 98%;     /* #fafafa */
+  --card: 0 0% 8%;            /* #141414 */
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 8%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 239 84% 67%;     /* #6366f1 → accent */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 11%;      /* #1a1a1a */
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 10%;          /* #1a1a1a */
+  --muted-foreground: 0 0% 64%; /* #a3a3a3 */
+  --accent: 239 84% 67%;      /* matches primary */
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 15%;         /* #262626 */
+  --input: 0 0% 15%;
+  --ring: 239 84% 67%;
+  --radius: 0.5rem;
+}
+
+@media prefers-color-scheme: light {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 239 84% 67%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 239 84% 67%;
+  }
+}
+
+/* Force dark theme always for dev-tool aesthetic */
+.dark,
+:root {
+  --background: 0 0% 4%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 8%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 8%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 239 84% 67%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 11%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 10%;
+  --muted-foreground: 0 0% 64%;
+  --accent: 239 84% 67%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 15%;
+  --input: 0 0% 15%;
+  --ring: 239 84% 67%;
+}
+
+/* ── Base Reset ───────────────────────────────── */
 *,
 *::before,
 *::after {
@@ -68,14 +177,14 @@ html {
 }
 
 body {
-  background-color: var(--color-bg-primary);
-  color: var(--color-text-primary);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Scrollbar — minimal, matches the dev-tool aesthetic */
+/* ── Scrollbar ────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -86,27 +195,27 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-surface-3);
+  background: #222222;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-border-strong);
+  background: #404040;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-surface-3) transparent;
+  scrollbar-color: #222222 transparent;
 }
 
-/* Focus ring — subtle accent, dev-tool style */
+/* ── Focus ring ───────────────────────────────── */
 *:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 1px;
   border-radius: 2px;
 }
 
-/* Animation utilities */
+/* ── Animations ───────────────────────────────── */
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -129,15 +238,9 @@ body {
   }
 }
 
-/* Skeleton loading shimmer */
 @keyframes skeleton-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.4;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 .skeleton {
@@ -146,9 +249,7 @@ body {
   animation: skeleton-pulse 1.5s ease-in-out infinite;
 }
 
-/* Shadow-as-border — Vercel-inspired technique:
-   Use box-shadow instead of CSS borders for cleaner, more precise
-   dividers and card edges that don't affect layout flow. */
+/* ── Shadow-as-border (Vercel technique) ─────── */
 .shadow-border {
   box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, 0.08);
 }

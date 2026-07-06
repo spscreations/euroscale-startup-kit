@@ -15,7 +15,19 @@ import {
   Shield,
 } from "lucide-react";
 import { cn, copyToClipboard, formatDate } from "@/lib/utils";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -60,15 +72,15 @@ function mockApiKeys(): ApiKey[] {
   ];
 }
 
-// ── Create Key Modal ───────────────────────────────────────────────────────
+// ── Create Key Dialog ───────────────────────────────────────────────────────
 
-interface CreateKeyModalProps {
+interface CreateKeyDialogProps {
   open: boolean;
   onClose: () => void;
   onCreated: (key: ApiKey) => void;
 }
 
-function CreateKeyModal({ open, onClose, onCreated }: CreateKeyModalProps) {
+function CreateKeyDialog({ open, onClose, onCreated }: CreateKeyDialogProps) {
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
   const [showKey, setShowKey] = useState(false);
@@ -123,174 +135,144 @@ function CreateKeyModal({ open, onClose, onCreated }: CreateKeyModalProps) {
     onClose();
   }, [onClose]);
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/60"
-        onClick={handleClose}
-      />
-      <div className="relative w-full max-w-md animate-slide-up">
-        <div className="rounded-xl border border-border-subtle bg-surface-1 p-5 shadow-2xl">
-          <div className="mb-5 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent-subtle">
-                <Key size={16} className="text-accent-text" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-text-primary">
-                  {createdKey ? "API Key Created" : "Create API Key"}
-                </h3>
-                <p className="text-xs text-text-muted">
-                  {createdKey
-                    ? "Save this key — it won't be shown again"
-                    : "Generate a new API key for programmatic access"}
-                </p>
-              </div>
+    <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            {createdKey ? "API Key Created" : "Create API Key"}
+          </DialogTitle>
+          <DialogDescription>
+            {createdKey
+              ? "Save this key — it won't be shown again"
+              : "Generate a new API key for programmatic access"}
+          </DialogDescription>
+        </DialogHeader>
+
+        {!createdKey ? (
+          <>
+            <div className="mb-4">
+              <label
+                htmlFor="key-name"
+                className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-text-muted"
+              >
+                Key Name
+              </label>
+              <Input
+                id="key-name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Production API, CI/CD Pipeline"
+                autoFocus
+                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+              />
             </div>
-            <button
-              onClick={handleClose}
-              className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-surface-2 hover:text-text-primary"
-            >
-              <X size={16} />
-            </button>
-          </div>
 
-          {!createdKey ? (
-            <>
-              <div className="mb-4">
-                <label
-                  htmlFor="key-name"
-                  className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-text-muted"
-                >
-                  Key Name
-                </label>
+            <div className="mb-5 space-y-2 rounded-lg bg-surface-2 border border-border-subtle p-3">
+              <p className="text-xs font-medium text-text-muted">
+                Permissions
+              </p>
+              <label className="flex items-center gap-2">
                 <input
-                  id="key-name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Production API, CI/CD Pipeline"
-                  className="w-full rounded-lg border border-border-subtle bg-surface-2 px-3 py-2 text-sm text-text-primary placeholder:text-text-disabled outline-none transition-colors focus:border-accent focus:ring-1 focus:ring-accent"
-                  autoFocus
-                  onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+                  type="checkbox"
+                  defaultChecked
+                  disabled
+                  className="rounded border-border-default bg-surface-2 accent-accent"
                 />
-              </div>
+                <span className="text-xs text-text-secondary">
+                  Full access (read & write)
+                </span>
+              </label>
+            </div>
 
-              <div className="mb-5 space-y-2 rounded-lg bg-surface-2 border border-border-subtle p-3">
-                <p className="text-xs font-medium text-text-muted">
-                  Permissions
-                </p>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    defaultChecked
-                    disabled
-                    className="rounded border-border-default bg-surface-2 accent-accent"
+            <DialogFooter>
+              <Button variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreate}
+                disabled={!name.trim() || creating}
+              >
+                {creating ? (
+                  <>
+                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Plus size={14} />
+                    Create Key
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </>
+        ) : (
+          <>
+            <div className="mb-4 rounded-lg border border-warning-subtle bg-warning-subtle p-3">
+              <p className="mb-1 text-xs font-medium text-warning-text">
+                ⚠️ Save this key — shown once only
+              </p>
+              <p className="text-[11px] text-text-muted">
+                You won&apos;t be able to see the full key again. Store it
+                securely.
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-text-muted">
+                API Key
+              </label>
+              <div className="relative">
+                <div className="flex">
+                  <Input
+                    type={showKey ? "text" : "password"}
+                    value={createdKey.fullKey}
+                    readOnly
+                    className="rounded-r-none font-mono text-xs text-accent-text"
                   />
-                  <span className="text-xs text-text-secondary">
-                    Full access (read & write)
-                  </span>
-                </label>
-              </div>
-
-              <div className="flex justify-end gap-2.5">
-                <button
-                  onClick={handleClose}
-                  className="rounded-lg border border-border-subtle px-3.5 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-border-default hover:text-text-primary"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCreate}
-                  disabled={!name.trim() || creating}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-medium transition-colors",
-                    name.trim() && !creating
-                      ? "bg-accent text-white hover:bg-accent-hover"
-                      : "bg-surface-3 text-text-disabled cursor-not-allowed",
-                  )}
-                >
-                  {creating ? (
-                    <>
-                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Plus size={14} />
-                      Create Key
-                    </>
-                  )}
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="mb-4 rounded-lg border border-warning-subtle bg-warning-subtle p-3">
-                <p className="mb-1 text-xs font-medium text-warning-text">
-                  ⚠️ Save this key — shown once only
-                </p>
-                <p className="text-[11px] text-text-muted">
-                  You won&apos;t be able to see the full key again. Store it
-                  securely.
-                </p>
-              </div>
-
-              <div className="mb-4">
-                <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-text-muted">
-                  API Key
-                </label>
-                <div className="relative">
-                  <div className="flex">
-                    <input
-                      type={showKey ? "text" : "password"}
-                      value={createdKey.fullKey}
-                      readOnly
-                      className="w-full rounded-l-lg border border-border-subtle bg-surface-2 px-3 py-2 font-mono text-xs text-accent-text outline-none"
-                    />
-                    <button
-                      onClick={() => setShowKey(!showKey)}
-                      className="border-y border-border-subtle bg-surface-2 px-2.5 py-2 text-text-muted transition-colors hover:text-text-primary"
-                      title={showKey ? "Hide key" : "Show key"}
-                    >
-                      {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
-                    </button>
-                    <button
-                      onClick={handleCopy}
-                      className="rounded-r-lg border border-border-subtle bg-surface-2 px-2.5 py-2 text-text-muted transition-colors hover:text-accent-text"
-                      title="Copy to clipboard"
-                    >
-                      {copied ? (
-                        <Check size={14} className="text-success" />
-                      ) : (
-                        <Copy size={14} />
-                      )}
-                    </button>
-                  </div>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShowKey(!showKey)}
+                    className="rounded-none border-x-0"
+                    title={showKey ? "Hide key" : "Show key"}
+                  >
+                    {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleCopy}
+                    className="rounded-l-none"
+                    title="Copy to clipboard"
+                  >
+                    {copied ? (
+                      <Check size={14} className="text-success" />
+                    ) : (
+                      <Copy size={14} />
+                    )}
+                  </Button>
                 </div>
               </div>
+            </div>
 
-              <div className="flex justify-end">
-                <button
-                  onClick={handleClose}
-                  className="rounded-lg bg-accent px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-accent-hover"
-                >
-                  Done
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+            <DialogFooter>
+              <Button onClick={handleClose}>
+                Done
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
 // ── Revoke Confirm Dialog ──────────────────────────────────────────────────
 
-function RevokeConfirm({
+function RevokeConfirmDialog({
   open,
   keyName,
   onConfirm,
@@ -303,66 +285,41 @@ function RevokeConfirm({
   onCancel: () => void;
   revoking: boolean;
 }) {
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/60"
-        onClick={onCancel}
-      />
-      <div className="relative w-full max-w-sm animate-slide-up">
-        <div className="rounded-xl border border-error-subtle bg-surface-1 p-5 shadow-2xl">
-          <div className="mb-4 flex items-start gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-error-subtle">
-              <Trash2 size={16} className="text-error-text" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-text-primary">
-                Revoke API Key
-              </h3>
-              <p className="mt-1 text-xs text-text-muted">
-                Are you sure you want to revoke{" "}
-                <span className="font-medium text-text-secondary">
-                  &ldquo;{keyName}&rdquo;
-                </span>
-                ? Any services using this key will immediately lose access.
-              </p>
-            </div>
-          </div>
-          <div className="flex justify-end gap-2.5">
-            <button
-              onClick={onCancel}
-              className="rounded-lg border border-border-subtle px-3.5 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-border-default hover:text-text-primary"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={onConfirm}
-              disabled={revoking}
-              className={cn(
-                "flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-medium text-white transition-colors",
-                revoking
-                  ? "bg-surface-3 text-text-disabled cursor-not-allowed"
-                  : "bg-error hover:bg-error/90",
-              )}
-            >
-              {revoking ? (
-                <>
-                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  Revoking...
-                </>
-              ) : (
-                <>
-                  <Trash2 size={14} />
-                  Revoke Key
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <Dialog open={open} onOpenChange={(v) => !v && onCancel()}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Revoke API Key</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to revoke{" "}
+            <span className="font-medium">&ldquo;{keyName}&rdquo;</span>
+            ? Any services using this key will immediately lose access.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={onConfirm}
+            disabled={revoking}
+          >
+            {revoking ? (
+              <>
+                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                Revoking...
+              </>
+            ) : (
+              <>
+                <Trash2 size={14} />
+                Revoke Key
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -419,13 +376,13 @@ export default function ApiKeys({ initialKeys }: ApiKeysProps) {
             {activeKeys.length} key{activeKeys.length !== 1 ? "s" : ""} active
           </p>
         </div>
-        <button
+        <Button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-accent-hover"
+          size="sm"
         >
           <Plus size={14} />
           Create Key
-        </button>
+        </Button>
       </div>
 
       {/* Empty state */}
@@ -453,15 +410,17 @@ export default function ApiKeys({ initialKeys }: ApiKeysProps) {
           {/* Revoked keys toggle */}
           {revokedKeys.length > 0 && (
             <div className="pt-1.5">
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setHidingRevoked(!hidingRevoked)}
-                className="flex items-center gap-1.5 text-[11px] font-medium text-text-muted transition-colors hover:text-text-secondary"
+                className="h-auto p-1"
               >
                 <Shield size={12} />
                 {hidingRevoked
                   ? `Show ${revokedKeys.length} revoked key${revokedKeys.length !== 1 ? "s" : ""}`
                   : "Hide revoked keys"}
-              </button>
+              </Button>
 
               {!hidingRevoked && (
                 <div className="mt-1.5 space-y-1.5">
@@ -479,13 +438,13 @@ export default function ApiKeys({ initialKeys }: ApiKeysProps) {
         </div>
       )}
 
-      {/* Modals */}
-      <CreateKeyModal
+      {/* Dialogs */}
+      <CreateKeyDialog
         open={showCreate}
         onClose={() => setShowCreate(false)}
         onCreated={handleCreated}
       />
-      <RevokeConfirm
+      <RevokeConfirmDialog
         open={revokingId !== null}
         keyName={revokingKey?.name ?? ""}
         onConfirm={handleRevoke}
@@ -546,9 +505,9 @@ function ApiKeyRow({
               {apiKey.name}
             </p>
             {isRevoked && (
-              <span className="rounded-full bg-error-subtle px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-error-text">
+              <Badge variant="destructive" className="text-[10px]">
                 Revoked
-              </span>
+              </Badge>
             )}
           </div>
           <div className="mt-0.5 flex items-center gap-2 text-[11px] text-text-muted">
@@ -571,9 +530,10 @@ function ApiKeyRow({
       </div>
 
       <div className="flex items-center gap-0.5 shrink-0">
-        <button
+        <Button
+          variant="ghost"
+          size="icon-xs"
           onClick={handleCopy}
-          className="rounded p-1.5 text-text-muted transition-colors hover:text-accent-text hover:bg-surface-3"
           title="Copy key prefix"
         >
           {copied ? (
@@ -581,15 +541,17 @@ function ApiKeyRow({
           ) : (
             <Copy size={13} />
           )}
-        </button>
+        </Button>
         {!isRevoked && onRevoke && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon-xs"
             onClick={onRevoke}
-            className="rounded p-1.5 text-text-muted transition-colors hover:text-error-text hover:bg-error-subtle"
+            className="text-text-muted hover:text-error-text hover:bg-error-subtle"
             title="Revoke key"
           >
             <Trash2 size={13} />
-          </button>
+          </Button>
         )}
       </div>
     </div>

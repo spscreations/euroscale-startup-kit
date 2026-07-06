@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useState, useCallback, type FormEvent } from "react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   Copy,
@@ -27,6 +27,21 @@ import { useDatabase } from "@/hooks/useDatabase";
 import { useDeleteDatabase } from "@/hooks/useDeleteDatabase";
 import { useRotateCredentials } from "@/hooks/useRotateCredentials";
 import IPWhitelist from "@/components/IPWhitelist";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -51,35 +66,17 @@ function statusBadge(status: string) {
   const normalized = status.toLowerCase();
   switch (normalized) {
     case "ready":
-      return {
-        label: "Ready",
-        className: "bg-success-subtle text-success-text",
-      };
+      return { label: "Ready", variant: "default" as const };
     case "creating":
-      return {
-        label: "Creating",
-        className: "bg-warning-subtle text-warning-text",
-      };
+      return { label: "Creating", variant: "secondary" as const };
     case "deleting":
-      return {
-        label: "Deleting",
-        className: "bg-error-subtle text-error-text",
-      };
+      return { label: "Deleting", variant: "destructive" as const };
     case "deleted":
-      return {
-        label: "Deleted",
-        className: "bg-surface-3 text-text-disabled",
-      };
+      return { label: "Deleted", variant: "secondary" as const };
     case "error":
-      return {
-        label: "Error",
-        className: "bg-error-subtle text-error-text",
-      };
+      return { label: "Error", variant: "destructive" as const };
     default:
-      return {
-        label: status,
-        className: "bg-surface-3 text-text-disabled",
-      };
+      return { label: status, variant: "secondary" as const };
   }
 }
 
@@ -98,18 +95,15 @@ function CopyButton({
 }) {
   const isActive = copied === label;
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
+      size="icon-xs"
       onClick={() => onCopy(value, label)}
-      className={cn(
-        "ml-1.5 shrink-0 p-1 rounded transition-colors",
-        "hover:bg-accent-subtle hover:text-accent-text",
-        isActive && "text-success",
-      )}
+      className={cn(isActive && "text-success")}
       aria-label={`Copy ${label}`}
     >
       {isActive ? <CopyCheck size={13} /> : <Copy size={13} />}
-    </button>
+    </Button>
   );
 }
 
@@ -132,7 +126,7 @@ function FieldRow({
 }) {
   return (
     <div className="flex items-center justify-between py-2 border-b border-border-subtle last:border-b-0">
-      <span className="text-xs font-medium text-text-muted uppercase tracking-wider min-w-[80px]">
+      <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider min-w-[80px]">
         {label}
       </span>
       <div className="flex items-center ml-2 overflow-hidden">
@@ -190,195 +184,6 @@ function ConnectionStringRow({
   );
 }
 
-function ProgressBar({
-  value,
-  max,
-}: {
-  value: number;
-  max: number;
-}) {
-  const pct = Math.min(100, Math.round((value / max) * 100));
-  return (
-    <div className="w-full h-1.5 rounded-full bg-surface-3 overflow-hidden">
-      <div
-        className="h-full rounded-full bg-accent transition-all duration-700 ease-out"
-        style={{ width: `${pct}%` }}
-      />
-    </div>
-  );
-}
-
-function ConfirmDialog({
-  open,
-  title,
-  message,
-  confirmLabel,
-  variant = "danger",
-  onConfirm,
-  onCancel,
-}: {
-  open: boolean;
-  title: string;
-  message: string;
-  confirmLabel: string;
-  variant?: "danger" | "warning";
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  if (!open) return null;
-
-  const colors =
-    variant === "danger"
-      ? { btn: "bg-error hover:bg-error/90" }
-      : { btn: "bg-warning hover:bg-warning/90 text-black" };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 animate-fade-in">
-      <div
-        className="absolute inset-0 bg-black/60"
-        onClick={onCancel}
-      />
-      <div className="relative w-full max-w-full sm:max-w-sm rounded-none sm:rounded-xl border border-border-subtle bg-surface-1 p-5 sm:p-5 space-y-4 animate-slide-up shadow-2xl min-h-[100dvh] sm:min-h-0 flex flex-col justify-center">
-        <h3 className="text-sm font-semibold text-text-primary">{title}</h3>
-        <p className="text-xs text-text-secondary">{message}</p>
-        <div className="flex gap-2.5 pt-1">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="flex-1 rounded-lg border border-border-subtle px-3 py-2.5 text-xs font-medium text-text-secondary hover:bg-surface-2 transition-colors min-h-[44px]"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className={cn(
-              "flex-1 rounded-lg px-3 py-2.5 text-xs font-semibold text-white transition-colors min-h-[44px]",
-              colors.btn,
-            )}
-          >
-            {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DeleteConfirmDialog({
-  open,
-  databaseName,
-  loading,
-  onConfirm,
-  onCancel,
-}: {
-  open: boolean;
-  databaseName: string;
-  loading: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  const [typed, setTyped] = useState("");
-
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (typed === databaseName) onConfirm();
-  }
-
-  if (!open) return null;
-
-  const match = typed === databaseName;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 animate-fade-in">
-      <div
-        className="absolute inset-0 bg-black/60"
-        onClick={onCancel}
-      />
-      <form
-        onSubmit={handleSubmit}
-        className="relative w-full max-w-full sm:max-w-md rounded-none sm:rounded-xl border border-error-subtle bg-surface-1 p-5 sm:p-5 space-y-4 animate-slide-up shadow-2xl min-h-[100dvh] sm:min-h-0 flex flex-col justify-center"
-      >
-        <div className="flex items-start gap-3">
-          <ShieldAlert
-            size={22}
-            className="text-error-text shrink-0 mt-0.5"
-          />
-          <div>
-            <h3 className="text-sm font-semibold text-text-primary">
-              Delete Database
-            </h3>
-            <p className="text-xs text-text-muted mt-1">
-              This action is{" "}
-              <strong className="text-error-text">irreversible</strong>. All
-              data and credentials will be permanently deleted.
-            </p>
-          </div>
-        </div>
-
-        <div>
-          <label
-            htmlFor="confirm-name"
-            className="block text-[11px] font-medium text-text-muted mb-1.5 uppercase tracking-wider"
-          >
-            Type{" "}
-            <code className="text-error-text bg-error-subtle px-1.5 py-0.5 rounded text-[11px]">
-              {databaseName}
-            </code>{" "}
-            to confirm
-          </label>
-          <input
-            id="confirm-name"
-            type="text"
-            autoComplete="off"
-            value={typed}
-            onChange={(e) => setTyped(e.target.value)}
-            disabled={loading}
-            className={cn(
-              "w-full rounded-lg bg-surface-2 border px-3 py-2 text-sm text-text-primary placeholder:text-text-disabled",
-              "focus:outline-none focus:ring-1 transition-colors",
-              match
-                ? "border-success focus:ring-success"
-                : "border-error-subtle focus:ring-error",
-            )}
-            placeholder={databaseName}
-          />
-        </div>
-
-        <div className="flex gap-2.5 pt-1">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={loading}
-            className="flex-1 rounded-lg border border-border-subtle px-3 py-2.5 text-xs font-medium text-text-secondary hover:bg-surface-2 transition-colors disabled:opacity-50 min-h-[44px]"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={!match || loading}
-            className={cn(
-              "flex-1 rounded-lg px-3 py-2.5 text-xs font-semibold text-white transition-colors min-h-[44px]",
-              match && !loading
-                ? "bg-error hover:bg-error/90"
-                : "bg-error/50 cursor-not-allowed",
-              "disabled:opacity-50",
-            )}
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-1.5">
-                <Loader2 size={14} className="animate-spin" /> Deleting…
-              </span>
-            ) : (
-              "Delete Database"
-            )}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 
 function DetailSkeleton() {
@@ -386,21 +191,20 @@ function DetailSkeleton() {
     <div className="flex-1 overflow-auto">
       <div className="max-w-3xl mx-auto px-6 py-6 space-y-4 animate-fade-in">
         <div className="flex items-center gap-3">
-          <div className="skeleton h-7 w-7 rounded-lg" />
-          <div className="skeleton h-6 w-40 rounded" />
-          <div className="skeleton h-5 w-16 rounded-full" />
+          <Skeleton className="h-7 w-7 rounded-lg" />
+          <Skeleton className="h-6 w-40 rounded" />
+          <Skeleton className="h-5 w-16 rounded-full" />
         </div>
         {[1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className="rounded-xl border border-border-subtle bg-surface-1 p-5 space-y-3"
-          >
-            <div className="skeleton h-4 w-28 rounded" />
-            <div className="space-y-2">
-              <div className="skeleton h-3 w-full rounded" />
-              <div className="skeleton h-3 w-3/4 rounded" />
-            </div>
-          </div>
+          <Card key={i}>
+            <CardContent className="space-y-3 pt-5">
+              <Skeleton className="h-4 w-28 rounded" />
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-full rounded" />
+                <Skeleton className="h-3 w-3/4 rounded" />
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>
@@ -436,13 +240,13 @@ export default function DatabaseDetailPage() {
   // ── Error ────────────────────────────────────────────────────────────────────
   if (error) {
     return (
-      <div className="flex-1 flex items-center justify-center p-4 bg-bg-primary">
-        <div className="max-w-sm w-full rounded-xl border border-error-subtle bg-surface-1 p-6 text-center space-y-3 animate-fade-in">
+      <div className="flex-1 flex items-center justify-center p-4">
+        <Card className="max-w-sm w-full text-center space-y-3 p-6">
           <WifiOff size={32} className="text-error-text mx-auto" />
           <div>
-            <h2 className="text-sm font-semibold text-text-primary">
+            <CardTitle className="text-sm font-semibold">
               Something went wrong
-            </h2>
+            </CardTitle>
             <p className="text-xs text-text-muted mt-1">
               {error instanceof Error
                 ? error.message
@@ -450,22 +254,23 @@ export default function DatabaseDetailPage() {
             </p>
           </div>
           <div className="flex gap-2.5 justify-center pt-1">
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => window.location.reload()}
-              className="rounded-lg bg-accent-subtle px-3.5 py-2 text-xs font-medium text-accent-text hover:bg-accent/20 transition-colors"
             >
               Retry
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => router.push("/dashboard")}
-              className="rounded-lg border border-border-subtle px-3.5 py-2 text-xs font-medium text-text-secondary hover:bg-surface-2 transition-colors"
             >
-              <ArrowLeft size={13} className="inline mr-1" /> Dashboard
-            </button>
+              <ArrowLeft size={13} />
+              Dashboard
+            </Button>
           </div>
-        </div>
+        </Card>
       </div>
     );
   }
@@ -473,26 +278,26 @@ export default function DatabaseDetailPage() {
   // ── Not found ────────────────────────────────────────────────────────────────
   if (!data?.database) {
     return (
-      <div className="flex-1 flex items-center justify-center p-4 bg-bg-primary">
-        <div className="max-w-sm w-full rounded-xl border border-border-subtle bg-surface-1 p-6 text-center space-y-3 animate-fade-in">
+      <div className="flex-1 flex items-center justify-center p-4">
+        <Card className="max-w-sm w-full text-center space-y-3 p-6">
           <Database size={36} className="text-text-disabled mx-auto" />
           <div>
-            <h2 className="text-sm font-semibold text-text-primary">
+            <CardTitle className="text-sm font-semibold">
               Database Not Found
-            </h2>
+            </CardTitle>
             <p className="text-xs text-text-muted mt-1">
               The database you&apos;re looking for doesn&apos;t exist or you
               don&apos;t have access.
             </p>
           </div>
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => router.push("/dashboard")}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-accent-subtle px-3.5 py-2 text-xs font-medium text-accent-text hover:bg-accent/20 transition-colors"
           >
             <ArrowLeft size={14} /> Back to Dashboard
-          </button>
-        </div>
+          </Button>
+        </Card>
       </div>
     );
   }
@@ -543,38 +348,30 @@ export default function DatabaseDetailPage() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="flex-1 overflow-auto bg-bg-primary">
+    <div className="flex-1 overflow-auto">
       <div className="max-w-3xl mx-auto px-6 py-6 space-y-4 animate-fade-in">
         {/* Header */}
         <div className="flex flex-wrap items-center gap-2.5">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => router.push("/dashboard")}
-            className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors"
             aria-label="Back to dashboard"
           >
             <ArrowLeft size={18} />
-          </button>
+          </Button>
           <h1 className="text-xl font-bold text-text-primary truncate">
             {db.name}
           </h1>
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider",
-              badge.className,
-            )}
-          >
+          <Badge variant={badge.variant} className="uppercase tracking-wider text-[11px]">
             {badge.label === "Ready" && (
-              <span className="w-1.5 h-1.5 rounded-full bg-success" />
-            )}
-            {badge.label === "Creating" && (
-              <Loader2 size={11} className="animate-spin" />
+              <span className="w-1.5 h-1.5 rounded-full bg-success mr-1" />
             )}
             {badge.label}
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-accent-subtle text-accent-text px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider">
+          </Badge>
+          <Badge variant="secondary" className="uppercase tracking-wider text-[11px]">
             {db.engine}
-          </span>
+          </Badge>
         </div>
 
         <p className="text-xs text-text-muted -mt-3">
@@ -582,17 +379,14 @@ export default function DatabaseDetailPage() {
         </p>
 
         {/* Connection Info */}
-        <section className="rounded-xl border border-border-subtle bg-surface-1 overflow-hidden">
-          <div className="border-b border-border-subtle px-5 py-3.5">
+        <Card className="overflow-hidden">
+          <CardHeader className="border-b border-border-subtle px-5 py-3.5">
             <div className="flex items-center gap-2">
               <Database size={16} className="text-accent-text" />
-              <h2 className="text-sm font-semibold text-text-primary">
-                Connection Info
-              </h2>
+              <CardTitle className="text-sm font-semibold">Connection Info</CardTitle>
             </div>
-          </div>
-
-          <div className="p-5 space-y-1">
+          </CardHeader>
+          <CardContent className="p-5 space-y-1">
             <FieldRow
               label="Host"
               value={db.host ?? "—"}
@@ -642,16 +436,16 @@ export default function DatabaseDetailPage() {
                         ? rotatedCreds.password
                         : "••••••••••••••••••••"}
                     </span>
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
                       onClick={() => setShowPassword((v) => !v)}
-                      className="ml-1.5 shrink-0 p-1 rounded hover:bg-accent-subtle transition-colors text-text-muted hover:text-text-primary"
                       aria-label={
                         showPassword ? "Hide password" : "Show password"
                       }
                     >
                       {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
-                    </button>
+                    </Button>
                     <CopyButton
                       value={rotatedCreds.password}
                       label="Password"
@@ -713,21 +507,18 @@ export default function DatabaseDetailPage() {
                 later.
               </p>
             </div>
-          </div>
-        </section>
+          </CardContent>
+        </Card>
 
         {/* Usage Stats */}
-        <section className="rounded-xl border border-border-subtle bg-surface-1 overflow-hidden">
-          <div className="border-b border-border-subtle px-5 py-3.5">
+        <Card className="overflow-hidden">
+          <CardHeader className="border-b border-border-subtle px-5 py-3.5">
             <div className="flex items-center gap-2">
               <Activity size={16} className="text-text-muted" />
-              <h2 className="text-sm font-semibold text-text-primary">
-                Usage Stats
-              </h2>
+              <CardTitle className="text-sm font-semibold">Usage Stats</CardTitle>
             </div>
-          </div>
-
-          <div className="grid gap-3 p-5 sm:grid-cols-3">
+          </CardHeader>
+          <CardContent className="grid gap-3 p-5 sm:grid-cols-3">
             <div className="p-3.5 rounded-lg bg-surface-2 border border-border-subtle space-y-1.5">
               <div className="flex items-center gap-1.5">
                 <HardDrive size={13} className="text-accent-text" />
@@ -741,7 +532,7 @@ export default function DatabaseDetailPage() {
                   / {stats.storageLimitMB} MB
                 </span>
               </p>
-              <ProgressBar value={stats.storageUsedMB} max={stats.storageLimitMB} />
+              <Progress value={Math.round((stats.storageUsedMB / stats.storageLimitMB) * 100)} className="h-1.5" />
             </div>
 
             <div className="p-3.5 rounded-lg bg-surface-2 border border-border-subtle space-y-1.5">
@@ -757,10 +548,7 @@ export default function DatabaseDetailPage() {
                   / {stats.maxConnections} active
                 </span>
               </p>
-              <ProgressBar
-                value={stats.activeConnections}
-                max={stats.maxConnections}
-              />
+              <Progress value={Math.round((stats.activeConnections / stats.maxConnections) * 100)} className="h-1.5" />
             </div>
 
             <div className="p-3.5 rounded-lg bg-surface-2 border border-border-subtle space-y-1.5">
@@ -776,26 +564,20 @@ export default function DatabaseDetailPage() {
                   / hour
                 </span>
               </p>
-              <ProgressBar
-                value={stats.queriesLastHour}
-                max={stats.queriesLimit}
-              />
+              <Progress value={Math.round((stats.queriesLastHour / stats.queriesLimit) * 100)} className="h-1.5" />
             </div>
-          </div>
-        </section>
+          </CardContent>
+        </Card>
 
         {/* Backups */}
-        <section className="rounded-xl border border-border-subtle bg-surface-1 overflow-hidden">
-          <div className="border-b border-border-subtle px-5 py-3.5">
+        <Card className="overflow-hidden">
+          <CardHeader className="border-b border-border-subtle px-5 py-3.5">
             <div className="flex items-center gap-2">
               <Shield size={16} className="text-success" />
-              <h2 className="text-sm font-semibold text-text-primary">
-                Backups
-              </h2>
+              <CardTitle className="text-sm font-semibold">Backups</CardTitle>
             </div>
-          </div>
-
-          <div className="grid gap-3 p-5 sm:grid-cols-2">
+          </CardHeader>
+          <CardContent className="grid gap-3 p-5 sm:grid-cols-2">
             <div className="p-3.5 rounded-lg bg-surface-2 border border-border-subtle space-y-1">
               <span className="text-xs font-medium text-text-muted uppercase tracking-wider">
                 Last Backup
@@ -816,8 +598,7 @@ export default function DatabaseDetailPage() {
                 <span className="text-text-muted">Not scheduled</span>
               </p>
             </div>
-          </div>
-
+          </CardContent>
           <div className="px-5 pb-4">
             <p className="text-xs text-text-muted">
               Automated backups are coming soon. See{" "}
@@ -832,32 +613,27 @@ export default function DatabaseDetailPage() {
               for manual backup procedures.
             </p>
           </div>
-        </section>
+        </Card>
 
         {/* IP Whitelist */}
         <IPWhitelist databaseId={db.databaseId} />
 
         {/* Danger Zone */}
-        <section className="rounded-xl border border-error-subtle bg-surface-1 overflow-hidden">
-          <div className="border-b border-border-subtle px-5 py-3.5">
+        <Card className="overflow-hidden border-destructive/30">
+          <CardHeader className="border-b border-border-subtle px-5 py-3.5">
             <div className="flex items-center gap-2">
-              <AlertTriangle size={16} className="text-error-text" />
-              <h2 className="text-sm font-semibold text-error-text">
+              <AlertTriangle size={16} className="text-destructive" />
+              <CardTitle className="text-sm font-semibold text-destructive">
                 Danger Zone
-              </h2>
+              </CardTitle>
             </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-2.5 p-5">
-            <button
-              type="button"
+          </CardHeader>
+          <CardContent className="flex flex-col sm:flex-row gap-2.5 p-5">
+            <Button
+              variant="secondary"
               onClick={() => setShowRotateConfirm(true)}
               disabled={rotateMutation.isPending}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-1.5 rounded-lg border px-3.5 py-2.5 text-xs font-medium transition-colors min-h-[44px]",
-                "border-warning-subtle text-warning-text bg-warning-subtle/50 hover:bg-warning-subtle",
-                "disabled:opacity-50 disabled:cursor-not-allowed",
-              )}
+              className="flex-1 border-warning-subtle text-warning-text bg-warning-subtle/50 hover:bg-warning-subtle"
             >
               {rotateMutation.isPending ? (
                 <>
@@ -868,17 +644,13 @@ export default function DatabaseDetailPage() {
                   <RefreshCw size={14} /> Rotate Credentials
                 </>
               )}
-            </button>
+            </Button>
 
-            <button
-              type="button"
+            <Button
+              variant="destructive"
               onClick={() => setShowDeleteConfirm(true)}
               disabled={deleteMutation.isPending}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-1.5 rounded-lg border px-3.5 py-2.5 text-xs font-medium transition-colors min-h-[44px]",
-                "border-error-subtle text-error-text bg-error-subtle/50 hover:bg-error-subtle",
-                "disabled:opacity-50 disabled:cursor-not-allowed",
-              )}
+              className="flex-1"
             >
               {deleteMutation.isPending ? (
                 <>
@@ -889,22 +661,22 @@ export default function DatabaseDetailPage() {
                   <Trash2 size={14} /> Delete Database
                 </>
               )}
-            </button>
-          </div>
-        </section>
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Rotated Credentials Banner */}
         {rotatedCreds && (
-          <section className="rounded-xl border border-success-subtle bg-surface-1 animate-slide-up overflow-hidden">
-            <div className="border-b border-border-subtle px-5 py-3.5">
+          <Card className="overflow-hidden animate-slide-up border-success">
+            <CardHeader className="border-b border-border-subtle px-5 py-3.5">
               <div className="flex items-center gap-2">
                 <Shield size={16} className="text-success" />
-                <h2 className="text-sm font-semibold text-success-text">
+                <CardTitle className="text-sm font-semibold text-success">
                   New Credentials
-                </h2>
+                </CardTitle>
               </div>
-            </div>
-            <div className="p-5 space-y-2">
+            </CardHeader>
+            <CardContent className="p-5 space-y-2">
               <p className="text-xs text-text-muted">
                 These credentials were just rotated. Save them now — they will
                 not be shown again.
@@ -928,16 +700,16 @@ export default function DatabaseDetailPage() {
                         ? rotatedCreds.password
                         : "••••••••••••••••••••"}
                     </span>
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
                       onClick={() => setShowPassword((v) => !v)}
-                      className="ml-1.5 shrink-0 p-1 rounded hover:bg-accent-subtle transition-colors text-text-muted hover:text-text-primary"
                       aria-label={
                         showPassword ? "Hide password" : "Show password"
                       }
                     >
                       {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
-                    </button>
+                    </Button>
                     <CopyButton
                       value={rotatedCreds.password}
                       label="Password"
@@ -962,18 +734,14 @@ export default function DatabaseDetailPage() {
                 copied={copied}
                 onCopy={copy}
               />
-            </div>
-          </section>
+            </CardContent>
+          </Card>
         )}
       </div>
 
       {/* Dialogs */}
-      <ConfirmDialog
+      <RotateConfirmDialog
         open={showRotateConfirm}
-        title="Rotate Credentials"
-        message="This will generate new credentials and invalidate the current ones. Any application using the old credentials will lose access. Continue?"
-        confirmLabel="Rotate"
-        variant="warning"
         onConfirm={handleRotate}
         onCancel={() => setShowRotateConfirm(false)}
       />
@@ -988,5 +756,138 @@ export default function DatabaseDetailPage() {
         }}
       />
     </div>
+  );
+}
+
+// ─── Dialogs ─────────────────────────────────────────────────────────────────
+
+function RotateConfirmDialog({
+  open,
+  onConfirm,
+  onCancel,
+}: {
+  open: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onCancel()}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Rotate Credentials</DialogTitle>
+          <DialogDescription>
+            This will generate new credentials and invalidate the current ones.
+            Any application using the old credentials will lose access. Continue?
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button variant="secondary" onClick={onConfirm}>
+            Rotate
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DeleteConfirmDialog({
+  open,
+  databaseName,
+  loading,
+  onConfirm,
+  onCancel,
+}: {
+  open: boolean;
+  databaseName: string;
+  loading: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const [typed, setTyped] = useState("");
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (typed === databaseName) onConfirm();
+  }
+
+  const match = typed === databaseName;
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onCancel()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <div className="flex items-start gap-3">
+            <ShieldAlert
+              size={22}
+              className="text-destructive shrink-0 mt-0.5"
+            />
+            <div>
+              <DialogTitle>Delete Database</DialogTitle>
+              <DialogDescription className="mt-1">
+                This action is{" "}
+                <strong className="text-destructive">irreversible</strong>. All
+                data and credentials will be permanently deleted.
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label
+              htmlFor="confirm-name"
+              className="block text-[11px] font-medium text-text-muted mb-1.5 uppercase tracking-wider"
+            >
+              Type{" "}
+              <code className="text-destructive bg-destructive/10 px-1.5 py-0.5 rounded text-[11px]">
+                {databaseName}
+              </code>{" "}
+              to confirm
+            </label>
+            <Input
+              id="confirm-name"
+              type="text"
+              autoComplete="off"
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+              disabled={loading}
+              className={cn(
+                match
+                  ? "border-success focus:ring-success"
+                  : "border-destructive focus:ring-destructive",
+              )}
+              placeholder={databaseName}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="destructive"
+              disabled={!match || loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" /> Deleting…
+                </>
+              ) : (
+                "Delete Database"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

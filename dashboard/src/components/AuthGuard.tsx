@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
-import { Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -21,7 +21,7 @@ export default function AuthGuard({
   const { isAuthenticated, isLoading } = useAuth();
 
   const isPublic = publicPaths.some(
-    (p) => pathname === p || pathname.startsWith(p + "/"),
+    (p) => pathname === p || pathname.startsWith(p + "/")
   );
 
   useEffect(() => {
@@ -34,18 +34,16 @@ export default function AuthGuard({
   // Public pages render immediately
   if (isPublic) return <>{children}</>;
 
-  // Show loading spinner while Better Auth resolves the session
+  // Show loading skeleton while Better Auth resolves the session
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg-primary">
-        <div className="text-center space-y-3 animate-fade-in">
-          <Loader2
-            size={24}
-            className="animate-spin text-accent mx-auto"
-          />
-          <p className="text-sm text-text-muted font-medium">
-            Checking authentication…
-          </p>
+        <div className="text-center space-y-4 animate-fade-in">
+          <Skeleton className="h-8 w-8 rounded-full mx-auto" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-48 mx-auto" />
+            <Skeleton className="h-3 w-32 mx-auto" />
+          </div>
         </div>
       </div>
     );

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export default function Home() {
   return (
@@ -17,29 +19,35 @@ export default function Home() {
         </div>
 
         {/* Status indicator */}
-        <div className="inline-flex items-center gap-2 rounded-full border border-border-subtle bg-surface-1 px-3 py-1.5">
+        <Badge
+          variant="outline"
+          className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 h-auto"
+        >
           <span className="relative flex h-1.5 w-1.5">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-success" />
           </span>
           <span className="text-xs text-text-muted">Dashboard is live</span>
-        </div>
+        </Badge>
 
         {/* CTAs */}
         <div className="flex items-center justify-center gap-3 pt-2">
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-white hover:bg-accent-hover active:bg-accent-pressed transition-colors min-h-[44px]"
+          <Button
+            render={<Link href="/login" />}
+            size="lg"
+            className="min-h-[44px]"
           >
             Sign in
             <ArrowRight size={15} />
-          </Link>
-          <Link
-            href="/signup"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border-default bg-surface-1 px-5 py-3 text-sm font-medium text-text-secondary hover:text-text-primary hover:border-border-hover transition-colors min-h-[44px]"
+          </Button>
+          <Button
+            variant="outline"
+            render={<Link href="/signup" />}
+            size="lg"
+            className="min-h-[44px] text-text-secondary hover:text-text-primary"
           >
             Create account
-          </Link>
+          </Button>
         </div>
 
         {/* Footer */}

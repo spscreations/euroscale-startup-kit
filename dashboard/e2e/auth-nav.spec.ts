@@ -9,7 +9,7 @@ const TEST_PASSWORD = 'Testb2c!';
  * Collects JS errors and console errors along the way.
  */
 async function login(
-  page: ReturnType<typeof test['info'] extends () => infer I ? never : never>,
+  page: import('@playwright/test').Page,
   jsErrors: string[],
   consoleErrors: string[],
 ) {
@@ -36,6 +36,7 @@ async function login(
   await page.waitForTimeout(1000);
 
   // Fill credentials
+  // shadcn/ui inputs use data-slot="input" attribute
   await page.locator('input[type="email"]').fill(TEST_EMAIL);
   await page.locator('input[type="password"]').fill(TEST_PASSWORD);
 
@@ -135,6 +136,7 @@ test.describe('Auth & Navigation Flows', () => {
       console.log(`[Logout] localStorage keys before: ${keysBefore.join(', ')}`);
 
       // Find and click "Sign out" — try multiple selectors
+      // shadcn/ui sidebar now renders nav items as <button> elements with data-slot="button"
       const signOutLink = page.getByRole('link', { name: /sign out/i });
       const signOutButton = page.getByRole('button', { name: /sign out/i });
       const signOutText = page.getByText(/sign out/i).first();
@@ -200,8 +202,10 @@ test.describe('Auth & Navigation Flows', () => {
       await expect(page.getByText(/databases/i).first()).toBeVisible({ timeout: 10_000 });
 
       // Helper: find and click a nav item by text, then verify URL
+      // shadcn/ui sidebar now renders nav items as <button> elements (data-slot="button"),
+      // so the selector includes both <a> and <button> elements inside nav/aside
       async function clickNav(navText: string | RegExp, expectedUrlPattern: RegExp): Promise<boolean> {
-        const navItem = page.locator('nav a, nav button, aside a, aside button, [role="navigation"] a').filter({ hasText: navText }).first();
+        const navItem = page.locator('nav a, nav button, aside a, aside button, [role="navigation"] a, [role="navigation"] button').filter({ hasText: navText }).first();
 
         if (!(await navItem.isVisible({ timeout: 3000 }).catch(() => false))) {
           console.warn(`[Nav] "${navText}" not found in nav`);
@@ -240,30 +244,55 @@ test.describe('Auth & Navigation Flows', () => {
       }
     });
 
-    test('New database nav item should show create dialog', async ({ page }) => {
+    test('"New database" nav item navigates to /dashboard/create', async ({ page }) => {
       const jsErrors: string[] = [];
       page.on('pageerror', (err) => jsErrors.push(err.message));
 
       await login(page, jsErrors, []);
       await expect(page.getByText(/databases/i).first()).toBeVisible({ timeout: 10_000 });
 
-      // Find "New database" or "Create" or "+" button
+      // Find "New database" or "Create" or "+" button in nav
+      // shadcn/ui sidebar renders these as <button> elements (data-slot="button")
       const newDb = page.locator('nav a, nav button, aside a, aside button, button').filter({ hasText: /new database|create database|\+ new/i }).first();
 
       if (await newDb.isVisible({ timeout: 3000 }).catch(() => false)) {
         await newDb.click();
         await page.waitForTimeout(2000);
 
-        // Check for dialog/modal content
-        const dialogVisible = await page.locator('[role="dialog"], .modal, [role="alertdialog"]').isVisible({ timeout: 3000 }).catch(() => false);
-        const hasCreateText = await page.getByText(/create|new database|database name/i).first().isVisible({ timeout: 2000 }).catch(() => false);
+        const url = page.url();
+        console.log(`[New database] URL after click: ${url}`);
 
-        console.log(`[New database] Dialog visible: ${dialogVisible}, Create text visible: ${hasCreateText}`);
+        // shadcn/ui rewrite: "New database" nav item now navigates to /dashboard/create page
+        // instead of opening an inline dialog
+        const navigatedToCreate = url.includes('/dashboard/create') || url.includes('/create');
+        console.log(`[New database] Navigated to /create: ${navigatedToCreate ? '✅' : '❌'}`);
 
-        // Close dialog if open (Escape)
+        // Also check for shadcn Dialog if it opens as a dialog instead
+        // shadcn/ui Dialog uses data-slot="dialog-content" for the actual popup
+        const dialogVisible = await page.locator('[data-slot="dialog-content"], [role="dialog"], [role="alertdialog"]').isVisible({ timeout: 3000 }).catch(() => false);
+
         if (dialogVisible) {
-          await page.keyboard.press('Escape');
+          console.log('[New database] shadcn Dialog opened');
+
+          // Verify dialog heading (data-slot="dialog-title")
+          const dialogTitle = page.locator('[data-slot="dialog-title"]');
+          const titleVisible = await dialogTitle.isVisible({ timeout: 2000 }).catch(() => false);
+          console.log(`[New database] Dialog title visible: ${titleVisible}`);
+
+          // Close dialog via close button (data-slot="dialog-close") or Escape
+          const closeBtn = page.locator('[data-slot="dialog-close"], button[aria-label="Close dialog"]');
+          if (await closeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+            await closeBtn.click();
+          } else {
+            await page.keyboard.press('Escape');
+          }
           await page.waitForTimeout(1000);
+        }
+
+        if (!navigatedToCreate && !dialogVisible) {
+          // Check for any inline create form as fallback
+          const hasCreateText = await page.getByText(/create|new database|database name/i).first().isVisible({ timeout: 2000 }).catch(() => false);
+          console.log(`[New database] Create text visible (fallback): ${hasCreateText}`);
         }
       } else {
         console.warn('[New database] "New database" button not found in nav');
@@ -289,13 +318,15 @@ test.describe('Auth & Navigation Flows', () => {
       // Verify "Databases" heading
       await expect(page.getByText(/databases/i).first()).toBeVisible({ timeout: 10_000 });
 
-      // Look for stats cards — common CSS classes or structures
-      const statsCards = page.locator('.card, [class*="stat"], [class*="tile"], [class*="metric"], .bg-white, .rounded-xl, .shadow');
+      // Look for stats cards — shadcn/ui Card components use data-slot="card"
+      // Also match common class patterns for fallback robustness
+      const statsCards = page.locator('[data-slot="card"], .card, [class*="stat"], [class*="tile"], [class*="metric"], .bg-white, .rounded-xl, .shadow');
       const cardCount = await statsCards.count();
       console.log(`[Dashboard] Stats card candidates: ${cardCount}`);
 
       // Look for usage bars / progress bars
-      const usageBars = page.locator('[role="progressbar"], .progress, [class*="usage"], [class*="bar"], .h-2, .h-3, .h-4');
+      // shadcn/ui Progress component uses role="progressbar" with data-slot="progress"
+      const usageBars = page.locator('[role="progressbar"], [data-slot="progress"], .progress, [class*="usage"], [class*="bar"], .h-2, .h-3, .h-4');
       const barCount = await usageBars.count();
       console.log(`[Dashboard] Usage bar candidates: ${barCount}`);
 
