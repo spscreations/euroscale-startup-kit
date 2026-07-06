@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+      {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"traefik.ingress.kubernetes.io/router.tls":"true","traefik.ingress.kubernetes.io/router.tls.certresolver":"letsencrypt"},"name":"euroscale-dashboard","namespace":"euroscale"},"spec":{"ingressClassName":"traefik","rules":[{"host":"euroscale.app","http":{"paths":[{"backend":{"service":{"name":"euroscale-dashboard","port":{"number":3000}}},"path":"/","pathType":"Prefix"}]}}]}}
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
+  name: euroscale-dashboard
+  namespace: euroscale
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: euroscale.app
+    http:
+      paths:
+      - backend:
+          service:
+            name: euroscale-dashboard
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - euroscale.app
+  loadBalancer:
+    ingress:
+    - ip: 116.202.105.201
+    - ip: 168.119.152.224
+    - ip: 91.99.187.108
