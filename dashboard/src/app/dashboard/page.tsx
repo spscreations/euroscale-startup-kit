@@ -6,7 +6,6 @@ import {
   Plus,
   RefreshCw,
   Loader2,
-  AlertTriangle,
   Database,
   X,
   Server,
@@ -21,8 +20,25 @@ import DatabaseCard from "@/components/DatabaseCard";
 import { useDatabases } from "@/hooks/useDatabases";
 import { useDeleteDatabase } from "@/hooks/useDeleteDatabase";
 import { useCreateDatabase } from "@/hooks/useCreateDatabase";
+import { useUsage } from "@/hooks/useUsage";
 import { useAuth } from "@/lib/auth";
 import toast from "react-hot-toast";
+
+/**
+ * Format raw storage bytes into a human-readable string.
+ * Returns "—" for zero/empty, kB/MB/GB as appropriate.
+ */
+function formatStorage(bytes: bigint): string {
+  const n = Number(bytes);
+  if (n <= 0) return "—";
+  if (n < 1024) return `${n} B`;
+  const kb = n / 1024;
+  if (kb < 1024) return `${kb.toFixed(1)} kB`;
+  const mb = kb / 1024;
+  if (mb < 1024) return `${mb.toFixed(1)} MB`;
+  const gb = mb / 1024;
+  return `${gb.toFixed(1)} GB`;
+}
 
 export default function DashboardPage() {
   return (
@@ -36,12 +52,19 @@ function DashboardContent() {
   const router = useRouter();
   const { session } = useAuth();
   const { data, isLoading, isError, error, refetch } = useDatabases();
+  const { data: usageData } = useUsage();
   const deleteMutation = useDeleteDatabase();
   const createMutation = useCreateDatabase();
 
   const databases = data?.databases ?? [];
   const totalDatabases = data?.total ?? databases.length;
   const readyCount = databases.filter((db) => db.status === "ready").length;
+
+  // REAL data from backend usage tracking
+  const usage = usageData?.usage;
+  const dbCount = usage?.databaseCount ?? totalDatabases;
+  const storageBytes = usage?.storageBytes ?? 0n;
+  const storageUsed = formatStorage(storageBytes);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -163,11 +186,9 @@ function DashboardContent() {
 
         {/* Stats */}
         <StatsCards
-          totalDatabases={totalDatabases}
+          totalDatabases={dbCount}
           activeConnections={readyCount}
-          storageUsed={
-            databases.length > 0 ? `${databases.length * 256} MB` : "—"
-          }
+          storageUsed={storageUsed}
           isLoading={isLoading}
         />
 
