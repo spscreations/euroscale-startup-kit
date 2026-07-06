@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Crown,
   ArrowUpRight,
@@ -17,7 +17,6 @@ import { useResizeStorage } from "@/hooks/useResizeStorage";
 import { useAuth } from "@/lib/auth";
 import UsageBar from "./UsageBar";
 import { useDatabases } from "@/hooks/useDatabases";
-import { useCreatePayment } from "@/hooks/useCreatePayment";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,8 +46,8 @@ export default function TierCard() {
   const { session } = useAuth();
   const { data: dbs } = useDatabases();
   const resizeMutation = useResizeStorage();
-  const { createPayment, isLoading: paymentLoading } = useCreatePayment();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Add-on state
   const [storageGB, setStorageGB] = useState<number>(10);
@@ -214,28 +213,11 @@ export default function TierCard() {
         ) : showUpgrade ? (
           <Button
             size="sm"
-            onClick={async () => {
-              try {
-                const result = await createPayment(upgradeTarget[tier] || tier);
-                window.location.href = result.checkout_url;
-              } catch (err: any) {
-                toast.error(err.message ?? "Failed to start payment");
-              }
-            }}
-            disabled={paymentLoading}
+            onClick={() => router.push("/dashboard/billing")}
             className="text-white"
           >
-            {paymentLoading ? (
-              <>
-                <Loader2 size={12} className="animate-spin" />
-                Loading…
-              </>
-            ) : (
-              <>
-                Upgrade
-                <ArrowUpRight size={12} />
-              </>
-            )}
+            Upgrade
+            <ArrowUpRight size={12} />
           </Button>
         ) : (
           <span className="text-xs text-muted-foreground">Current plan</span>

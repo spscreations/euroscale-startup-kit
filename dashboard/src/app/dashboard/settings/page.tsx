@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   User,
   Bell,
@@ -171,6 +172,7 @@ function deriveBPlan(
 }
 
 export default function SettingsPage() {
+  const router = useRouter();
   const { session } = useAuth();
   const { data: usageData, isLoading: usageLoading } = useUsage();
   const [editing, setEditing] = useState(false);
@@ -400,7 +402,7 @@ export default function SettingsPage() {
                   <span className="text-xs">{plan.period}</span>
                 </p>
               </div>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => router.push("/dashboard/billing")}>
                 Change Plan
                 <ChevronRight size={13} />
               </Button>
