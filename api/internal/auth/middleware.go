@@ -210,6 +210,22 @@ func JWTUnaryInterceptor(jwtSecret string) grpc.UnaryServerInterceptor {
 			}
 		}
 
+		// Backward compatibility: accept x-api-key header matching jwtSecret.
+		// When using x-api-key, the caller must also provide x-user-id.
+		if apiKeyVals := md.Get("x-api-key"); len(apiKeyVals) > 0 {
+			if apiKeyVals[0] == jwtSecret {
+				// Extract user ID from x-user-id header (fallback to empty string).
+				userID := ""
+				if uidVals := md.Get("x-user-id"); len(uidVals) > 0 {
+					userID = uidVals[0]
+				}
+				ctx = SetUserID(ctx, userID)
+				ctx = SetUserRole(ctx, "user")
+				return handler(ctx, req)
+			}
+			return nil, status.Error(codes.Unauthenticated, "invalid API key")
+		}
+
 		return nil, status.Error(codes.Unauthenticated, "missing or invalid Authorization header")
 	}
 }

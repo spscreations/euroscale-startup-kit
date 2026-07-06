@@ -17,8 +17,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pat
   const headers: Record<string, string> = {};
   const ct = req.headers.get("content-type");
   if (ct) headers["Content-Type"] = ct;
-  headers["Authorization"] = `Bearer ${API_KEY}`;
-  if (userId) headers["X-User-ID"] = userId;
+  headers["x-api-key"] = API_KEY;
+  if (userId) headers["x-user-id"] = userId;
 
   try {
     const response = await fetch(`${API_BASE}/${servicePath}`, { method: "POST", headers, body: await req.arrayBuffer() });
