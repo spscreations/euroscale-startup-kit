@@ -38,6 +38,19 @@ spec:
               value: "https://api.euroscale.app"
             - name: HOST
               value: "0.0.0.0"
+            - name: AUTH_DB_HOST
+              value: "db.euroscale.app"
+            - name: AUTH_DB_PORT
+              value: "3306"
+            - name: AUTH_DB_USER
+              value: "io8vw118xqyz"
+            - name: AUTH_DB_NAME
+              value: "euroscale_auth"
+            - name: AUTH_DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: db-56ef192d-1af1-47b2-a8e5-d47176eba77f-creds
+                  key: password
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
