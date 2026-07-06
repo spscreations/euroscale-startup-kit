@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/v1/:path*",
-        destination: "https://api.euroscale.app/api/v1/:path*",
+        destination: "/api/rest/:path*",
       },
     ];
   },
