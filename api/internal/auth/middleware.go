@@ -178,10 +178,6 @@ func ValidateJWT(tokenString, jwtSecret string) (userID, email, role string, err
 // JWTUnaryInterceptor returns a gRPC unary server interceptor that validates
 // a JWT Bearer token from the "authorization" metadata header and injects
 // the user ID into the request context.
-//
-// Also supports "x-api-key" for backward compatibility — if the value matches
-// jwtSecret, the request is treated as an admin service-call with user_id from
-// the "x-user-id" metadata header.
 func JWTUnaryInterceptor(jwtSecret string) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
@@ -194,7 +190,7 @@ func JWTUnaryInterceptor(jwtSecret string) grpc.UnaryServerInterceptor {
 			return nil, status.Error(codes.Unauthenticated, "missing metadata")
 		}
 
-		// Try JWT Bearer token from Authorization header.
+		// Validate JWT Bearer token from Authorization header.
 		if authVals := md.Get("authorization"); len(authVals) > 0 {
 			for _, v := range authVals {
 				if len(v) > 7 && v[:7] == "Bearer " {
@@ -208,22 +204,6 @@ func JWTUnaryInterceptor(jwtSecret string) grpc.UnaryServerInterceptor {
 					return handler(ctx, req)
 				}
 			}
-		}
-
-		// Backward compatibility: accept x-api-key header matching jwtSecret.
-		// When using x-api-key, the caller must also provide x-user-id.
-		if apiKeyVals := md.Get("x-api-key"); len(apiKeyVals) > 0 {
-			if apiKeyVals[0] == jwtSecret {
-				// Extract user ID from x-user-id header (fallback to empty string).
-				userID := ""
-				if uidVals := md.Get("x-user-id"); len(uidVals) > 0 {
-					userID = uidVals[0]
-				}
-				ctx = SetUserID(ctx, userID)
-				ctx = SetUserRole(ctx, "user")
-				return handler(ctx, req)
-			}
-			return nil, status.Error(codes.Unauthenticated, "invalid API key")
 		}
 
 		return nil, status.Error(codes.Unauthenticated, "missing or invalid Authorization header")

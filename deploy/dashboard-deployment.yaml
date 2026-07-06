@@ -39,11 +39,6 @@ spec:
                   key: better_auth_secret
             - name: BETTER_AUTH_URL
               value: "https://euroscale.app"
-            - name: EUROSCALE_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: euroscale-api-key
-                  key: api_key
             - name: NEXT_PUBLIC_API_BASE_URL
               value: "https://api.euroscale.app"
             - name: NEXT_PUBLIC_RPC_BASE_URL

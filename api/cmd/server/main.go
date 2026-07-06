@@ -947,32 +947,22 @@ func (s *server) handleRemoveIP(w http.ResponseWriter, r *http.Request, userID s
 }
 
 // authenticateHTTPRequest extracts and validates a JWT Bearer token from the
-// Authorization header of an HTTP request. Falls back to x-api-key + x-user-id
-// headers (used by the dashboard BFF proxy). Returns the authenticated user ID.
+// Authorization header of an HTTP request. Returns the authenticated user ID.
 func (s *server) authenticateHTTPRequest(r *http.Request) (string, error) {
-	// Primary: JWT Bearer token from Authorization header.
+	// Validate JWT Bearer token from Authorization header.
 	authHeader := r.Header.Get("Authorization")
-	if authHeader != "" {
-		tokenStr, ok := strings.CutPrefix(authHeader, "Bearer ")
-		if ok {
-			userID, _, _, err := auth.ValidateJWT(tokenStr, s.jwtSecret)
-			if err == nil {
-				return userID, nil
-			}
-		}
+	if authHeader == "" {
+		return "", fmt.Errorf("missing Authorization header")
 	}
-
-	// Fallback: BFF proxy auth via x-api-key + x-user-id.
-	apiKey := r.Header.Get("x-api-key")
-	if apiKey != "" && apiKey == s.jwtSecret {
-		userID := r.Header.Get("x-user-id")
-		if userID != "" {
-			return userID, nil
-		}
-		return "", fmt.Errorf("missing x-user-id header")
+	tokenStr, ok := strings.CutPrefix(authHeader, "Bearer ")
+	if !ok {
+		return "", fmt.Errorf("invalid Authorization header format")
 	}
-
-	return "", fmt.Errorf("missing or invalid Authorization header")
+	userID, _, _, err := auth.ValidateJWT(tokenStr, s.jwtSecret)
+	if err != nil {
+		return "", fmt.Errorf("invalid token")
+	}
+	return userID, nil
 }
 
 // extractClientIP extracts the real client IP from request headers or RemoteAddr.
@@ -1126,14 +1116,18 @@ func main() {
 		vtctldAddr = "euroscale-vtctld:15999"
 	}
 
-	// JWT secret for token signing. Falls back to EUROSCALE_API_KEY for
-	// backward compatibility during migration.
-	jwtSecret := os.Getenv("JWT_SECRET")
+	// JWT secret for token signing and validation.
+	// BETTER_AUTH_SECRET is the shared secret with Better Auth (dashboard).
+	// This ensures JWTs issued by Better Auth can be validated by the API.
+	jwtSecret := os.Getenv("BETTER_AUTH_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = os.Getenv("JWT_SECRET")
+	}
 	if jwtSecret == "" {
 		jwtSecret = os.Getenv("EUROSCALE_API_KEY")
 	}
 	if jwtSecret == "" {
-		log.Fatal("JWT_SECRET (or EUROSCALE_API_KEY) environment variable is required")
+		log.Fatal("BETTER_AUTH_SECRET (or JWT_SECRET, or EUROSCALE_API_KEY) environment variable is required")
 	}
 
 	namespace := os.Getenv("K8S_NAMESPACE")
@@ -1437,34 +1431,26 @@ var rateLimiterStore = struct {
 
 // withHTTPAuth wraps an http.HandlerFunc with JWT Bearer token validation.
 // It extracts the token from the Authorization header and validates it before
-// calling the wrapped handler. Falls back to x-api-key + x-user-id headers
-// (used by the dashboard BFF proxy). If validation fails, it returns 401.
+// calling the wrapped handler. If validation fails, it returns 401.
 func withHTTPAuth(jwtSecret string, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Primary: JWT Bearer token from Authorization header.
+		// Validate JWT Bearer token from Authorization header.
 		authHeader := r.Header.Get("Authorization")
-		if authHeader != "" {
-			tokenStr, ok := strings.CutPrefix(authHeader, "Bearer ")
-			if ok {
-				_, _, _, err := auth.ValidateJWT(tokenStr, jwtSecret)
-				if err == nil {
-					next(w, r)
-					return
-				}
-			}
+		if authHeader == "" {
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"message": "missing Authorization header"})
+			return
 		}
-
-		// Fallback: BFF proxy auth via x-api-key + x-user-id.
-		apiKey := r.Header.Get("x-api-key")
-		if apiKey != "" && apiKey == jwtSecret {
-			// x-user-id is trusted when api key matches the shared secret.
-			if r.Header.Get("x-user-id") != "" {
-				next(w, r)
-				return
-			}
+		tokenStr, ok := strings.CutPrefix(authHeader, "Bearer ")
+		if !ok {
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"message": "invalid Authorization header format"})
+			return
 		}
-
-		writeJSON(w, http.StatusUnauthorized, map[string]string{"message": "missing or invalid Authorization header"})
+		_, _, _, err := auth.ValidateJWT(tokenStr, jwtSecret)
+		if err != nil {
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"message": "invalid token"})
+			return
+		}
+		next(w, r)
 	}
 }
 

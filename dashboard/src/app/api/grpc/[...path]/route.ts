@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@/lib/auth-server";
 
 const API_BASE = "https://api.euroscale.app";
-const API_KEY = process.env.EUROSCALE_API_KEY || "";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params;
@@ -17,7 +16,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pat
   const headers: Record<string, string> = {};
   const ct = req.headers.get("content-type");
   if (ct) headers["Content-Type"] = ct;
-  headers["x-api-key"] = API_KEY;
+
+  // Forward the original Authorization header (Better Auth session JWT).
+  const auth = req.headers.get("authorization");
+  if (auth) headers["Authorization"] = auth;
   if (userId) headers["x-user-id"] = userId;
 
   try {

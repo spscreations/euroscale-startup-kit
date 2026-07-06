@@ -248,11 +248,8 @@ func NewMetadataHandler(srv MetadataServiceServer, jwtSecret string, extraInterc
 	mux.Handle(PathListSchemaDatabases, connect.NewUnaryHandler(
 		PathListSchemaDatabases,
 		func(ctx context.Context, req *connect.Request[pb.ListSchemaDatabasesRequest]) (*connect.Response[pb.ListSchemaDatabasesResponse], error) {
-			// Inject the authenticated user ID from context into the request.
+			// Use the authenticated user ID from the JWT context.
 			userID := auth.GetUserID(ctx)
-			if userID == "" {
-				userID = req.Header().Get("X-User-ID")
-			}
 			if userID != "" {
 				req.Msg.UserId = userID
 			}
@@ -270,9 +267,6 @@ func NewMetadataHandler(srv MetadataServiceServer, jwtSecret string, extraInterc
 		PathListTables,
 		func(ctx context.Context, req *connect.Request[pb.ListTablesRequest]) (*connect.Response[pb.ListTablesResponse], error) {
 			userID := auth.GetUserID(ctx)
-			if userID == "" {
-				userID = req.Header().Get("X-User-ID")
-			}
 			if userID != "" {
 				req.Msg.UserId = userID
 			}
@@ -290,9 +284,6 @@ func NewMetadataHandler(srv MetadataServiceServer, jwtSecret string, extraInterc
 		PathListColumns,
 		func(ctx context.Context, req *connect.Request[pb.ListColumnsRequest]) (*connect.Response[pb.ListColumnsResponse], error) {
 			userID := auth.GetUserID(ctx)
-			if userID == "" {
-				userID = req.Header().Get("X-User-ID")
-			}
 			if userID != "" {
 				req.Msg.UserId = userID
 			}
@@ -310,9 +301,6 @@ func NewMetadataHandler(srv MetadataServiceServer, jwtSecret string, extraInterc
 		PathPreviewTable,
 		func(ctx context.Context, req *connect.Request[pb.PreviewTableRequest]) (*connect.Response[pb.PreviewTableResponse], error) {
 			userID := auth.GetUserID(ctx)
-			if userID == "" {
-				userID = req.Header().Get("X-User-ID")
-			}
 			if userID != "" {
 				req.Msg.UserId = userID
 			}
@@ -337,43 +325,32 @@ func NewMetadataHandler(srv MetadataServiceServer, jwtSecret string, extraInterc
 func jwtAuthInterceptor(jwtSecret string) connect.UnaryInterceptorFunc {
 	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-			// Try JWT Bearer token from Authorization header first.
+			// Validate JWT Bearer token from Authorization header.
 			authHeader := req.Header().Get("Authorization")
-			if authHeader != "" {
-				tokenStr, ok := strings.CutPrefix(authHeader, "Bearer ")
-				if ok {
-					userID, _, role, err := auth.ValidateJWT(tokenStr, jwtSecret)
-					if err != nil {
-						return nil, connect.NewError(
-							connect.CodeUnauthenticated,
-							fmt.Errorf("invalid token"),
-						)
-					}
-					ctx = auth.SetUserID(ctx, userID)
-					ctx = auth.SetUserRole(ctx, role)
-					req.Header().Set("X-User-ID", userID)
-					return next(ctx, req)
-				}
+			if authHeader == "" {
+				return nil, connect.NewError(
+					connect.CodeUnauthenticated,
+					fmt.Errorf("missing Authorization header"),
+				)
+			}
+			tokenStr, ok := strings.CutPrefix(authHeader, "Bearer ")
+			if !ok {
 				return nil, connect.NewError(
 					connect.CodeUnauthenticated,
 					fmt.Errorf("invalid Authorization header format"),
 				)
 			}
-
-			// Backward compatibility: accept x-api-key header matching jwtSecret.
-			// Used by the dashboard BFF proxy (no JWT, just shared API key).
-			if apiKey := req.Header().Get("x-api-key"); apiKey == jwtSecret {
-				userID := req.Header().Get("x-user-id")
-				ctx = auth.SetUserID(ctx, userID)
-				ctx = auth.SetUserRole(ctx, "user")
-				req.Header().Set("X-User-ID", userID)
-				return next(ctx, req)
+			userID, _, role, err := auth.ValidateJWT(tokenStr, jwtSecret)
+			if err != nil {
+				return nil, connect.NewError(
+					connect.CodeUnauthenticated,
+					fmt.Errorf("invalid token"),
+				)
 			}
-
-			return nil, connect.NewError(
-				connect.CodeUnauthenticated,
-				fmt.Errorf("missing or invalid Authorization/x-api-key header"),
-			)
+			ctx = auth.SetUserID(ctx, userID)
+			ctx = auth.SetUserRole(ctx, role)
+			req.Header().Set("X-User-ID", userID)
+			return next(ctx, req)
 		}
 	}
 	return connect.UnaryInterceptorFunc(interceptor)

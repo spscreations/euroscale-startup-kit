@@ -74,6 +74,18 @@ spec:
                   key: api_host
                   optional: true
             # ── From Secret ────────────────────────────────────────────
+            - name: BETTER_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: euroscale-auth-secret
+                  key: better_auth_secret
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: euroscale-auth-secret
+                  key: better_auth_secret
+            # EUROSCALE_API_KEY: kept for backward compatibility.
+            # Not required if BETTER_AUTH_SECRET is set.
             - name: EUROSCALE_API_KEY
               valueFrom:
                 secretKeyRef:
