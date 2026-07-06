@@ -308,39 +308,43 @@ func NewMetadataHandler(srv MetadataServiceServer, jwtSecret string, extraInterc
 func jwtAuthInterceptor(jwtSecret string) connect.UnaryInterceptorFunc {
 	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+			// Try JWT Bearer token from Authorization header first.
 			authHeader := req.Header().Get("Authorization")
-			if authHeader == "" {
-				return nil, connect.NewError(
-					connect.CodeUnauthenticated,
-					fmt.Errorf("missing Authorization header"),
-				)
-			}
-
-			tokenStr, ok := strings.CutPrefix(authHeader, "Bearer ")
-			if !ok {
+			if authHeader != "" {
+				tokenStr, ok := strings.CutPrefix(authHeader, "Bearer ")
+				if ok {
+					userID, _, role, err := auth.ValidateJWT(tokenStr, jwtSecret)
+					if err != nil {
+						return nil, connect.NewError(
+							connect.CodeUnauthenticated,
+							fmt.Errorf("invalid token"),
+						)
+					}
+					ctx = auth.SetUserID(ctx, userID)
+					ctx = auth.SetUserRole(ctx, role)
+					req.Header().Set("X-User-ID", userID)
+					return next(ctx, req)
+				}
 				return nil, connect.NewError(
 					connect.CodeUnauthenticated,
 					fmt.Errorf("invalid Authorization header format"),
 				)
 			}
 
-			userID, _, role, err := auth.ValidateJWT(tokenStr, jwtSecret)
-			if err != nil {
-				return nil, connect.NewError(
-					connect.CodeUnauthenticated,
-					fmt.Errorf("invalid token"),
-				)
+			// Backward compatibility: accept x-api-key header matching jwtSecret.
+			// Used by the dashboard BFF proxy (no JWT, just shared API key).
+			if apiKey := req.Header().Get("x-api-key"); apiKey == jwtSecret {
+				userID := req.Header().Get("x-user-id")
+				ctx = auth.SetUserID(ctx, userID)
+				ctx = auth.SetUserRole(ctx, "user")
+				req.Header().Set("X-User-ID", userID)
+				return next(ctx, req)
 			}
 
-			// Inject user identity into context for downstream handlers.
-			ctx = auth.SetUserID(ctx, userID)
-			ctx = auth.SetUserRole(ctx, role)
-
-			// Also set X-User-ID header for backward compat with IP whitelist
-			// interceptor and any other header-based checks.
-			req.Header().Set("X-User-ID", userID)
-
-			return next(ctx, req)
+			return nil, connect.NewError(
+				connect.CodeUnauthenticated,
+				fmt.Errorf("missing or invalid Authorization/x-api-key header"),
+			)
 		}
 	}
 	return connect.UnaryInterceptorFunc(interceptor)
