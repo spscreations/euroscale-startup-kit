@@ -1,22 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@/lib/auth-server";
+import crypto from "crypto";
 
 const API_BASE = "https://api.euroscale.app";
+
+function signJWT(userId: string, email: string, role: string, secret: string): string {
+  const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+  const now = Math.floor(Date.now() / 1000);
+  const payload = Buffer.from(
+    JSON.stringify({
+      user_id: userId,
+      email,
+      role,
+      sub: userId,
+      iss: "euroscale",
+      aud: ["euroscale-api"],
+      iat: now,
+      exp: now + 300,
+      nbf: now,
+    })
+  ).toString("base64url");
+  const signature = crypto.createHmac("sha256", secret).update(`${header}.${payload}`).digest("base64url");
+  return `${header}.${payload}.${signature}`;
+}
 
 async function proxy(req: NextRequest, segs: string[]) {
   const qs = req.nextUrl.searchParams.toString();
   const url = `${API_BASE}/${segs.join("/")}${qs ? "?" + qs : ""}`;
 
   let userId: string | undefined;
-  try { const ses = await getAuth()!.api.getSession({ headers: req.headers }); userId = ses?.user?.id; } catch {}
+  let email: string | undefined;
+  try { const ses = await getAuth()!.api.getSession({ headers: req.headers }); userId = ses?.user?.id; email = ses?.user?.email; } catch {}
 
   const headers: Record<string, string> = {};
   const ct = req.headers.get("content-type");
   if (ct) headers["Content-Type"] = ct;
-  // Forward the original Bearer token (Better Auth session JWT).
-  const auth = req.headers.get("authorization");
-  if (auth) headers["Authorization"] = auth;
-  if (userId) headers["x-user-id"] = userId;
+
+  const jwtSecret = process.env.BETTER_AUTH_SECRET || process.env.EUROSCALE_API_KEY || "";
+  if (userId && jwtSecret) {
+    headers["Authorization"] = `Bearer ${signJWT(userId, email || userId, "user", jwtSecret)}`;
+    headers["x-user-id"] = userId;
+  }
 
   const body = req.method !== "GET" && req.method !== "HEAD" ? await req.arrayBuffer() : undefined;
   try {
@@ -27,7 +51,6 @@ async function proxy(req: NextRequest, segs: string[]) {
     if (rct) respH["Content-Type"] = rct;
     return new NextResponse(respBody, { status: resp.status, headers: respH });
   } catch {
-    // Do not leak internal error details to the client
     return NextResponse.json({ error: "Internal server error" }, { status: 502 });
   }
 }
