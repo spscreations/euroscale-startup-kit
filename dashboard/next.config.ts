@@ -2,11 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  // Use webpack for production builds — turbopack has chunk-hash bugs with
-  // dynamic routes that import large dependency trees (Better Auth).
-  experimental: {
-    turbo: false,
-  },
   async headers() {
     return [
       {
