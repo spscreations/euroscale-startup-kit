@@ -43,7 +43,7 @@ function bigintToNumber(n: number | bigint | undefined | null): number {
 
 export default function TierCard() {
   // ── ALL hooks must stay above early returns ──
-  const { data, isLoading, isError, error } = useUsage();
+  const { data, isLoading, isError, error, refetch } = useUsage();
   const { session } = useAuth();
   const { data: dbs } = useDatabases();
   const resizeMutation = useResizeStorage();
@@ -60,10 +60,12 @@ export default function TierCard() {
     const paymentStatus = searchParams.get("payment");
     if (paymentStatus === "success") {
       toast.success("Payment successful! Your plan has been updated.");
+      // Force-refetch usage data in case webhook hasn't been processed yet
+      refetch();
     } else if (paymentStatus === "cancelled") {
       toast.error("Payment was cancelled. Your plan has not been changed.");
     }
-  }, [searchParams]);
+  }, [searchParams, refetch]);
 
   const handleApply = useCallback(() => {
     if (!session?.id) {

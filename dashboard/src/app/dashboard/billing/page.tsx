@@ -71,9 +71,9 @@ const PLANS: PlanOption[] = [
     label: "Scale",
     price: "€29/mo",
     features: [
-      "10 databases",
-      "30 GB storage",
-      "100k reads / 50k writes",
+      "3 databases",
+      "10 GB storage",
+      "1M read / 500K write units",
       "Autoscale compute (up to 2 CU)",
       "Email support",
     ],
@@ -83,10 +83,10 @@ const PLANS: PlanOption[] = [
     label: "Team",
     price: "€99/mo",
     features: [
-      "25 databases",
-      "100 GB storage",
-      "500k reads / 250k writes",
-      "Autoscale compute (up to 8 CU)",
+      "10 databases",
+      "50 GB storage",
+      "10M read / 5M write units",
+      "Autoscale compute (up to 4 CU)",
       "Priority support",
     ],
   },
@@ -95,10 +95,10 @@ const PLANS: PlanOption[] = [
     label: "Business",
     price: "€399/mo",
     features: [
-      "100 databases",
-      "500 GB storage",
-      "5M reads / 2.5M writes",
-      "Autoscale compute (up to 32 CU)",
+      "Unlimited databases",
+      "250 GB storage",
+      "Burstable reads & writes",
+      "Autoscale compute (up to 8 CU)",
       "Dedicated support & SLA",
     ],
   },
@@ -179,7 +179,7 @@ function BillingSkeleton() {
 // ── Page ────────────────────────────────────────────────────────────────────
 export default function BillingPage() {
   const { session } = useAuth();
-  const { data, isLoading: usageLoading } = useUsage();
+  const { data, isLoading: usageLoading, refetch } = useUsage();
   const { createPayment, isLoading: paymentLoading } = useCreatePayment();
   const searchParams = useSearchParams();
 
@@ -196,10 +196,12 @@ export default function BillingPage() {
     const paymentStatus = searchParams.get("payment");
     if (paymentStatus === "success") {
       toast.success("Payment successful! Your plan has been updated.");
+      // Force-refetch usage data in case webhook hasn't been processed yet
+      refetch();
     } else if (paymentStatus === "cancelled") {
       toast.error("Payment was cancelled. Your plan has not been changed.");
     }
-  }, [searchParams]);
+  }, [searchParams, refetch]);
 
   // ── Fetch invoices ──────────────────────────────────────────────────────
   useEffect(() => {

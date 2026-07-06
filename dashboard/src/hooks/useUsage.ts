@@ -9,7 +9,7 @@ import { getUsage } from "@/lib/proto/euroscale/v1/database-DatabaseService_conn
 export function useUsage() {
   const { session } = useAuth();
 
-  return useQuery(
+  const result = useQuery(
     getUsage,
     session?.id ? { userId: session.id } : undefined,
     {
@@ -17,4 +17,7 @@ export function useUsage() {
       refetchInterval: 60_000,
     },
   );
+
+  // Re-export refetch so callers can force-refresh after payment redirects
+  return { ...result, refetch: result.refetch };
 }

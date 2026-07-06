@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
+import { useUsage } from "@/hooks/useUsage";
 import ApiKeys from "@/components/ApiKeys";
 import AllowedIPs from "@/components/AllowedIPs";
 import { toast } from "sonner";
@@ -31,6 +32,7 @@ import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface NPref {
   id: string;
@@ -90,27 +92,87 @@ interface BPlan {
   usageLbl: string;
 }
 
-function mkB(): BPlan {
+// Tier labels and prices matching backend tiers.go and mollie.go tierPrice()
+const TIER_LABELS: Record<string, string> = {
+  free: "Free",
+  scale: "Scale",
+  team: "Team",
+  business: "Business",
+  enterprise: "Enterprise",
+};
+
+const TIER_PRICES: Record<string, string> = {
+  free: "€0",
+  scale: "€29",
+  team: "€99",
+  business: "€399",
+  enterprise: "Custom",
+};
+
+function deriveBPlan(
+  tier: string,
+  limits: { maxDatabases: number; maxStorageBytes: bigint; readUnitsPerMonth: bigint; writeUnitsPerMonth: bigint } | undefined,
+  usage: { databaseCount: number; storageBytes: bigint } | undefined,
+): BPlan {
+  const tierLabel = TIER_LABELS[tier] ?? tier;
+  const price = TIER_PRICES[tier] ?? "—";
+
+  // Build features from actual tier limits
+  const features: string[] = [];
+  if (limits) {
+    const maxDbs = Number(limits.maxDatabases);
+    const maxStorageGB = Number(limits.maxStorageBytes) / (1024 * 1024 * 1024);
+    if (maxDbs === -1) {
+      features.push("Unlimited databases");
+    } else {
+      features.push(`Up to ${maxDbs} database${maxDbs !== 1 ? "s" : ""}`);
+    }
+    if (maxStorageGB === -1) {
+      features.push("Unlimited storage");
+    } else {
+      features.push(`${maxStorageGB} GB storage`);
+    }
+    const reads = Number(limits.readUnitsPerMonth);
+    const writes = Number(limits.writeUnitsPerMonth);
+    if (reads === -1) {
+      features.push("Burstable reads & writes");
+    } else {
+      const readsStr = reads >= 1_000_000 ? `${reads / 1_000_000}M` : reads >= 1_000 ? `${reads / 1_000}k` : String(reads);
+      const writesStr = writes >= 1_000_000 ? `${writes / 1_000_000}M` : writes >= 1_000 ? `${writes / 1_000}k` : String(writes);
+      features.push(`${readsStr} reads / ${writesStr} writes`);
+    }
+  } else {
+    features.push("1 database", "1 GB storage", "100k reads / 0 writes");
+  }
+
+  // Compute usage % (databases used out of limit)
+  let usagePct = 0;
+  let usageLbl = "—";
+  if (limits && usage) {
+    const maxDbs = Number(limits.maxDatabases);
+    const used = Number(usage.databaseCount);
+    if (maxDbs > 0) {
+      usagePct = Math.min(100, Math.round((used / maxDbs) * 100));
+      usageLbl = `${used} of ${maxDbs} database${maxDbs !== 1 ? "s" : ""} used`;
+    } else if (maxDbs === -1) {
+      usageLbl = `${used} database${used !== 1 ? "s" : ""} used (unlimited)`;
+    }
+  }
+
   return {
-    name: "Scale",
-    price: "€9",
+    name: tierLabel,
+    price,
     period: "per month",
     status: "active",
-    features: [
-      "Up to 10 databases",
-      "5 GB storage per database",
-      "Daily automated backups",
-      "99.95% SLA",
-      "Priority email support",
-      "Team members (up to 5)",
-    ],
-    usagePct: 45,
-    usageLbl: "5 of 10 databases used",
+    features,
+    usagePct,
+    usageLbl,
   };
 }
 
 export default function SettingsPage() {
   const { session } = useAuth();
+  const { data: usageData, isLoading: usageLoading } = useUsage();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(session?.name ?? "User");
   const [saving, setSaving] = useState(false);
@@ -132,7 +194,10 @@ export default function SettingsPage() {
     toast.success("Notification preference updated");
   }, []);
 
-  const plan = mkB();
+  const tier = usageData?.tier ?? "free";
+  const limits = usageData?.limits;
+  const usage = usageData?.usage;
+  const plan = deriveBPlan(tier, limits, usage);
 
   const initials = (session?.name?.charAt(0)?.toUpperCase() ?? name.charAt(0).toUpperCase() ?? "?");
   const userEmail = session?.email ?? "user@example.com";
