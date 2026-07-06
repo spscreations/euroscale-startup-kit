@@ -54,6 +54,7 @@ jobs:
           tags: |
             type=sha,prefix=,format=long
             type=raw,value=latest
+            type=raw,value=v1.2
             type=raw,value=v1.1
             type=raw,value=${{ inputs.image_tag }},enable=${{ inputs.image_tag != '' }}
           labels:
@@ -147,6 +148,7 @@ jobs:
           tags: |
             type=sha,prefix=,format=long
             type=raw,value=latest
+            type=raw,value=v1.2
             type=raw,value=v1.1
           labels:
             org.opencontainers.image.title=EuroScale Dashboard
