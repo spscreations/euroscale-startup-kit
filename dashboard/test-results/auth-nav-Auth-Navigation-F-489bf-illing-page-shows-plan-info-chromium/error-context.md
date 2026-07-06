@@ -12,6 +12,10 @@
 # Error details
 
 ```
+Error: Channel closed
+```
+
+```
 Error: page.waitForURL: Target page, context or browser has been closed
 =========================== logs ===========================
 waiting for navigation until "load"
@@ -19,5 +23,5 @@ waiting for navigation until "load"
 ```
 
 ```
-Error: write EPIPE
+Error: apiRequestContext._wrapApiCall: Target page, context or browser has been closed
 ```

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth-server";
+import { getAuth } from "@/lib/auth-server";
 
 const API_BASE = "https://api.euroscale.app";
 const API_KEY = process.env.EUROSCALE_API_KEY || "";
@@ -24,6 +24,7 @@ export async function POST(
   // ── Look up the Better Auth session ──────────────────────────────────
   let userId: string | undefined;
   try {
+    const auth = await getAuth();
     const session = await auth.api.getSession({
       headers: req.headers,
     });

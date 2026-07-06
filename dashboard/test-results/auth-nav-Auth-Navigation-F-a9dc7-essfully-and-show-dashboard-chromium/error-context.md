@@ -12,62 +12,97 @@
 # Error details
 
 ```
-TimeoutError: page.waitForURL: Timeout 20000ms exceeded.
-=========================== logs ===========================
-waiting for navigation until "load"
-============================================================
+Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: true
+Received: false
 ```
 
 # Page snapshot
 
 ```yaml
 - generic [active] [ref=e1]:
-  - main [ref=e2]:
-    - generic [ref=e3]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
       - generic [ref=e4]:
         - img "EuroScale" [ref=e5]
-        - heading "EuroScale" [level=1] [ref=e6]
-        - paragraph [ref=e7]: Sign in to your account
-      - generic [ref=e8]:
-        - alert [ref=e9]:
+        - paragraph [ref=e7]: EuroScale
+      - navigation [ref=e8]:
+        - link "Databases" [ref=e9] [cursor=pointer]:
+          - /url: /dashboard
           - img [ref=e10]
-          - generic [ref=e12]: Login failed
-        - generic [ref=e13]:
-          - generic [ref=e14]:
-            - generic [ref=e15]: Email address
-            - generic [ref=e16]:
-              - img
-              - textbox "Email address" [ref=e17]:
-                - /placeholder: you@company.com
-                - text: j.doe@company.com
-          - generic [ref=e18]:
-            - generic [ref=e19]: Password
-            - generic [ref=e20]:
-              - img
-              - textbox "Password" [ref=e21]:
-                - /placeholder: ••••••••
-                - text: Testb2c!
-              - button "Show password" [ref=e22]:
-                - img [ref=e23]
-          - button "Sign in" [ref=e26]:
-            - text: Sign in
-            - img [ref=e27]
-        - paragraph [ref=e29]:
-          - text: Don't have an account?
-          - link "Create one" [ref=e30] [cursor=pointer]:
-            - /url: /signup
-      - paragraph [ref=e31]: EU sovereign infrastructure · GDPR by architecture
-  - alert [ref=e32]
+          - text: Databases
+        - link "Backups" [ref=e14] [cursor=pointer]:
+          - /url: /dashboard/backups
+          - img [ref=e15]
+          - text: Backups
+        - link "Browse Data" [ref=e18] [cursor=pointer]:
+          - /url: /dashboard/browse
+          - img [ref=e19]
+          - text: Browse Data
+        - link "New database" [ref=e22] [cursor=pointer]:
+          - /url: /dashboard/create
+          - img [ref=e23]
+          - text: New database
+        - link "Billing" [ref=e24] [cursor=pointer]:
+          - /url: /dashboard/billing
+          - img [ref=e25]
+          - text: Billing
+        - link "Settings" [ref=e27] [cursor=pointer]:
+          - /url: /dashboard/settings
+          - img [ref=e28]
+          - text: Settings
+      - generic [ref=e31]:
+        - generic [ref=e32]:
+          - generic [ref=e33]: U
+          - generic [ref=e34]:
+            - paragraph [ref=e36]: User
+            - paragraph [ref=e37]: j.doe@company.com
+        - button "Sign out" [ref=e38]:
+          - img [ref=e39]
+          - text: Sign out
+    - main [ref=e42]:
+      - generic [ref=e43]:
+        - generic [ref=e45]:
+          - heading "Databases" [level=1] [ref=e47]
+          - generic [ref=e48]:
+            - button "Refresh databases" [ref=e49]:
+              - img [ref=e50]
+              - text: Refresh
+            - button "New database" [ref=e55]:
+              - img [ref=e56]
+              - text: New database
+        - main [ref=e57]:
+          - generic [ref=e58]:
+            - generic [ref=e59]:
+              - generic [ref=e60]:
+                - generic [ref=e61]: Total Databases
+                - img [ref=e62]
+              - paragraph [ref=e66]: "0"
+            - generic [ref=e67]:
+              - generic [ref=e68]:
+                - generic [ref=e69]: Active Connections
+                - img [ref=e70]
+              - paragraph [ref=e72]: "0"
+            - generic [ref=e73]:
+              - generic [ref=e74]:
+                - generic [ref=e75]: Storage Used
+                - img [ref=e76]
+              - paragraph [ref=e78]: —
+          - generic [ref=e79]:
+            - img [ref=e80]
+            - generic [ref=e87]:
+              - paragraph [ref=e88]: Could not load databases
+              - paragraph [ref=e89]: "[unauthenticated] invalid or missing API key"
+            - button "Retry" [ref=e90]:
+              - img [ref=e91]
+              - text: Retry
+  - alert [ref=e96]
 ```
 
 # Test source
 
 ```ts
-  1   | import { test, expect } from '@playwright/test';
-  2   | 
-  3   | const BASE_URL = 'https://euroscale.app';
-  4   | const TEST_EMAIL = 'j.doe@company.com';
-  5   | const TEST_PASSWORD = 'Testb2c!';
   6   | 
   7   | /**
   8   |  * Helper: login and return the page, ready for dashboard assertions.
@@ -107,8 +142,7 @@ waiting for navigation until "load"
   42  |   // Submit
   43  |   await page.locator('button[type="submit"]').click();
   44  | 
-> 45  |   await page.waitForURL(/\/dashboard/, { timeout: 20_000 });
-      |              ^ TimeoutError: page.waitForURL: Timeout 20000ms exceeded.
+  45  |   await page.waitForURL(/\/dashboard/, { timeout: 20_000 });
   46  |   await page.waitForLoadState('networkidle', { timeout: 15_000 });
   47  |   await page.waitForTimeout(3000);
   48  | }
@@ -169,7 +203,8 @@ waiting for navigation until "load"
   103 |         }
   104 |         return allKeys.some((k) => k && /auth|session|token|supabase/i.test(k));
   105 |       });
-  106 |       expect(hasSession).toBe(true);
+> 106 |       expect(hasSession).toBe(true);
+      |                          ^ Error: expect(received).toBe(expected) // Object.is equality
   107 | 
   108 |       // Report errors
   109 |       if (jsErrors.length > 0) {
@@ -209,4 +244,65 @@ waiting for navigation until "load"
   143 |       for (const el of [signOutLink, signOutButton, signOutText]) {
   144 |         if (await el.isVisible({ timeout: 2000 }).catch(() => false)) {
   145 |           await el.click();
+  146 |           clicked = true;
+  147 |           console.log('[Logout] Clicked Sign out');
+  148 |           break;
+  149 |         }
+  150 |       }
+  151 | 
+  152 |       if (!clicked) {
+  153 |         // Try to find any element containing "Sign out" or "Log out"
+  154 |         const anyLogout = page.locator('a, button, span, div').filter({ hasText: /sign out|log out/i }).first();
+  155 |         if (await anyLogout.isVisible({ timeout: 3000 }).catch(() => false)) {
+  156 |           await anyLogout.click();
+  157 |           clicked = true;
+  158 |           console.log('[Logout] Clicked Sign out via fallback selector');
+  159 |         }
+  160 |       }
+  161 | 
+  162 |       if (clicked) {
+  163 |         // Wait for redirect away from dashboard
+  164 |         await page.waitForTimeout(3000);
+  165 |         const url = page.url();
+  166 |         console.log(`[Logout] URL after sign out: ${url}`);
+  167 | 
+  168 |         // Should be on landing or login page
+  169 |         const isRedirected = !url.includes('/dashboard');
+  170 |         console.log(`[Logout] Redirected away from dashboard: ${isRedirected}`);
+  171 | 
+  172 |         // Verify session removed from localStorage
+  173 |         const authKeysAfter = await page.evaluate(() => {
+  174 |           const keys: string[] = [];
+  175 |           for (let i = 0; i < localStorage.length; i++) {
+  176 |             const k = localStorage.key(i);
+  177 |             if (k && /auth|session|token|supabase/i.test(k)) keys.push(k);
+  178 |           }
+  179 |           return keys;
+  180 |         });
+  181 |         console.log(`[Logout] Auth keys after logout: ${authKeysAfter.join(', ') || '(none)'}`);
+  182 |         expect(authKeysAfter.length).toBe(0);
+  183 |       } else {
+  184 |         console.warn('[Logout] Could not find Sign out element — skipping logout assertion');
+  185 |       }
+  186 | 
+  187 |       if (jsErrors.length > 0) {
+  188 |         console.warn(`[Logout] JS errors: ${jsErrors.join('; ')}`);
+  189 |       }
+  190 |     });
+  191 |   });
+  192 | 
+  193 |   test.describe('Sidebar Navigation', () => {
+  194 |     test('should navigate to all sidebar destinations', async ({ page }) => {
+  195 |       const jsErrors: string[] = [];
+  196 |       page.on('pageerror', (err) => jsErrors.push(err.message));
+  197 | 
+  198 |       // Login
+  199 |       await login(page, jsErrors, []);
+  200 |       await expect(page.getByText(/databases/i).first()).toBeVisible({ timeout: 10_000 });
+  201 | 
+  202 |       // Helper: find and click a nav item by text, then verify URL
+  203 |       async function clickNav(navText: string | RegExp, expectedUrlPattern: RegExp): Promise<boolean> {
+  204 |         const navItem = page.locator('nav a, nav button, aside a, aside button, [role="navigation"] a').filter({ hasText: navText }).first();
+  205 | 
+  206 |         if (!(await navItem.isVisible({ timeout: 3000 }).catch(() => false))) {
 ```
