@@ -7,10 +7,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -25,6 +27,12 @@ type Resizer struct {
 	namespace string
 }
 
+// PVCConfig holds the parameters for provisioning a new PVC for a database.
+type PVCConfig struct {
+	DatabaseID string
+	SizeGB     int64
+}
+
 // NewResizer creates a new Resizer.
 func NewResizer(clientset *kubernetes.Clientset, namespace string) *Resizer {
 	return &Resizer{
@@ -34,11 +42,12 @@ func NewResizer(clientset *kubernetes.Clientset, namespace string) *Resizer {
 }
 
 // ResizePVC expands a database's PVC by the specified GB amount.
+// If no PVC exists for the database, a new one is provisioned at the requested size.
 //
 // Steps:
 //  1. Find the PVC by database ID label.
-//  2. Read the current capacity.
-//  3. Compute the new size (current + additional).
+//  2. If none exists, create a new PVC at the requested size.
+//  3. If one exists, read current capacity and compute new size.
 //  4. Validate against Hetzner's 10 TB limit.
 //  5. Patch the PVC with the new size.
 //
@@ -51,7 +60,14 @@ func (r *Resizer) ResizePVC(ctx context.Context, dbID string, additionalGB int32
 	// 1. Find the PVC by label.
 	pvc, err := r.findPVCByDatabaseID(ctx, dbID)
 	if err != nil {
-		return 0, fmt.Errorf("failed to find PVC for database %q: %w", dbID, err)
+		// If no PVC exists, auto-provision one at the requested size.
+		newGB := int64(additionalGB)
+		_, err := r.CreatePVC(ctx, PVCConfig{DatabaseID: dbID, SizeGB: newGB})
+		if err != nil {
+			return 0, fmt.Errorf("no PVC found for database %q and failed to create one: %w", dbID, err)
+		}
+		log.Printf("INFO: auto-provisioned PVC for database %q at %d Gi", dbID, newGB)
+		return newGB, nil
 	}
 
 	// 2. Parse current capacity.
@@ -89,6 +105,52 @@ func (r *Resizer) ResizePVC(ctx context.Context, dbID string, additionalGB int32
 		pvc.Name, dbID, currentGB, newGB)
 
 	return newGB, nil
+}
+
+// pvcNameFor returns the deterministic PVC name for a given database ID.
+func pvcNameFor(dbID string) string {
+	return fmt.Sprintf("db-%s-data", dbID)
+}
+
+// CreatePVC provisions a new PVC for a database.
+func (r *Resizer) CreatePVC(ctx context.Context, cfg PVCConfig) (*corev1.PersistentVolumeClaim, error) {
+	storageClassName := "local-path" // default for development; overridden by env
+	if sc := os.Getenv("EUROSCALE_STORAGE_CLASS"); sc != "" {
+		storageClassName = sc
+	}
+
+	sizeGB := cfg.SizeGB
+	if sizeGB <= 0 {
+		sizeGB = 1
+	}
+
+	pvc := &corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      pvcNameFor(cfg.DatabaseID),
+			Namespace: r.namespace,
+			Labels: map[string]string{
+				"app":                        "euroscale",
+				"euroscale.app/database-id": cfg.DatabaseID,
+				"managed":                    "true",
+			},
+		},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+			Resources: corev1.VolumeResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceStorage: resource.MustParse(fmt.Sprintf("%dGi", sizeGB)),
+				},
+			},
+			StorageClassName: &storageClassName,
+		},
+	}
+
+	created, err := r.clientset.CoreV1().PersistentVolumeClaims(r.namespace).Create(ctx, pvc, metav1.CreateOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create PVC %q: %w", pvcNameFor(cfg.DatabaseID), err)
+	}
+
+	return created, nil
 }
 
 // findPVCByDatabaseID looks up a PVC labelled euroscale.app/database-id=<dbID>.

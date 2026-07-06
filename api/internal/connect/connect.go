@@ -248,6 +248,14 @@ func NewMetadataHandler(srv MetadataServiceServer, jwtSecret string, extraInterc
 	mux.Handle(PathListSchemaDatabases, connect.NewUnaryHandler(
 		PathListSchemaDatabases,
 		func(ctx context.Context, req *connect.Request[pb.ListSchemaDatabasesRequest]) (*connect.Response[pb.ListSchemaDatabasesResponse], error) {
+			// Inject the authenticated user ID from context into the request.
+			userID := auth.GetUserID(ctx)
+			if userID == "" {
+				userID = req.Header().Get("X-User-ID")
+			}
+			if userID != "" {
+				req.Msg.UserId = userID
+			}
 			resp, err := srv.ListSchemaDatabases(ctx, req.Msg)
 			if err != nil {
 				return nil, err
@@ -261,6 +269,13 @@ func NewMetadataHandler(srv MetadataServiceServer, jwtSecret string, extraInterc
 	mux.Handle(PathListTables, connect.NewUnaryHandler(
 		PathListTables,
 		func(ctx context.Context, req *connect.Request[pb.ListTablesRequest]) (*connect.Response[pb.ListTablesResponse], error) {
+			userID := auth.GetUserID(ctx)
+			if userID == "" {
+				userID = req.Header().Get("X-User-ID")
+			}
+			if userID != "" {
+				req.Msg.UserId = userID
+			}
 			resp, err := srv.ListTables(ctx, req.Msg)
 			if err != nil {
 				return nil, err
@@ -274,6 +289,13 @@ func NewMetadataHandler(srv MetadataServiceServer, jwtSecret string, extraInterc
 	mux.Handle(PathListColumns, connect.NewUnaryHandler(
 		PathListColumns,
 		func(ctx context.Context, req *connect.Request[pb.ListColumnsRequest]) (*connect.Response[pb.ListColumnsResponse], error) {
+			userID := auth.GetUserID(ctx)
+			if userID == "" {
+				userID = req.Header().Get("X-User-ID")
+			}
+			if userID != "" {
+				req.Msg.UserId = userID
+			}
 			resp, err := srv.ListColumns(ctx, req.Msg)
 			if err != nil {
 				return nil, err
@@ -287,6 +309,13 @@ func NewMetadataHandler(srv MetadataServiceServer, jwtSecret string, extraInterc
 	mux.Handle(PathPreviewTable, connect.NewUnaryHandler(
 		PathPreviewTable,
 		func(ctx context.Context, req *connect.Request[pb.PreviewTableRequest]) (*connect.Response[pb.PreviewTableResponse], error) {
+			userID := auth.GetUserID(ctx)
+			if userID == "" {
+				userID = req.Header().Get("X-User-ID")
+			}
+			if userID != "" {
+				req.Msg.UserId = userID
+			}
 			resp, err := srv.PreviewTable(ctx, req.Msg)
 			if err != nil {
 				return nil, err

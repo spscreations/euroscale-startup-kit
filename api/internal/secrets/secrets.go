@@ -127,10 +127,10 @@ func (s *Store) UpdateCredentials(ctx context.Context, db *models.Database, cred
 }
 
 // ListAll returns all euroscale-managed databases by querying K8s Secrets
-// with the label app=euroscale, managed=true.
+// with the label app=euroscale, managed=true, excluding usage-tracking secrets.
 func (s *Store) ListAll(ctx context.Context) ([]models.Database, error) {
 	secretsList, err := s.clientset.CoreV1().Secrets(s.namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: "app=euroscale,managed=true",
+		LabelSelector: "app=euroscale,managed=true,!usage",
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list k8s secrets: %w", err)
@@ -138,6 +138,12 @@ func (s *Store) ListAll(ctx context.Context) ([]models.Database, error) {
 
 	databases := make([]models.Database, 0, len(secretsList.Items))
 	for _, secret := range secretsList.Items {
+		// Defensive: skip secrets without a "database" label (e.g. usage tracking secrets
+		// that may have gotten the managed=true label).
+		if secret.Labels["database"] == "" {
+			continue
+		}
+
 		db := models.Database{
 			ID:       secret.Labels["database"],
 			Name:     secret.Annotations["euroscale.app/database-name"],

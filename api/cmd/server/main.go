@@ -233,6 +233,12 @@ func (s *server) CreateDatabase(ctx context.Context, req *pb.CreateDatabaseReque
 		return nil, status.Error(codes.Internal, "failed to store credentials")
 	}
 
+	// Provision a 1 GiB PVC for the database (expanded later via resize).
+	if _, err := s.resizer.CreatePVC(ctx, storage.PVCConfig{DatabaseID: dbID, SizeGB: 1}); err != nil {
+		log.Printf("WARNING: failed to create PVC for %q: %v", dbID, err)
+		// Non-fatal — the database is still usable, just can't resize until PVC exists.
+	}
+
 	// Increment the database count for tier tracking.
 	if err := s.tierStore.IncrementDatabaseCount(ctx, userID); err != nil {
 		log.Printf("ERROR: failed to increment database count for user %q: %v", userID, err)
@@ -676,7 +682,7 @@ func (s *server) ResizeStorage(ctx context.Context, req *pb.ResizeStorageRequest
 		log.Printf("ERROR: failed to resize PVC for database %q: %v", req.DatabaseId, err)
 		return &pb.ResizeStorageResponse{
 			Success: false,
-			Message: "resize failed",
+			Message: fmt.Sprintf("resize failed: %v", err),
 		}, nil
 	}
 
@@ -941,21 +947,32 @@ func (s *server) handleRemoveIP(w http.ResponseWriter, r *http.Request, userID s
 }
 
 // authenticateHTTPRequest extracts and validates a JWT Bearer token from the
-// Authorization header of an HTTP request. Returns the authenticated user ID.
+// Authorization header of an HTTP request. Falls back to x-api-key + x-user-id
+// headers (used by the dashboard BFF proxy). Returns the authenticated user ID.
 func (s *server) authenticateHTTPRequest(r *http.Request) (string, error) {
+	// Primary: JWT Bearer token from Authorization header.
 	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		return "", fmt.Errorf("missing Authorization header")
+	if authHeader != "" {
+		tokenStr, ok := strings.CutPrefix(authHeader, "Bearer ")
+		if ok {
+			userID, _, _, err := auth.ValidateJWT(tokenStr, s.jwtSecret)
+			if err == nil {
+				return userID, nil
+			}
+		}
 	}
-	tokenStr, ok := strings.CutPrefix(authHeader, "Bearer ")
-	if !ok {
-		return "", fmt.Errorf("invalid Authorization header format")
+
+	// Fallback: BFF proxy auth via x-api-key + x-user-id.
+	apiKey := r.Header.Get("x-api-key")
+	if apiKey != "" && apiKey == s.jwtSecret {
+		userID := r.Header.Get("x-user-id")
+		if userID != "" {
+			return userID, nil
+		}
+		return "", fmt.Errorf("missing x-user-id header")
 	}
-	userID, _, _, err := auth.ValidateJWT(tokenStr, s.jwtSecret)
-	if err != nil {
-		return "", fmt.Errorf("invalid token")
-	}
-	return userID, nil
+
+	return "", fmt.Errorf("missing or invalid Authorization header")
 }
 
 // extractClientIP extracts the real client IP from request headers or RemoteAddr.
@@ -1420,21 +1437,34 @@ var rateLimiterStore = struct {
 
 // withHTTPAuth wraps an http.HandlerFunc with JWT Bearer token validation.
 // It extracts the token from the Authorization header and validates it before
-// calling the wrapped handler. If validation fails, it returns 401.
+// calling the wrapped handler. Falls back to x-api-key + x-user-id headers
+// (used by the dashboard BFF proxy). If validation fails, it returns 401.
 func withHTTPAuth(jwtSecret string, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Primary: JWT Bearer token from Authorization header.
 		authHeader := r.Header.Get("Authorization")
-		tokenStr, ok := strings.CutPrefix(authHeader, "Bearer ")
-		if !ok {
-			writeJSON(w, http.StatusUnauthorized, map[string]string{"message": "missing Authorization header"})
-			return
+		if authHeader != "" {
+			tokenStr, ok := strings.CutPrefix(authHeader, "Bearer ")
+			if ok {
+				_, _, _, err := auth.ValidateJWT(tokenStr, jwtSecret)
+				if err == nil {
+					next(w, r)
+					return
+				}
+			}
 		}
-		_, _, _, err := auth.ValidateJWT(tokenStr, jwtSecret)
-		if err != nil {
-			writeJSON(w, http.StatusUnauthorized, map[string]string{"message": "invalid token"})
-			return
+
+		// Fallback: BFF proxy auth via x-api-key + x-user-id.
+		apiKey := r.Header.Get("x-api-key")
+		if apiKey != "" && apiKey == jwtSecret {
+			// x-user-id is trusted when api key matches the shared secret.
+			if r.Header.Get("x-user-id") != "" {
+				next(w, r)
+				return
+			}
 		}
-		next(w, r)
+
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"message": "missing or invalid Authorization header"})
 	}
 }
 
