@@ -14,6 +14,8 @@ metadata:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/service.serversscheme: h2c
+    # IP whitelist — only allow admin IPs to reach the API directly
+    traefik.ingress.kubernetes.io/whitelist-source-range: "194.154.34.123/32, 2.84.193.24/32"
 spec:
   ingressClassName: traefik
   tls:
