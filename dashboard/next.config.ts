@@ -2,16 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  async rewrites() {
-    return [
-      // Rewrite all Better Auth paths to a single handler
-      // The handler reads req.url to dispatch to the correct auth action
-      {
-        source: "/api/better-auth/:path*",
-        destination: "/api/auth-handler",
-      },
-    ];
-  },
   async headers() {
     return [
       {
