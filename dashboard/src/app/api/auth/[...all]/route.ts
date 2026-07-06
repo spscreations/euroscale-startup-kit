@@ -1,10 +1,3 @@
-import { getAuth } from "@/lib/auth-server";
-
-export async function GET(req: Request) {
-  const a = await getAuth();
-  return a.handler(req);
-}
-export async function POST(req: Request) {
-  const a = await getAuth();
-  return a.handler(req);
-}
+import { auth } from "@/lib/auth-server";
+import { toNextJsHandler } from "better-auth/next-js";
+export const { GET, POST } = toNextJsHandler(auth);
