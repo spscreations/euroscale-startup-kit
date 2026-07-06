@@ -1,13 +1,26 @@
-import { getAuth } from "@/lib/auth-server";
+// Self-contained Better Auth handler. Imported at module level only if
+// dynamically require'd — avoids turbopack chunk resolution issues.
+// Route: /api/auth-handler (via rewrite from /api/better-auth/*)
 
-// Single handler for all Better Auth actions. Next.js rewrites
-// /api/better-auth/* → /api/auth-handler while preserving the
-// original URL so Better Auth can dispatch correctly.
+const BASE = "/api/better-auth";
+
 export async function GET(req: Request) {
-  const auth = getAuth()!;
-  return auth.handler(req);
+  return handle(req);
 }
 export async function POST(req: Request) {
-  const auth = getAuth()!;
-  return auth.handler(req);
+  return handle(req);
+}
+
+async function handle(req: Request) {
+  try {
+    const { getAuth } = await import("@/lib/auth-server");
+    const auth = getAuth()!;
+    return auth.handler(req);
+  } catch (e) {
+    console.error("[auth] handler error:", e);
+    return new Response(
+      JSON.stringify({ error: "Authentication service unavailable" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
 }
