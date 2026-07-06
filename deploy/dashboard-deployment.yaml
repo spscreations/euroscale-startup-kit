@@ -39,7 +39,7 @@ spec:
             - name: HOST
               value: "0.0.0.0"
             - name: AUTH_DB_HOST
-              value: "db.euroscale.app"
+              value: "euroscale-vtgate-208e47d6.euroscale"
             - name: AUTH_DB_PORT
               value: "3306"
             - name: AUTH_DB_USER

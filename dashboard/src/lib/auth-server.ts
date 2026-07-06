@@ -4,6 +4,7 @@ import { nextCookies } from "better-auth/next-js";
 import mysql from "mysql2/promise";
 import { drizzle } from "drizzle-orm/mysql2";
 import { mysqlTable, varchar, int, text, datetime } from "drizzle-orm/mysql-core";
+import { readFileSync } from "fs";
 
 function requireEnv(name: string): string {
   const val = process.env[name];
@@ -77,6 +78,9 @@ function getAuth() {
   const pool = mysql.createPool({
     host: DB_HOST, port: DB_PORT, user: DB_USER, password: DB_PASS, database: DB_NAME,
     waitForConnections: true, connectionLimit: 5, connectTimeout: 10000,
+    ssl: process.env.DB_SSL_CA
+      ? { ca: readFileSync(process.env.DB_SSL_CA) }
+      : undefined,
   });
 
   const db = drizzle(pool);
