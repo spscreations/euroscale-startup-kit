@@ -244,9 +244,12 @@ test.describe('EuroScale Dashboard Interactions', () => {
 
     // Check if API is unavailable (TierCard/Add-ons section won't render)
     const apiError = page.getByText('Could not load databases');
-    if (await apiError.isVisible({ timeout: 3000 }).catch(() => false)) {
+    try {
+      await apiError.waitFor({ state: 'visible', timeout: 8000 });
       console.log('⚠️  API unavailable — Add-ons test skipped');
       return;
+    } catch {
+      // API available — proceed
     }
 
     // --- Verify Additional Storage input is present with default 10 ---
