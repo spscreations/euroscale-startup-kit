@@ -528,6 +528,121 @@ func (h *Handler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// ── Confirm Payment ──────────────────────────────────────────────────────────
+
+// HandleConfirmPayment processes GET /api/v1/confirm-payment?id=xxx.
+// Called by the dashboard when the user returns from the Mollie checkout
+// redirect. It verifies the payment status with the Mollie API and upgrades
+// the user's tier immediately, bypassing the webhook (which may not reach
+// this server if it's behind a firewall).
+func (h *Handler) HandleConfirmPayment(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	paymentID := r.URL.Query().Get("id")
+	if paymentID == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"message": "payment id is required"})
+		return
+	}
+
+	if h.client == nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"message": "Mollie payment service is not configured"})
+		return
+	}
+
+	// Verify payment status with Mollie.
+	payment, err := h.client.GetPayment(r.Context(), paymentID)
+	if err != nil {
+		log.Printf("ERROR: confirm-payment: failed to get payment %q: %v", paymentID, err)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"message": "failed to verify payment"})
+		return
+	}
+
+	if payment.Status != "paid" {
+		writeJSON(w, http.StatusOK, map[string]string{"status": payment.Status, "message": "payment not yet completed"})
+		return
+	}
+
+	// Extract user metadata from the payment.
+	userID := ""
+	tierName := ""
+
+	if payment.Metadata != nil {
+		if uid, ok := payment.Metadata["user_id"].(string); ok {
+			userID = uid
+		}
+		if t, ok := payment.Metadata["tier"].(string); ok {
+			tierName = t
+		}
+	}
+
+	// Fall back to in-memory store.
+	if userID == "" || tierName == "" {
+		h.mu.RLock()
+		info := h.payments[paymentID]
+		h.mu.RUnlock()
+		if info != nil {
+			if userID == "" {
+				userID = info.UserID
+			}
+			if tierName == "" {
+				tierName = info.Tier
+			}
+		}
+	}
+
+	if userID == "" || tierName == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"message": "could not determine user or tier for this payment"})
+		return
+	}
+
+	// Upgrade the user's tier.
+	if err := h.tierStore.SetUserTier(r.Context(), userID, tierName); err != nil {
+		log.Printf("ERROR: confirm-payment: failed to upgrade user %q to tier %q: %v", userID, tierName, err)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"message": "failed to upgrade tier"})
+		return
+	}
+
+	// Update in-memory status.
+	amountStr := ""
+	if payment.Amount.Currency != "" || payment.Amount.Value != "" {
+		amountStr = payment.Amount.Currency + " " + payment.Amount.Value
+	}
+	invoiceRef := generateInvoiceRef(paymentID)
+
+	h.mu.Lock()
+	if info, ok := h.payments[paymentID]; ok {
+		info.Status = "paid"
+		info.PaidAt = time.Now().UTC().Format(time.RFC3339)
+		info.InvoiceRef = invoiceRef
+		if amountStr != "" {
+			info.Amount = amountStr
+		}
+	} else {
+		h.payments[paymentID] = &PaymentInfo{
+			PaymentID: paymentID,
+			UserID:    userID,
+			Tier:      tierName,
+			Amount:    amountStr,
+			Status:    "paid",
+			InvoiceRef: invoiceRef,
+			CreatedAt: time.Now().UTC().Format(time.RFC3339),
+			PaidAt:    time.Now().UTC().Format(time.RFC3339),
+		}
+	}
+	h.mu.Unlock()
+
+	log.Printf("INFO: confirm-payment: user %q upgraded to tier %q (payment %q)", userID, tierName, paymentID)
+
+	writeJSON(w, http.StatusOK, map[string]string{
+		"status":      "paid",
+		"tier":        tierName,
+		"invoice_ref": invoiceRef,
+	})
+}
+
 // ── List Invoices ────────────────────────────────────────────────────────────
 
 // HandleListInvoices processes GET /api/v1/invoices?user_id=xxx and returns

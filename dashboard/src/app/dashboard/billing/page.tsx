@@ -194,9 +194,24 @@ export default function BillingPage() {
   // ── Mollie redirect detection ───────────────────────────────────────────
   useEffect(() => {
     const paymentStatus = searchParams.get("payment");
-    if (paymentStatus === "success") {
+    const paymentId = searchParams.get("id");
+    if (paymentStatus === "success" && paymentId) {
+      fetch(`/api/v1/confirm-payment?id=${encodeURIComponent(paymentId)}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.status === "paid") {
+            toast.success(`Upgraded to ${d.tier}!`);
+            refetch();
+          } else if (d.status === "pending") {
+            toast.info("Payment is still being processed...");
+          } else {
+            toast.success("Payment successful! Your plan has been updated.");
+            refetch();
+          }
+        })
+        .catch(() => toast.error("Failed to confirm payment"));
+    } else if (paymentStatus === "success" && !paymentId) {
       toast.success("Payment successful! Your plan has been updated.");
-      // Force-refetch usage data in case webhook hasn't been processed yet
       refetch();
     } else if (paymentStatus === "cancelled") {
       toast.error("Payment was cancelled. Your plan has not been changed.");

@@ -1314,7 +1314,8 @@ func main() {
 		httpMux.HandleFunc("/api/v1/create-payment", withHTTPAuth(jwtSecret, mollieHTTPHandler.HandleCreatePayment))
 		httpMux.HandleFunc("/api/v1/mollie-webhook", mollieHTTPHandler.HandleWebhook)
 		httpMux.HandleFunc("/api/v1/invoices", withHTTPAuth(jwtSecret, mollieHTTPHandler.HandleListInvoices))
-		log.Println("Mollie payment handlers registered: /api/v1/create-payment, /api/v1/mollie-webhook, /api/v1/invoices")
+		httpMux.HandleFunc("/api/v1/confirm-payment", withHTTPAuth(jwtSecret, mollieHTTPHandler.HandleConfirmPayment))
+		log.Println("Mollie payment handlers registered: /api/v1/create-payment, /api/v1/mollie-webhook, /api/v1/invoices, /api/v1/confirm-payment")
 	} else {
 		log.Println("MOLLIE_API_KEY not set — Mollie payment handlers disabled")
 	}
