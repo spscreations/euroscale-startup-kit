@@ -51,6 +51,10 @@ spec:
                 secretKeyRef:
                   name: db-56ef192d-1af1-47b2-a8e5-d47176eba77f-creds
                   key: password
+            - name: DB_SSL_CERT
+              value: "/etc/euroscale/dash-tls/tls.crt"
+            - name: DB_SSL_KEY
+              value: "/etc/euroscale/dash-tls/tls.key"
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

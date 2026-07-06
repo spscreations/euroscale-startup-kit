@@ -79,7 +79,11 @@ function getAuth() {
     host: DB_HOST, port: DB_PORT, user: DB_USER, password: DB_PASS, database: DB_NAME,
     waitForConnections: true, connectionLimit: 5, connectTimeout: 10000,
     ssl: process.env.DB_SSL_CA
-      ? { ca: readFileSync(process.env.DB_SSL_CA) }
+      ? {
+          ca: readFileSync(process.env.DB_SSL_CA),
+          cert: process.env.DB_SSL_CERT ? readFileSync(process.env.DB_SSL_CERT) : undefined,
+          key: process.env.DB_SSL_KEY ? readFileSync(process.env.DB_SSL_KEY) : undefined,
+        }
       : undefined,
   });
 
