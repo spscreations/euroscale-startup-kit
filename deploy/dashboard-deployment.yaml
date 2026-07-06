@@ -18,11 +18,15 @@ spec:
         app: euroscale
         component: dashboard
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
       imagePullSecrets:
         - name: ghcr-pull
       containers:
         - name: dashboard
-          image: ghcr.io/spscreations/euroscale-dashboard:latest
+          image: ghcr.io/spscreations/euroscale-dashboard:v1.0.0  # Pinned tag; CI updates this on deploy
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
@@ -34,6 +38,13 @@ spec:
               value: "https://api.euroscale.app"
             - name: HOST
               value: "0.0.0.0"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
           resources:
             requests:
               cpu: 100m

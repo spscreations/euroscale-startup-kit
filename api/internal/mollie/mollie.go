@@ -6,6 +6,9 @@ package mollie
 import (
 	"bytes"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -232,19 +235,23 @@ type invoiceListResponse struct {
 // processing, and invoice listing. It is wired into the HTTP mux in
 // cmd/server/main.go.
 type Handler struct {
-	client    *Client
-	tierStore *tiers.Store
+	client        *Client
+	tierStore     *tiers.Store
+	webhookSecret string
 
 	payments map[string]*PaymentInfo
 	mu       sync.RWMutex
 }
 
 // NewHandler creates a new Mollie HTTP handler.
-func NewHandler(client *Client, tierStore *tiers.Store) *Handler {
+// webhookSecret is the secret key Mollie uses to sign webhook payloads
+// (HMAC-SHA256). Set to empty string to skip verification (not recommended).
+func NewHandler(client *Client, tierStore *tiers.Store, webhookSecret string) *Handler {
 	return &Handler{
-		client:    client,
-		tierStore: tierStore,
-		payments:  make(map[string]*PaymentInfo),
+		client:        client,
+		tierStore:     tierStore,
+		webhookSecret: webhookSecret,
+		payments:      make(map[string]*PaymentInfo),
 	}
 }
 
@@ -352,15 +359,43 @@ func (h *Handler) HandleCreatePayment(w http.ResponseWriter, r *http.Request) {
 // ── Webhook ──────────────────────────────────────────────────────────────────
 
 // HandleWebhook processes POST /api/v1/mollie-webhook. Mollie calls this when
-// a payment's status changes. We verify with the Mollie API and, on "paid",
-// upgrade the user's tier. Returns a JSON response with invoice reference.
+// a payment's status changes. We verify the webhook signature, then confirm
+// with the Mollie API, and on "paid", upgrade the user's tier.
 func (h *Handler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
+	// Read the raw body for signature verification.
+	rawBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("ERROR: mollie webhook: failed to read body: %v", err)
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	r.Body.Close()
+
+	// Verify Mollie webhook signature if a webhook secret is configured.
+	// Mollie signs webhook payloads with HMAC-SHA256 using the webhook secret
+	// as the key. The signature is in the X-Mollie-Signature header.
+	if h.webhookSecret != "" {
+		signature := r.Header.Get("X-Mollie-Signature")
+		if signature == "" {
+			log.Printf("ERROR: mollie webhook: missing X-Mollie-Signature header")
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		if !verifyMollieSignature(rawBody, signature, h.webhookSecret) {
+			log.Printf("ERROR: mollie webhook: invalid signature")
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+	}
+
 	// Mollie sends webhook payload as application/x-www-form-urlencoded.
+	// Reconstruct the form body for ParseForm.
+	r.Body = io.NopCloser(bytes.NewReader(rawBody))
 	if err := r.ParseForm(); err != nil {
 		log.Printf("ERROR: mollie webhook: failed to parse form: %v", err)
 		w.WriteHeader(http.StatusOK)
@@ -591,4 +626,14 @@ func getEnvOrDefault(key, def string) string {
 		return v
 	}
 	return def
+}
+
+// verifyMollieSignature validates the X-Mollie-Signature header against
+// the raw webhook body using HMAC-SHA256. The secret is the Mollie API key
+// used to sign webhook payloads.
+func verifyMollieSignature(body []byte, signature, secret string) bool {
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write(body)
+	expected := hex.EncodeToString(mac.Sum(nil))
+	return hmac.Equal([]byte(expected), []byte(signature))
 }

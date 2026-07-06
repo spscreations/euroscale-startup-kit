@@ -519,7 +519,7 @@ func runCommand(ctx context.Context, name string, args ...string) (string, error
 	cmd := exec.CommandContext(ctx, name, args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("command %s failed: %w\noutput: %s", name, err, string(output))
+		return "", fmt.Errorf("command %s failed: %w", name, err)
 	}
 	return string(output), nil
 }

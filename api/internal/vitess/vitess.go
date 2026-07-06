@@ -60,7 +60,7 @@ func (m *Manager) ListBackups(ctx context.Context, keyspace string) (string, err
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("failed to list backups for keyspace %q: %w\noutput: %s", keyspace, err, string(output))
+		return "", fmt.Errorf("failed to list backups for keyspace %q: %w", keyspace, err)
 	}
 
 	return string(output), nil
@@ -76,7 +76,7 @@ func (m *Manager) RestoreFromBackup(ctx context.Context, tabletAlias string) (st
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("failed to restore from backup for tablet %q: %w\noutput: %s", tabletAlias, err, string(output))
+		return "", fmt.Errorf("failed to restore from backup for tablet %q: %w", tabletAlias, err)
 	}
 
 	return string(output), nil
@@ -100,9 +100,9 @@ func (m *Manager) CreateDatabase(ctx context.Context, name string) error {
 		"CreateKeyspace", name,
 	)
 
-	output, err := cmd.CombinedOutput()
+	_, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("failed to create keyspace %q: %w\noutput: %s", name, err, string(output))
+		return fmt.Errorf("failed to create keyspace %q: %w", name, err)
 	}
 
 	return nil
@@ -130,7 +130,7 @@ func (m *Manager) DeleteDatabase(ctx context.Context, name string) error {
 		if strings.Contains(string(output), "failed to lock") {
 			return nil
 		}
-		return fmt.Errorf("failed to delete keyspace %q: %w\noutput: %s", name, err, string(output))
+		return fmt.Errorf("failed to delete keyspace %q: %w", name, err)
 	}
 
 	return nil

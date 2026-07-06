@@ -1,33 +1,20 @@
 resource "hcloud_firewall" "euroscale" {
   name = "euroscale-internal"
 
+  # SSH — restricted to admin/office IP range only
   rule {
     direction  = "in"
     protocol   = "tcp"
-    source_ips = ["0.0.0.0/0", "::/0"]
-    port       = "22" # SSH
+    source_ips = var.admin_allowed_ips
+    port       = "22"
   }
 
+  # K8s API — restricted to admin/office IP range only
   rule {
     direction  = "in"
     protocol   = "tcp"
-    source_ips = ["0.0.0.0/0", "::/0"]
-    port       = "6443" # K8s API — lock to your IP in prod
-  }
-
-  # Vitess ports
-  rule {
-    direction  = "in"
-    protocol   = "tcp"
-    source_ips = ["0.0.0.0/0"]
-    port       = "3306" # MySQL protocol
-  }
-
-  rule {
-    direction  = "in"
-    protocol   = "tcp"
-    source_ips = ["0.0.0.0/0"]
-    port       = "15991" # vtgate admin
+    source_ips = var.admin_allowed_ips
+    port       = "6443"
   }
 
   # Internal node-to-node (Flannel VXLAN)
@@ -40,7 +27,7 @@ resource "hcloud_firewall" "euroscale" {
     port       = "8472"
   }
 
-  # HTTP for admin dashboard
+  # HTTP for Traefik ingress (dashboard + API routes)
   rule {
     direction  = "in"
     protocol   = "tcp"
@@ -48,7 +35,7 @@ resource "hcloud_firewall" "euroscale" {
     port       = "80"
   }
 
-  # HTTPS for admin dashboard
+  # HTTPS for Traefik ingress
   rule {
     direction  = "in"
     protocol   = "tcp"
@@ -56,11 +43,11 @@ resource "hcloud_firewall" "euroscale" {
     port       = "443"
   }
 
-  # NodePort range for K8s services (dashboard, API, auth)
+  # Traefik dashboard / metrics (if exposed via NodePort)
   rule {
     direction  = "in"
     protocol   = "tcp"
-    source_ips = ["0.0.0.0/0"]
-    port       = "30080-30238"
+    source_ips = var.admin_allowed_ips
+    port       = "30080"
   }
 }

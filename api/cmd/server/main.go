@@ -15,15 +15,16 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
 	"github.com/google/uuid"
+	"golang.org/x/time/rate"
 	"connectrpc.com/connect"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
-	grpcmeta "google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 
@@ -91,7 +92,10 @@ type server struct {
 	host     string
 	sslCAPem string
 
-	apiKey string
+	// jwtSecret is the signing key for JWT tokens.
+	jwtSecret string
+	// userStore holds the in-memory user registry (for login/signup).
+	userStore *auth.UserStore
 
 	// mollieHTTPHandler handles Mollie payment endpoints (create-payment, webhook, invoices).
 	mollieHTTPHandler *molliepkg.Handler
@@ -100,10 +104,48 @@ type server struct {
 	pitrHandler *pitr.Handler
 }
 
+// ── Authorization helpers ─────────────────────────────────────────────────
+
+// authenticatedUserID extracts the user ID from the request context.
+// Returns an error if the user is not authenticated.
+func authenticatedUserID(ctx context.Context) (string, error) {
+	userID := auth.GetUserID(ctx)
+	if userID == "" {
+		return "", status.Error(codes.Unauthenticated, "authentication required")
+	}
+	return userID, nil
+}
+
+// verifyDatabaseOwnership checks that the authenticated user owns the
+// database identified by dbID. Returns a gRPC error if not.
+func (s *server) verifyDatabaseOwnership(ctx context.Context, dbID string) error {
+	ownerID := s.secrets.GetUserID(ctx, dbID)
+	if ownerID == "" {
+		return status.Errorf(codes.NotFound, "database not found")
+	}
+
+	userID, err := authenticatedUserID(ctx)
+	if err != nil {
+		return err
+	}
+
+	if ownerID != userID {
+		return status.Error(codes.PermissionDenied, "access denied")
+	}
+
+	return nil
+}
+
 // ── gRPC method implementations ────────────────────────────────────────────
 
 // CreateDatabase provisions a new Vitess database.
 func (s *server) CreateDatabase(ctx context.Context, req *pb.CreateDatabaseRequest) (*pb.CreateDatabaseResponse, error) {
+	// Extract the authenticated user ID from context.
+	userID, err := authenticatedUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	// Validate the request.
 	if req.Name == "" {
 		return nil, status.Error(codes.InvalidArgument, "name is required")
@@ -114,16 +156,13 @@ func (s *server) CreateDatabase(ctx context.Context, req *pb.CreateDatabaseReque
 	if req.Region != "" && req.Region != models.RegionNuremberg && req.Region != models.RegionHelsinki {
 		return nil, status.Errorf(codes.InvalidArgument, "unsupported region: %s", req.Region)
 	}
-	if req.UserId == "" {
-		return nil, status.Error(codes.InvalidArgument, "user_id is required")
-	}
 
 	// Tier enforcement: check database count limit.
-	tier := s.tierStore.GetTierForUser(ctx, req.UserId)
-	usage, err := s.tierStore.GetCurrentUsage(ctx, req.UserId)
+	tier := s.tierStore.GetTierForUser(ctx, userID)
+	usage, err := s.tierStore.GetCurrentUsage(ctx, userID)
 	if err != nil {
-		log.Printf("ERROR: failed to get usage for user %q: %v", req.UserId, err)
-		return nil, status.Errorf(codes.Internal, "failed to check tier usage: %v", err)
+		log.Printf("ERROR: failed to get usage for user %q: %v", userID, err)
+		return nil, status.Error(codes.Internal, "failed to check tier usage")
 	}
 	if tier.MaxDatabases != tiers.UnlimitedDBs && int(usage.DatabaseCount) >= tier.MaxDatabases {
 		return nil, status.Errorf(codes.ResourceExhausted,
@@ -148,7 +187,7 @@ func (s *server) CreateDatabase(ctx context.Context, req *pb.CreateDatabaseReque
 	// Create the database in Vitess.
 	if err := s.vtgate.CreateDatabase(ctx, dbName); err != nil {
 		log.Printf("ERROR: failed to create vitess database %q: %v", dbName, err)
-		return nil, status.Errorf(codes.Internal, "failed to create database: %v", err)
+		return nil, status.Error(codes.Internal, "failed to create database")
 	}
 
 	// Generate credentials.
@@ -157,7 +196,7 @@ func (s *server) CreateDatabase(ctx context.Context, req *pb.CreateDatabaseReque
 		log.Printf("ERROR: failed to generate credentials for %q: %v", dbID, err)
 		// Best-effort cleanup of the created database.
 		_ = s.vtgate.DeleteDatabase(context.Background(), dbName)
-		return nil, status.Errorf(codes.Internal, "failed to generate credentials: %v", err)
+		return nil, status.Error(codes.Internal, "failed to generate credentials")
 	}
 
 	// Build connection string.
@@ -174,7 +213,7 @@ func (s *server) CreateDatabase(ctx context.Context, req *pb.CreateDatabaseReque
 		Port:      3306,
 		Username:  username,
 		Status:    models.StatusReady,
-		UserID:    req.UserId,
+		UserID:    userID,
 		CreatedAt: now,
 	}
 
@@ -191,21 +230,21 @@ func (s *server) CreateDatabase(ctx context.Context, req *pb.CreateDatabaseReque
 		log.Printf("ERROR: failed to store credentials for %q: %v", dbID, err)
 		// Best-effort cleanup.
 		_ = s.vtgate.DeleteDatabase(context.Background(), dbName)
-		return nil, status.Errorf(codes.Internal, "failed to store credentials: %v", err)
+		return nil, status.Error(codes.Internal, "failed to store credentials")
 	}
 
 	// Increment the database count for tier tracking.
-	if err := s.tierStore.IncrementDatabaseCount(ctx, req.UserId); err != nil {
-		log.Printf("ERROR: failed to increment database count for user %q: %v", req.UserId, err)
+	if err := s.tierStore.IncrementDatabaseCount(ctx, userID); err != nil {
+		log.Printf("ERROR: failed to increment database count for user %q: %v", userID, err)
 		// Non-fatal — the database was created, just logging is fine.
 	}
 
 	// Track initial storage (256 MB default for new databases).
-	if err := s.tierStore.AddStorageBytes(ctx, req.UserId, 256*1024*1024); err != nil {
-		log.Printf("ERROR: failed to track initial storage for user %q: %v", req.UserId, err)
+	if err := s.tierStore.AddStorageBytes(ctx, userID, 256*1024*1024); err != nil {
+		log.Printf("ERROR: failed to track initial storage for user %q: %v", userID, err)
 	}
 
-	log.Printf("INFO: created database %q (id=%s, user=%s, region=%s)", dbName, dbID, req.UserId, region)
+	log.Printf("INFO: created database %q (id=%s, user=%s, region=%s)", dbName, dbID, userID, region)
 
 	return &pb.CreateDatabaseResponse{
 		DatabaseId:       dbID,
@@ -228,17 +267,22 @@ func (s *server) DeleteDatabase(ctx context.Context, req *pb.DeleteDatabaseReque
 		return nil, status.Error(codes.InvalidArgument, "database_id is required")
 	}
 
+	// Verify the authenticated user owns this database.
+	if err := s.verifyDatabaseOwnership(ctx, req.DatabaseId); err != nil {
+		return nil, err
+	}
+
 	// Retrieve credentials to find the database name.
 	creds, err := s.secrets.GetCredentials(ctx, req.DatabaseId)
 	if err != nil {
 		log.Printf("ERROR: failed to get credentials for %q: %v", req.DatabaseId, err)
-		return nil, status.Errorf(codes.NotFound, "database %q not found", req.DatabaseId)
+		return nil, status.Error(codes.NotFound, "database not found")
 	}
 
 	// Drop the database in Vitess.
 	if err := s.vtgate.DeleteDatabase(ctx, extractDBName(creds.ConnectionString)); err != nil {
 		log.Printf("ERROR: failed to drop vitess database for %q: %v", req.DatabaseId, err)
-		return nil, status.Errorf(codes.Internal, "failed to delete database: %v", err)
+		return nil, status.Error(codes.Internal, "failed to delete database")
 	}
 
 	// Delete the K8s Secret.
@@ -248,8 +292,8 @@ func (s *server) DeleteDatabase(ctx context.Context, req *pb.DeleteDatabaseReque
 	}
 
 	// Decrement the database count for tier tracking.
-	// The user_id was extracted from the credentials secret labels above.
-	userID := s.secrets.GetUserID(ctx, req.DatabaseId)
+	// Get user ID from context for the usage update.
+	userID, _ := authenticatedUserID(ctx)
 	if userID != "" {
 		if err := s.tierStore.DecrementDatabaseCount(ctx, userID); err != nil {
 			log.Printf("ERROR: failed to decrement database count for user %q: %v", userID, err)
@@ -266,14 +310,16 @@ func (s *server) DeleteDatabase(ctx context.Context, req *pb.DeleteDatabaseReque
 
 // ListDatabases returns all databases owned by a user.
 func (s *server) ListDatabases(ctx context.Context, req *pb.ListDatabasesRequest) (*pb.ListDatabasesResponse, error) {
-	if req.UserId == "" {
-		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+	userID, err := authenticatedUserID(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	// List all euroscale-managed databases from K8s Secrets.
 	allDBs, err := s.secrets.ListAll(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to list databases: %v", err)
+		log.Printf("ERROR: failed to list databases: %v", err)
+		return nil, status.Error(codes.Internal, "failed to list databases")
 	}
 
 	pageSize := int(req.PageSize)
@@ -284,7 +330,7 @@ func (s *server) ListDatabases(ctx context.Context, req *pb.ListDatabasesRequest
 	// Filter by user_id.
 	databases := make([]*pb.Database, 0)
 	for _, db := range allDBs {
-		if db.UserID != req.UserId {
+		if db.UserID != userID {
 			continue
 		}
 		pbDB := &pb.Database{
@@ -314,9 +360,14 @@ func (s *server) GetDatabase(ctx context.Context, req *pb.GetDatabaseRequest) (*
 		return nil, status.Error(codes.InvalidArgument, "database_id is required")
 	}
 
+	// Verify the authenticated user owns this database.
+	if err := s.verifyDatabaseOwnership(ctx, req.DatabaseId); err != nil {
+		return nil, err
+	}
+
 	creds, err := s.secrets.GetCredentials(ctx, req.DatabaseId)
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "database %q not found", req.DatabaseId)
+		return nil, status.Error(codes.NotFound, "database not found")
 	}
 
 	return &pb.GetDatabaseResponse{
@@ -338,10 +389,15 @@ func (s *server) RotateCredentials(ctx context.Context, req *pb.RotateCredential
 		return nil, status.Error(codes.InvalidArgument, "database_id is required")
 	}
 
+	// Verify the authenticated user owns this database.
+	if err := s.verifyDatabaseOwnership(ctx, req.DatabaseId); err != nil {
+		return nil, err
+	}
+
 	// Retrieve existing credentials to find the database name.
 	existing, err := s.secrets.GetCredentials(ctx, req.DatabaseId)
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "database %q not found", req.DatabaseId)
+		return nil, status.Error(codes.NotFound, "database not found")
 	}
 
 	dbName := extractDBName(existing.ConnectionString)
@@ -349,7 +405,8 @@ func (s *server) RotateCredentials(ctx context.Context, req *pb.RotateCredential
 	// Generate new credentials.
 	username, password, err := vitess.GenerateCredentials()
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to generate credentials: %v", err)
+		log.Printf("ERROR: failed to generate credentials for %q: %v", req.DatabaseId, err)
+		return nil, status.Error(codes.Internal, "failed to generate credentials")
 	}
 
 	// Build new connection string.
@@ -379,7 +436,8 @@ func (s *server) RotateCredentials(ctx context.Context, req *pb.RotateCredential
 		SSLCAPem:         s.sslCAPem,
 	}
 	if err := s.secrets.UpdateCredentials(ctx, db, newCreds); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to update credentials: %v", err)
+		log.Printf("ERROR: failed to update credentials for %q: %v", req.DatabaseId, err)
+		return nil, status.Error(codes.Internal, "failed to update credentials")
 	}
 
 	log.Printf("INFO: rotated credentials for database %q", req.DatabaseId)
@@ -401,9 +459,15 @@ func (s *server) GetIPWhitelist(ctx context.Context, req *pb.GetIPWhitelistReque
 		return nil, status.Error(codes.InvalidArgument, "database_id is required")
 	}
 
+	// Verify the authenticated user owns this database.
+	if err := s.verifyDatabaseOwnership(ctx, req.DatabaseId); err != nil {
+		return nil, err
+	}
+
 	entries, err := s.secrets.GetIPWhitelist(ctx, req.DatabaseId)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get IP whitelist: %v", err)
+		log.Printf("ERROR: failed to get IP whitelist for %q: %v", req.DatabaseId, err)
+		return nil, status.Error(codes.Internal, "failed to get IP whitelist")
 	}
 
 	pbEntries := make([]*pb.IPWhitelistEntry, 0, len(entries))
@@ -427,6 +491,11 @@ func (s *server) AddIPWhitelistEntry(ctx context.Context, req *pb.AddIPWhitelist
 	}
 	if req.Cidr == "" {
 		return nil, status.Error(codes.InvalidArgument, "cidr is required")
+	}
+
+	// Verify the authenticated user owns this database.
+	if err := s.verifyDatabaseOwnership(ctx, req.DatabaseId); err != nil {
+		return nil, err
 	}
 
 	// Validate CIDR format.
@@ -480,6 +549,11 @@ func (s *server) RemoveIPWhitelistEntry(ctx context.Context, req *pb.RemoveIPWhi
 		return nil, status.Error(codes.InvalidArgument, "cidr is required")
 	}
 
+	// Verify the authenticated user owns this database.
+	if err := s.verifyDatabaseOwnership(ctx, req.DatabaseId); err != nil {
+		return nil, err
+	}
+
 	// Get existing whitelist.
 	entries, err := s.secrets.GetIPWhitelist(ctx, req.DatabaseId)
 	if err != nil {
@@ -516,14 +590,16 @@ func (s *server) RemoveIPWhitelistEntry(ctx context.Context, req *pb.RemoveIPWhi
 
 // GetUsage returns the current usage and tier limits for a user.
 func (s *server) GetUsage(ctx context.Context, req *pb.GetUsageRequest) (*pb.GetUsageResponse, error) {
-	if req.UserId == "" {
-		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+	userID, err := authenticatedUserID(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	tier := s.tierStore.GetTierForUser(ctx, req.UserId)
-	usage, err := s.tierStore.GetCurrentUsage(ctx, req.UserId)
+	tier := s.tierStore.GetTierForUser(ctx, userID)
+	usage, err := s.tierStore.GetCurrentUsage(ctx, userID)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get usage: %v", err)
+		log.Printf("ERROR: failed to get usage for user %q: %v", userID, err)
+		return nil, status.Error(codes.Internal, "failed to get usage")
 	}
 
 	limits := &pb.TierLimits{
@@ -537,7 +613,7 @@ func (s *server) GetUsage(ctx context.Context, req *pb.GetUsageRequest) (*pb.Get
 	}
 
 	return &pb.GetUsageResponse{
-		UserId: req.UserId,
+		UserId: userID,
 		Tier:   tier.Name,
 		Limits: limits,
 		Usage: &pb.Usage{
@@ -549,8 +625,15 @@ func (s *server) GetUsage(ctx context.Context, req *pb.GetUsageRequest) (*pb.Get
 	}, nil
 }
 
-// SetUserTier updates the subscription tier for a user (admin only).
+// SetUserTier updates the subscription tier for a user (admin only — gated
+// by the role claim in the JWT). The target user ID is passed in the request
+// (only allowed for admin users) or defaults to the authenticated user.
 func (s *server) SetUserTier(ctx context.Context, req *pb.SetUserTierRequest) (*pb.SetUserTierResponse, error) {
+	role := auth.GetUserRole(ctx)
+	if role != "admin" {
+		return nil, status.Error(codes.PermissionDenied, "admin access required")
+	}
+
 	if req.UserId == "" {
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
 	}
@@ -559,7 +642,8 @@ func (s *server) SetUserTier(ctx context.Context, req *pb.SetUserTierRequest) (*
 	}
 
 	if err := s.tierStore.SetUserTier(ctx, req.UserId, req.Tier); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "failed to set tier: %v", err)
+		log.Printf("ERROR: failed to set tier %q for user %q: %v", req.Tier, req.UserId, err)
+		return nil, status.Errorf(codes.InvalidArgument, "invalid tier")
 	}
 
 	log.Printf("INFO: set tier %q for user %q", req.Tier, req.UserId)
@@ -578,11 +662,13 @@ func (s *server) ResizeStorage(ctx context.Context, req *pb.ResizeStorageRequest
 		return nil, status.Error(codes.InvalidArgument, "additional_gb must be positive")
 	}
 
-	// Find the user who owns this database to update tier usage.
-	userID := s.secrets.GetUserID(ctx, req.DatabaseId)
-	if userID == "" {
-		return nil, status.Errorf(codes.NotFound, "database %q not found", req.DatabaseId)
+	// Verify the authenticated user owns this database.
+	if err := s.verifyDatabaseOwnership(ctx, req.DatabaseId); err != nil {
+		return nil, err
 	}
+
+	// Find the user who owns this database to update tier usage.
+	userID, _ := authenticatedUserID(ctx)
 
 	// Resize the PVC.
 	newTotalGB, err := s.resizer.ResizePVC(ctx, req.DatabaseId, req.AdditionalGb)
@@ -590,7 +676,7 @@ func (s *server) ResizeStorage(ctx context.Context, req *pb.ResizeStorageRequest
 		log.Printf("ERROR: failed to resize PVC for database %q: %v", req.DatabaseId, err)
 		return &pb.ResizeStorageResponse{
 			Success: false,
-			Message: fmt.Sprintf("resize failed: %v", err),
+			Message: "resize failed",
 		}, nil
 	}
 
@@ -654,9 +740,8 @@ func extractDBName(connStr string) string {
 
 // ── Auth HTTP handlers ───────────────────────────────────────────────────────
 
-// authHandler handles login/signup by accepting any credentials and returning
-// a valid session with the API key as the bearer token. In production this
-// would validate against a user database.
+// authHandler handles login and signup with real password validation and
+// per-user JWT token generation. The JWT is valid for 24 hours.
 func (s *server) authHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -664,8 +749,9 @@ func (s *server) authHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var (
-		email string
-		name  string
+		email    string
+		password string
+		name     string
 	)
 
 	// Determine which endpoint was hit.
@@ -677,7 +763,7 @@ func (s *server) authHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		email = req.Email
-		name = ""
+		password = req.Password
 	case strings.HasSuffix(r.URL.Path, "/signup"):
 		var req signupRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -685,27 +771,60 @@ func (s *server) authHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		email = req.Email
+		password = req.Password
 		name = req.Name
 	default:
 		http.Error(w, "not found", http.StatusNotFound)
 		return
 	}
 
-	if email == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"message": "email is required"})
+	if email == "" || password == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"message": "email and password are required"})
 		return
 	}
 
-	// Generate a deterministic user ID from email.
-	userID := uuid.NewSHA1(uuid.NameSpaceDNS, []byte(email)).String()
+	var user *auth.User
+
+	// Signup path: create a new user.
+	if strings.HasSuffix(r.URL.Path, "/signup") {
+		if name == "" {
+			name = email // default name to email prefix
+		}
+		var err error
+		user, err = s.userStore.CreateUser(email, name, password, "user")
+		if err != nil {
+			log.Printf("ERROR: signup failed for %q: %v", email, err)
+			writeJSON(w, http.StatusConflict, map[string]string{"message": "a user with this email already exists"})
+			return
+		}
+		log.Printf("INFO: new user signed up: %s <%s>", user.ID, user.Email)
+	} else {
+		// Login path: authenticate existing user.
+		var err error
+		user, err = s.userStore.Authenticate(email, password)
+		if err != nil {
+			log.Printf("WARNING: login failed for %q: %v", email, err)
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"message": "invalid email or password"})
+			return
+		}
+		log.Printf("INFO: user logged in: %s <%s>", user.ID, user.Email)
+	}
+
+	// Generate JWT (valid for 24 hours).
+	token, err := auth.GenerateJWT(user.ID, user.Email, user.Role, s.jwtSecret, 24*time.Hour)
+	if err != nil {
+		log.Printf("ERROR: failed to generate JWT for %q: %v", user.ID, err)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"message": "failed to generate token"})
+		return
+	}
 
 	resp := authResponse{
 		User: authUser{
-			ID:    userID,
-			Name:  name,
-			Email: email,
+			ID:    user.ID,
+			Name:  user.Name,
+			Email: user.Email,
 		},
-		Token:            s.apiKey,
+		Token:            token,
 		ExpiresInSeconds: 86400,
 	}
 
@@ -736,12 +855,13 @@ type ipWhitelistRemoveRequest struct {
 }
 
 // ipWhitelistHandler handles GET (list), POST (add), and DELETE (remove)
-// for per-user IP whitelists. The user_id is extracted from the
-// X-User-ID header.
+// for per-user IP whitelists. The authenticated user ID is extracted from the
+// JWT token in the Authorization header.
 func (s *server) ipWhitelistHandler(w http.ResponseWriter, r *http.Request) {
-	userID := r.Header.Get("X-User-ID")
-	if userID == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"message": "X-User-ID header is required"})
+	// Extract and validate JWT from the Authorization header.
+	userID, err := s.authenticateHTTPRequest(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"message": err.Error()})
 		return
 	}
 
@@ -786,7 +906,7 @@ func (s *server) handleAddIP(w http.ResponseWriter, r *http.Request, userID stri
 
 	if err := s.ipwl.AddIP(r.Context(), userID, req.IP); err != nil {
 		log.Printf("ERROR: failed to add IP %q for user %q: %v", req.IP, userID, err)
-		writeJSON(w, http.StatusBadRequest, map[string]string{"message": err.Error()})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"message": "invalid IP address or format"})
 		return
 	}
 
@@ -810,7 +930,7 @@ func (s *server) handleRemoveIP(w http.ResponseWriter, r *http.Request, userID s
 
 	if err := s.ipwl.RemoveIP(r.Context(), userID, req.IP); err != nil {
 		log.Printf("ERROR: failed to remove IP %q for user %q: %v", req.IP, userID, err)
-		writeJSON(w, http.StatusBadRequest, map[string]string{"message": err.Error()})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"message": "IP not found"})
 		return
 	}
 
@@ -818,6 +938,24 @@ func (s *server) handleRemoveIP(w http.ResponseWriter, r *http.Request, userID s
 
 	// Return the updated list.
 	s.handleListIPs(w, r, userID)
+}
+
+// authenticateHTTPRequest extracts and validates a JWT Bearer token from the
+// Authorization header of an HTTP request. Returns the authenticated user ID.
+func (s *server) authenticateHTTPRequest(r *http.Request) (string, error) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return "", fmt.Errorf("missing Authorization header")
+	}
+	tokenStr, ok := strings.CutPrefix(authHeader, "Bearer ")
+	if !ok {
+		return "", fmt.Errorf("invalid Authorization header format")
+	}
+	userID, _, _, err := auth.ValidateJWT(tokenStr, s.jwtSecret)
+	if err != nil {
+		return "", fmt.Errorf("invalid token")
+	}
+	return userID, nil
 }
 
 // extractClientIP extracts the real client IP from request headers or RemoteAddr.
@@ -901,36 +1039,12 @@ func ipWhitelistInterceptor(store *ipwhitelist.Store) connect.UnaryInterceptorFu
 	return connect.UnaryInterceptorFunc(interceptor)
 }
 
-// ── Auth interceptor (supports both x-api-key and Authorization: *** ─────
+// ── Auth interceptor (JWT-based) ──────────────────────────────────────────
 
-func authInterceptor(validKey string) grpc.UnaryServerInterceptor {
-	return func(
-		ctx context.Context,
-		req interface{},
-		info *grpc.UnaryServerInfo,
-		handler grpc.UnaryHandler,
-	) (interface{}, error) {
-		md, ok := grpcmeta.FromIncomingContext(ctx)
-		if !ok {
-			return nil, status.Error(codes.Unauthenticated, "missing metadata")
-		}
-
-		// Try x-api-key header first
-		if vals := md.Get(auth.MetadataKey); len(vals) > 0 && vals[0] == validKey {
-			return handler(ctx, req)
-		}
-
-		// Try Authorization: Bearer ***
-		if vals := md.Get("authorization"); len(vals) > 0 {
-			for _, v := range vals {
-				if strings.HasPrefix(v, "Bearer ") && strings.TrimPrefix(v, "Bearer ") == validKey {
-					return handler(ctx, req)
-				}
-			}
-		}
-
-		return nil, status.Error(codes.Unauthenticated, "invalid API key")
-	}
+// authInterceptor validates JWT Bearer tokens and injects the authenticated
+// user ID into the gRPC context using the auth package's JWTUnaryInterceptor.
+func authInterceptor(jwtSecret string) grpc.UnaryServerInterceptor {
+	return auth.JWTUnaryInterceptor(jwtSecret)
 }
 
 // ── health endpoints ─────────────────────────────────────────────────────────
@@ -995,9 +1109,14 @@ func main() {
 		vtctldAddr = "euroscale-vtctld:15999"
 	}
 
-	apiKey := os.Getenv("EUROSCALE_API_KEY")
-	if apiKey == "" {
-		log.Fatal("EUROSCALE_API_KEY environment variable is required")
+	// JWT secret for token signing. Falls back to EUROSCALE_API_KEY for
+	// backward compatibility during migration.
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = os.Getenv("EUROSCALE_API_KEY")
+	}
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET (or EUROSCALE_API_KEY) environment variable is required")
 	}
 
 	namespace := os.Getenv("K8S_NAMESPACE")
@@ -1070,6 +1189,10 @@ func main() {
 	// ── Initialize Mollie handler ──────────────────────────────────────────
 	var mollieHTTPHandler *molliepkg.Handler
 	mollieAPIKey := os.Getenv("MOLLIE_API_KEY")
+	mollieWebhookSecret := os.Getenv("MOLLIE_WEBHOOK_SECRET")
+	if mollieWebhookSecret == "" {
+		mollieWebhookSecret = mollieAPIKey // fallback: use API key as webhook secret
+	}
 	if mollieAPIKey != "" {
 		baseURL := os.Getenv("MOLLIE_BASE_URL")
 		if baseURL == "" {
@@ -1082,7 +1205,7 @@ func main() {
 		if err != nil {
 			log.Printf("WARNING: failed to initialize Mollie client: %v", err)
 		} else {
-			mollieHTTPHandler = molliepkg.NewHandler(mollieClient, tierStore)
+			mollieHTTPHandler = molliepkg.NewHandler(mollieClient, tierStore, mollieWebhookSecret)
 			log.Println("Mollie payment handler initialized.")
 		}
 	} else {
@@ -1091,6 +1214,23 @@ func main() {
 
 	// ── Load SSL CA certificate ───────────────────────────────────────────
 	sslCAPem := loadSSLCert()
+
+	// ── Initialize user store ──────────────────────────────────────────────
+	userStore := auth.NewUserStore()
+	log.Println("User store initialized.")
+
+	// Seed default admin user if configured via env vars.
+	adminEmail := os.Getenv("ADMIN_EMAIL")
+	adminPassword := os.Getenv("ADMIN_PASSWORD")
+	if adminEmail != "" && adminPassword != "" {
+		if !userStore.HasUser() {
+			if _, err := userStore.CreateUser(adminEmail, "Admin", adminPassword, "admin"); err != nil {
+				log.Printf("WARNING: failed to seed admin user: %v", err)
+			} else {
+				log.Printf("INFO: seeded admin user %q", adminEmail)
+			}
+		}
+	}
 
 	// ── Build the gRPC server ───────────────────────────────────────────────
 	// Initialize the PITR handler for backup/restore operations.
@@ -1104,13 +1244,14 @@ func main() {
 		resizer:   resizer,
 		host:      host,
 		sslCAPem:  sslCAPem,
-		apiKey:             apiKey,
+		jwtSecret:        jwtSecret,
+		userStore:        userStore,
 		mollieHTTPHandler: mollieHTTPHandler,
 		pitrHandler:       pitrHandler,
 	}
 
 	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(authInterceptor(apiKey)),
+		grpc.UnaryInterceptor(authInterceptor(jwtSecret)),
 	)
 	pb.RegisterDatabaseServiceServer(grpcServer, srv)
 
@@ -1157,39 +1298,44 @@ func main() {
 	httpMux.HandleFunc("/api/v1/ip-whitelist", srv.ipWhitelistHandler)
 	httpMux.HandleFunc("/api/v1/ip-whitelist/", srv.ipWhitelistHandler)
 
-	// Mollie payment endpoints
+	// Mollie payment endpoints (require JWT auth except webhook which uses signature verification).
 	if mollieHTTPHandler != nil {
-		httpMux.HandleFunc("/api/v1/create-payment", mollieHTTPHandler.HandleCreatePayment)
+		httpMux.HandleFunc("/api/v1/create-payment", withHTTPAuth(jwtSecret, mollieHTTPHandler.HandleCreatePayment))
 		httpMux.HandleFunc("/api/v1/mollie-webhook", mollieHTTPHandler.HandleWebhook)
-		httpMux.HandleFunc("/api/v1/invoices", mollieHTTPHandler.HandleListInvoices)
+		httpMux.HandleFunc("/api/v1/invoices", withHTTPAuth(jwtSecret, mollieHTTPHandler.HandleListInvoices))
 		log.Println("Mollie payment handlers registered: /api/v1/create-payment, /api/v1/mollie-webhook, /api/v1/invoices")
 	} else {
 		log.Println("MOLLIE_API_KEY not set — Mollie payment handlers disabled")
 	}
 
-	// PITR backup and restore endpoints
-	httpMux.HandleFunc("/api/v1/backups", srv.pitrHandler.HandleListBackups)
-	httpMux.HandleFunc("/api/v1/backups/", srv.pitrHandler.HandleListBackups)
-	httpMux.HandleFunc("/api/v1/restore", srv.pitrHandler.HandleTriggerRestore)
-	httpMux.HandleFunc("/api/v1/restore/", srv.pitrHandler.HandleTriggerRestore)
-	httpMux.HandleFunc("/api/v1/restores", srv.pitrHandler.HandleRestoreStatus)
-	httpMux.HandleFunc("/api/v1/restores/", srv.pitrHandler.HandleRestoreStatus)
+	// PITR backup and restore endpoints (require JWT auth).
+	httpMux.HandleFunc("/api/v1/backups", withHTTPAuth(jwtSecret, srv.pitrHandler.HandleListBackups))
+	httpMux.HandleFunc("/api/v1/backups/", withHTTPAuth(jwtSecret, srv.pitrHandler.HandleListBackups))
+	httpMux.HandleFunc("/api/v1/restore", withHTTPAuth(jwtSecret, srv.pitrHandler.HandleTriggerRestore))
+	httpMux.HandleFunc("/api/v1/restore/", withHTTPAuth(jwtSecret, srv.pitrHandler.HandleTriggerRestore))
+	httpMux.HandleFunc("/api/v1/restores", withHTTPAuth(jwtSecret, srv.pitrHandler.HandleRestoreStatus))
+	httpMux.HandleFunc("/api/v1/restores/", withHTTPAuth(jwtSecret, srv.pitrHandler.HandleRestoreStatus))
 	log.Println("PITR endpoints registered: /api/v1/backups, /api/v1/restore, /api/v1/restores")
 
 	// Build and register Connect/gRPC-web handler on the same port.
 	// This makes the DatabaseService available to browsers via HTTP/1.1
 	// using the Connect protocol (JSON or binary), plus gRPC-web.
 	// Chain the IP whitelist interceptor after the auth interceptor.
-	connectHandler := connectpkg.NewHandler(srv, apiKey, ipWhitelistInterceptor(ipwlStore))
+	connectHandler := connectpkg.NewHandler(srv, jwtSecret, ipWhitelistInterceptor(ipwlStore))
 	httpMux.Handle("/euroscale.v1.DatabaseService/", connectHandler)
 
 	// Register MetadataService for schema browsing.
-	metaConnectHandler := connectpkg.NewMetadataHandler(metaSvc, apiKey)
+	metaConnectHandler := connectpkg.NewMetadataHandler(metaSvc, jwtSecret)
 	httpMux.Handle("/euroscale.v1.MetadataService/", metaConnectHandler)
+
+	// Chain middleware: CORS → rate limiting → handler.
+	var httpHandler http.Handler = httpMux
+	httpHandler = rateLimitMiddleware(httpHandler)
+	httpHandler = withCORS(httpHandler)
 
 	httpServer := &http.Server{
 		Addr:         httpPort,
-		Handler:      withCORS(httpMux),
+		Handler:      httpHandler,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 60 * time.Second,
 		IdleTimeout:  60 * time.Second,
@@ -1219,12 +1365,30 @@ func main() {
 	log.Println("Server stopped.")
 }
 
-// withCORS wraps a handler with permissive CORS headers for development.
-// It adds headers required by gRPC-web and the Connect protocol so browsers
-// can make cross-origin RPC calls to the HTTP server on port 8081.
+// withCORS wraps a handler with CORS headers. Origin is restricted to known
+// EuroScale domains; falls back to reading ALLOWED_ORIGINS from env.
 func withCORS(next http.Handler) http.Handler {
+	allowedOrigin := os.Getenv("ALLOWED_ORIGINS")
+	if allowedOrigin == "" {
+		allowedOrigin = "https://euroscale.app, https://app.euroscale.app"
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		origin := r.Header.Get("Origin")
+		originAllowed := false
+		for _, allowed := range strings.Split(allowedOrigin, ",") {
+			if strings.TrimSpace(allowed) == origin {
+				originAllowed = true
+				break
+			}
+		}
+		if originAllowed || origin == "" {
+			if origin != "" {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+			} else {
+				w.Header().Set("Access-Control-Allow-Origin", strings.Split(allowedOrigin, ",")[0])
+			}
+		}
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers",
 			"Content-Type, Authorization, X-User-Agent, X-User-ID, "+
@@ -1239,6 +1403,64 @@ func withCORS(next http.Handler) http.Handler {
 
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// rateLimitMiddleware applies per-IP token-bucket rate limiting.
+// Global limit: 100 requests/second burstable to 200.
+// This runs before the handler for all HTTP requests.
+var rateLimiterStore = struct {
+	sync.Mutex
+	limiters map[string]*rate.Limiter
+}{limiters: make(map[string]*rate.Limiter)}
+
+// withHTTPAuth wraps an http.HandlerFunc with JWT Bearer token validation.
+// It extracts the token from the Authorization header and validates it before
+// calling the wrapped handler. If validation fails, it returns 401.
+func withHTTPAuth(jwtSecret string, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		tokenStr, ok := strings.CutPrefix(authHeader, "Bearer ")
+		if !ok {
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"message": "missing Authorization header"})
+			return
+		}
+		_, _, _, err := auth.ValidateJWT(tokenStr, jwtSecret)
+		if err != nil {
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"message": "invalid token"})
+			return
+		}
+		next(w, r)
+	}
+}
+
+func rateLimitMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Skip rate limiting for health endpoints.
+		if strings.HasPrefix(r.URL.Path, "/healthz") || strings.HasPrefix(r.URL.Path, "/ready") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		ip := extractClientIP(r)
+
+		rateLimiterStore.Lock()
+		limiter, exists := rateLimiterStore.limiters[ip]
+		if !exists {
+			// 100 req/s with burst of 200.
+			limiter = rate.NewLimiter(100, 200)
+			rateLimiterStore.limiters[ip] = limiter
+		}
+		rateLimiterStore.Unlock()
+
+		if !limiter.Allow() {
+			writeJSON(w, http.StatusTooManyRequests, map[string]string{
+				"message": "rate limit exceeded — please slow down",
+			})
 			return
 		}
 

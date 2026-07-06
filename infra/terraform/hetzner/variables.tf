@@ -21,3 +21,11 @@ variable "node_specs" {
     node-3 = { name = "euroscale-wk-2", location = "fsn1", type = "worker" }
   }
 }
+
+variable "admin_allowed_ips" {
+  description = "List of CIDR blocks allowed to access SSH, K8s API, and admin ports"
+  type        = list(string)
+  # Defaults to RFC 1918 private ranges — replace with your office/admin IPs.
+  # Example: ["203.0.113.0/24", "198.51.100.42/32"]
+  default = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+}

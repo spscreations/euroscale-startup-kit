@@ -27,7 +27,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pat
     const responseCt = response.headers.get("content-type");
     if (responseCt) responseHeaders["Content-Type"] = responseCt;
     return new NextResponse(responseBody, { status: response.status, headers: responseHeaders });
-  } catch (err) {
-    return NextResponse.json({ error: "API proxy error", details: String(err) }, { status: 502 });
+  } catch {
+    // Do not leak internal error details to the client
+    return NextResponse.json({ error: "Internal server error" }, { status: 502 });
   }
 }

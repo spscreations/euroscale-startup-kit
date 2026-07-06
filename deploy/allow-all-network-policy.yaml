@@ -1,41 +1,14 @@
-# Allow-all network policy for kube-system (CoreDNS + metrics-server)
-# kube-router default-deny is blocking pod-to-API-server traffic
+# Allow-all network policies for critical system namespaces.
+# These namespaces run infrastructure components (CoreDNS, metrics-server,
+# local-path-provisioner) that need broad network access.
+# Application namespaces (euroscale) use least-privilege policies defined in
+# euroscale-network-policy.yaml.
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-all
   namespace: kube-system
-spec:
-  podSelector: {}
-  policyTypes:
-    - Ingress
-    - Egress
-  ingress:
-    - {}
-  egress:
-    - {}
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-all
-  namespace: euroscale
-spec:
-  podSelector: {}
-  policyTypes:
-    - Ingress
-    - Egress
-  ingress:
-    - {}
-  egress:
-    - {}
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-all
-  namespace: default
 spec:
   podSelector: {}
   policyTypes:

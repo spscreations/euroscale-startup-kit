@@ -99,7 +99,7 @@ func (s *Service) ListSchemaDatabases(ctx context.Context, req *pb.ListSchemaDat
 	rows, err := db.QueryContext(ctx,
 		"SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA ORDER BY SCHEMA_NAME")
 	if err != nil {
-		return nil, fmt.Errorf("failed to query INFORMATION_SCHEMA.SCHEMATA: %w", err)
+		return nil, fmt.Errorf("failed to query databases")
 	}
 	defer rows.Close()
 
@@ -161,7 +161,7 @@ func (s *Service) ListTables(ctx context.Context, req *pb.ListTablesRequest) (*p
 		"SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ? ORDER BY TABLE_NAME",
 		req.Database)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query INFORMATION_SCHEMA.TABLES: %w", err)
+		return nil, fmt.Errorf("failed to query tables")
 	}
 	defer rows.Close()
 
@@ -230,7 +230,7 @@ func (s *Service) ListColumns(ctx context.Context, req *pb.ListColumnsRequest) (
 		 ORDER BY ORDINAL_POSITION`,
 		req.Database, req.Table)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query INFORMATION_SCHEMA.COLUMNS: %w", err)
+		return nil, fmt.Errorf("failed to query columns")
 	}
 	defer rows.Close()
 
@@ -305,7 +305,7 @@ func (s *Service) PreviewTable(ctx context.Context, req *pb.PreviewTableRequest)
 	query := fmt.Sprintf("SELECT * FROM `%s`.`%s` LIMIT %d", req.Database, req.Table, limit)
 	rows, err := db.QueryContext(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query table %s.%s: %w", req.Database, req.Table, err)
+		return nil, fmt.Errorf("failed to query table")
 	}
 	defer rows.Close()
 
@@ -387,7 +387,7 @@ func (s *Service) connectForUser(ctx context.Context, userID string) (*sql.DB, e
 		}
 	}
 
-	return nil, fmt.Errorf("no valid credentials found for user %s", userID)
+	return nil, fmt.Errorf("no valid credentials found")
 }
 
 // connectAs connects to vtgate as a specific MySQL user.
@@ -397,7 +397,7 @@ func (s *Service) connectAs(ctx context.Context, username, password string) (*sq
 
 	conn, err := sql.Open("mysql", dsn)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open MySQL connection: %w", err)
+		return nil, fmt.Errorf("failed to open database connection")
 	}
 
 	conn.SetMaxOpenConns(3)
@@ -405,7 +405,7 @@ func (s *Service) connectAs(ctx context.Context, username, password string) (*sq
 
 	if err := conn.PingContext(ctx); err != nil {
 		conn.Close()
-		return nil, fmt.Errorf("failed to ping vtgate: %w", err)
+		return nil, fmt.Errorf("failed to connect to database")
 	}
 
 	return conn, nil

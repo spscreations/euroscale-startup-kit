@@ -25,8 +25,9 @@ async function proxy(req: NextRequest, segs: string[]) {
     const rct = resp.headers.get("content-type");
     if (rct) respH["Content-Type"] = rct;
     return new NextResponse(respBody, { status: resp.status, headers: respH });
-  } catch (e) {
-    return NextResponse.json({ error: "REST proxy error", details: String(e) }, { status: 502 });
+  } catch {
+    // Do not leak internal error details to the client
+    return NextResponse.json({ error: "Internal server error" }, { status: 502 });
   }
 }
 

@@ -1,0 +1,239 @@
+# Least-privilege network policy for the euroscale namespace.
+# Replaces the previous allow-all policy with explicit rules.
+---
+# ── API pods ─────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-network-policy
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: api
+spec:
+  podSelector:
+    matchLabels:
+      app: euroscale
+      component: api
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from Traefik ingress controller (HTTP routes)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - port: 50051
+          protocol: TCP
+        - port: 8081
+          protocol: TCP
+        - port: 8080
+          protocol: TCP
+    # Allow health probes from kube-system
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - port: 8080
+          protocol: TCP
+    # Allow intra-namespace traffic (dashboard -> API)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: euroscale
+        - podSelector:
+            matchLabels:
+              app: euroscale
+      ports:
+        - port: 50051
+          protocol: TCP
+        - port: 8081
+          protocol: TCP
+        - port: 8080
+          protocol: TCP
+  egress:
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+        - podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    # Allow egress to Vitess (vtgate)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: euroscale
+        - podSelector:
+            matchLabels:
+              app: vitess
+      ports:
+        - port: 3306
+          protocol: TCP
+        - port: 15991
+          protocol: TCP
+    # Allow egress to K8s API server
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: default
+        - podSelector:
+            matchLabels:
+              component: kube-apiserver
+      ports:
+        - port: 6443
+          protocol: TCP
+---
+# ── Dashboard pods ───────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dashboard-network-policy
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: dashboard
+spec:
+  podSelector:
+    matchLabels:
+      app: euroscale
+      component: dashboard
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from Traefik ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - port: 3000
+          protocol: TCP
+    # Allow health probes from kube-system
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - port: 3000
+          protocol: TCP
+  egress:
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+        - podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    # Allow egress to API
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: euroscale
+        - podSelector:
+            matchLabels:
+              component: api
+      ports:
+        - port: 50051
+          protocol: TCP
+        - port: 8081
+          protocol: TCP
+        - port: 8080
+          protocol: TCP
+---
+# ── Vitess pods ──────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: vitess-network-policy
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: vitess
+spec:
+  podSelector:
+    matchLabels:
+      app: vitess
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow API pods to connect to vtgate
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: euroscale
+        - podSelector:
+            matchLabels:
+              component: api
+      ports:
+        - port: 3306
+          protocol: TCP
+        - port: 15991
+          protocol: TCP
+        - port: 15999
+          protocol: TCP
+    # Allow inter-Vitess traffic (vtgate <-> vttablet <-> vtctld)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: euroscale
+        - podSelector:
+            matchLabels:
+              app: vitess
+      ports:
+        - port: 15000
+          protocol: TCP
+        - port: 15001
+          protocol: TCP
+        - port: 15999
+          protocol: TCP
+        - port: 16000
+          protocol: TCP
+  egress:
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+        - podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    # Allow inter-Vitess egress
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: euroscale
+        - podSelector:
+            matchLabels:
+              app: vitess
+      ports:
+        - port: 15000
+          protocol: TCP
+        - port: 15001
+          protocol: TCP
+        - port: 15999
+          protocol: TCP
+        - port: 16000
+          protocol: TCP

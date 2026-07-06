@@ -5,11 +5,19 @@ import mysql from "mysql2/promise";
 import { drizzle } from "drizzle-orm/mysql2";
 import { mysqlTable, varchar, int, text, datetime } from "drizzle-orm/mysql-core";
 
-const DB_HOST = process.env.AUTH_DB_HOST || "euroscale-auth-db";
-const DB_PORT = Number(process.env.AUTH_DB_PORT) || 3306;
-const DB_USER = process.env.AUTH_DB_USER || "root";
-const DB_PASS = process.env.AUTH_DB_PASS || "euroscale-auth";
-const DB_NAME = process.env.AUTH_DB_NAME || "euroscale_auth";
+function requireEnv(name: string): string {
+  const val = process.env[name];
+  if (!val) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return val;
+}
+
+const DB_HOST = requireEnv("AUTH_DB_HOST");
+const DB_PORT = parseInt(requireEnv("AUTH_DB_PORT"), 10);
+const DB_USER = requireEnv("AUTH_DB_USER");
+const DB_PASS = requireEnv("AUTH_DB_PASS");
+const DB_NAME = requireEnv("AUTH_DB_NAME");
 
 const pool = mysql.createPool({
   host: DB_HOST, port: DB_PORT, user: DB_USER, password: DB_PASS, database: DB_NAME,

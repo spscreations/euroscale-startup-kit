@@ -12,6 +12,8 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/spscreations/euroscale-startup-kit/api/internal/auth"
+
 	pb "github.com/spscreations/euroscale-startup-kit/api/gen/euroscale/v1"
 )
 
@@ -74,15 +76,14 @@ const (
 
 // ── Handler construction ─────────────────────────────────────────────────────
 
-// NewHandler returns an http.Handler that serves all five DatabaseService RPCs
-// via the Connect protocol. It validates an API key on every request using the
-// same auth logic as the gRPC interceptor (x-api-key header or Authorization:
-// Bearer token). Additional interceptors (e.g., IP whitelist) can be passed
-// and are chained after the auth interceptor.
-func NewHandler(srv DatabaseServiceServer, apiKey string, extraInterceptors ...connect.Interceptor) http.Handler {
+// NewHandler returns an http.Handler that serves all DatabaseService RPCs
+// via the Connect protocol. It validates JWT Bearer tokens on every request
+// and injects the authenticated user ID into the context. Additional
+// interceptors (e.g., IP whitelist) are chained after auth.
+func NewHandler(srv DatabaseServiceServer, jwtSecret string, extraInterceptors ...connect.Interceptor) http.Handler {
 	mux := http.NewServeMux()
 
-	authInter := authInterceptor(apiKey)
+	authInter := jwtAuthInterceptor(jwtSecret)
 
 	// Build the full interceptor chain: auth first, then extras.
 	allInterceptors := []connect.Interceptor{authInter}
@@ -235,11 +236,11 @@ func NewHandler(srv DatabaseServiceServer, apiKey string, extraInterceptors ...c
 }
 
 // NewMetadataHandler returns an http.Handler that serves MetadataService RPCs
-// via the Connect protocol with API key authentication.
-func NewMetadataHandler(srv MetadataServiceServer, apiKey string, extraInterceptors ...connect.Interceptor) http.Handler {
+// via the Connect protocol with JWT authentication.
+func NewMetadataHandler(srv MetadataServiceServer, jwtSecret string, extraInterceptors ...connect.Interceptor) http.Handler {
 	mux := http.NewServeMux()
 
-	authInter := authInterceptor(apiKey)
+	authInter := jwtAuthInterceptor(jwtSecret)
 	allInterceptors := []connect.Interceptor{authInter}
 	allInterceptors = append(allInterceptors, extraInterceptors...)
 
@@ -298,31 +299,48 @@ func NewMetadataHandler(srv MetadataServiceServer, apiKey string, extraIntercept
 	return mux
 }
 
-// ── Auth interceptor ─────────────────────────────────────────────────────────
+// ── JWT Auth interceptor ─────────────────────────────────────────────────────
 
-// authInterceptor returns a Connect unary interceptor that validates the API key
-// from either the "x-api-key" header or an "Authorization: *** Bearer token.
-// This mirrors the auth logic in the gRPC interceptor so both transports share
-// the same auth semantics.
-func authInterceptor(apiKey string) connect.UnaryInterceptorFunc {
+// jwtAuthInterceptor returns a Connect unary interceptor that validates JWT
+// Bearer tokens from the Authorization header and injects the user ID into
+// the request context. It also sets X-User-ID in request headers so
+// downstream interceptors (e.g. IP whitelist) can use it.
+func jwtAuthInterceptor(jwtSecret string) connect.UnaryInterceptorFunc {
 	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-			// Check x-api-key header.
-			if key := req.Header().Get("x-api-key"); key == apiKey {
-				return next(ctx, req)
+			authHeader := req.Header().Get("Authorization")
+			if authHeader == "" {
+				return nil, connect.NewError(
+					connect.CodeUnauthenticated,
+					fmt.Errorf("missing Authorization header"),
+				)
 			}
 
-			// Check Authorization: Bearer ***
-			if auth := req.Header().Get("Authorization"); auth != "" {
-				if key, ok := strings.CutPrefix(auth, "Bearer "); ok && key == apiKey {
-					return next(ctx, req)
-				}
+			tokenStr, ok := strings.CutPrefix(authHeader, "Bearer ")
+			if !ok {
+				return nil, connect.NewError(
+					connect.CodeUnauthenticated,
+					fmt.Errorf("invalid Authorization header format"),
+				)
 			}
 
-			return nil, connect.NewError(
-				connect.CodeUnauthenticated,
-				fmt.Errorf("invalid or missing API key"),
-			)
+			userID, _, role, err := auth.ValidateJWT(tokenStr, jwtSecret)
+			if err != nil {
+				return nil, connect.NewError(
+					connect.CodeUnauthenticated,
+					fmt.Errorf("invalid token"),
+				)
+			}
+
+			// Inject user identity into context for downstream handlers.
+			ctx = auth.SetUserID(ctx, userID)
+			ctx = auth.SetUserRole(ctx, role)
+
+			// Also set X-User-ID header for backward compat with IP whitelist
+			// interceptor and any other header-based checks.
+			req.Header().Set("X-User-ID", userID)
+
+			return next(ctx, req)
 		}
 	}
 	return connect.UnaryInterceptorFunc(interceptor)
