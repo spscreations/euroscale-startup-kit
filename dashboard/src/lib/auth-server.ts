@@ -94,6 +94,7 @@ function getAuth() {
 
   _auth = betterAuth({
     database: drizzleAdapter(db, { provider: "mysql", schema: { user, session, account, verification } }),
+    basePath: "/api/better-auth",
     emailAndPassword: { enabled: true },
     socialProviders: socialProviderConfig as Parameters<typeof betterAuth>[0]["socialProviders"],
     plugins: [nextCookies()],
