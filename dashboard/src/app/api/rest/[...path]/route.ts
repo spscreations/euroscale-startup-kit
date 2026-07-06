@@ -30,7 +30,34 @@ async function proxy(req: NextRequest, segs: string[]) {
 
   let userId: string | undefined;
   let email: string | undefined;
+
+  // Try Better Auth session first.
   try { const ses = await getAuth()!.api.getSession({ headers: req.headers }); userId = ses?.user?.id; email = ses?.user?.email; } catch {}
+
+  // Fallback: try to find the auth cookie directly if session failed.
+  // This handles the case where getSession() doesn't work after a cross-domain redirect
+  // but the browser still sends the cookie.
+  if (!userId) {
+    try {
+      const cookieHeader = req.headers.get("cookie") || "";
+      if (cookieHeader.includes("__Secure-better-auth.session_token")) {
+        const cookies = cookieHeader.split(";").map(c => c.trim());
+        for (const cookie of cookies) {
+          if (cookie.startsWith("__Secure-better-auth.session_token=")) {
+            const sessionToken = cookie.substring("__Secure-better-auth.session_token=".length);
+            // Try getting the session again using just the cookie header directly.
+            // Construct a headers object with only the session cookie to avoid conflicts.
+            const ses = await getAuth()!.api.getSession({
+              headers: new Headers({ cookie: `__Secure-better-auth.session_token=${sessionToken}` }),
+            });
+            userId = ses?.user?.id;
+            email = ses?.user?.email;
+            break;
+          }
+        }
+      }
+    } catch {}
+  }
 
   const headers: Record<string, string> = {};
   const ct = req.headers.get("content-type");

@@ -196,6 +196,7 @@ export default function BillingPage() {
     const paymentStatus = searchParams.get("payment");
     const paymentId = searchParams.get("id");
     if (paymentStatus === "success" && paymentId) {
+      if (!session?.id) return; // Wait for session to be available
       fetch(`/api/v1/confirm-payment?id=${encodeURIComponent(paymentId)}`)
         .then((r) => r.json())
         .then((d) => {
@@ -216,7 +217,7 @@ export default function BillingPage() {
     } else if (paymentStatus === "cancelled") {
       toast.error("Payment was cancelled. Your plan has not been changed.");
     }
-  }, [searchParams, refetch]);
+  }, [searchParams, refetch, session?.id]);
 
   // ── Fetch invoices ──────────────────────────────────────────────────────
   useEffect(() => {
