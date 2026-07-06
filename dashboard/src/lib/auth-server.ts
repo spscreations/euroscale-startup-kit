@@ -3,7 +3,7 @@ import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { nextCookies } from "better-auth/next-js";
 import mysql from "mysql2/promise";
 import { drizzle } from "drizzle-orm/mysql2";
-import { mysqlTable, varchar, int, text, bigint, datetime } from "drizzle-orm/mysql-core";
+import { mysqlTable, varchar, int, text, datetime } from "drizzle-orm/mysql-core";
 
 const DB_HOST = process.env.AUTH_DB_HOST || "euroscale-auth-db";
 const DB_PORT = Number(process.env.AUTH_DB_PORT) || 3306;
@@ -29,7 +29,7 @@ const user = mysqlTable("user", {
 
 const session = mysqlTable("session", {
   id: varchar("id", { length: 255 }).primaryKey(),
-  expiresAt: bigint("expiresAt", { mode: "number" }).notNull(),
+  expiresAt: datetime("expiresAt").notNull(),
   token: varchar("token", { length: 255 }).notNull().unique(),
   createdAt: datetime("createdAt").notNull(),
   updatedAt: datetime("updatedAt").notNull(),
@@ -46,8 +46,8 @@ const account = mysqlTable("account", {
   accessToken: text("accessToken"),
   refreshToken: text("refreshToken"),
   idToken: text("idToken"),
-  accessTokenExpiresAt: bigint("accessTokenExpiresAt", { mode: "number" }),
-  refreshTokenExpiresAt: bigint("refreshTokenExpiresAt", { mode: "number" }),
+  accessTokenExpiresAt: datetime("accessTokenExpiresAt"),
+  refreshTokenExpiresAt: datetime("refreshTokenExpiresAt"),
   scope: text("scope"),
   password: text("password"),
   createdAt: datetime("createdAt").notNull(),
@@ -58,7 +58,7 @@ const verification = mysqlTable("verification", {
   id: varchar("id", { length: 255 }).primaryKey(),
   identifier: varchar("identifier", { length: 255 }).notNull(),
   value: text("value").notNull(),
-  expiresAt: bigint("expiresAt", { mode: "number" }).notNull(),
+  expiresAt: datetime("expiresAt").notNull(),
   createdAt: datetime("createdAt"),
   updatedAt: datetime("updatedAt"),
 });
