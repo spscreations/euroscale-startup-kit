@@ -143,7 +143,7 @@ function BackupsContent() {
     setBackupsLoading(true);
     setBackupsError(null);
     try {
-      const url = `/api/rest/api/v1/backups?database_id=${encodeURIComponent(selectedDbId)}&user_id=${encodeURIComponent(session.id)}`;
+      const url = `/api/rest/api/v1/backups?database_id=${encodeURIComponent(selectedDbId)}`;
       const res = await fetch(url);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));

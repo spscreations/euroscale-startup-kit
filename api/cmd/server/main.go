@@ -754,6 +754,9 @@ func (s *server) authHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Limit request body to 8KB (login/signup payloads are small).
+	r.Body = http.MaxBytesReader(w, r.Body, 8<<10)
+
 	var (
 		email    string
 		password string
@@ -869,6 +872,11 @@ func (s *server) ipWhitelistHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeJSON(w, http.StatusUnauthorized, map[string]string{"message": err.Error()})
 		return
+	}
+
+	// Limit request body to 4KB for POST/DELETE (IP entries are tiny).
+	if r.Method == http.MethodPost || r.Method == http.MethodDelete {
+		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
 	}
 
 	switch r.Method {
@@ -1201,8 +1209,9 @@ func main() {
 	var mollieHTTPHandler *molliepkg.Handler
 	mollieAPIKey := os.Getenv("MOLLIE_API_KEY")
 	mollieWebhookSecret := os.Getenv("MOLLIE_WEBHOOK_SECRET")
-	if mollieWebhookSecret == "" {
-		mollieWebhookSecret = mollieAPIKey // fallback: use API key as webhook secret
+	if mollieWebhookSecret == "" && mollieAPIKey != "" {
+		log.Println("WARNING: MOLLIE_WEBHOOK_SECRET not set — webhook signature verification disabled")
+		log.Println("         Set MOLLIE_WEBHOOK_SECRET to the webhook secret from Mollie dashboard to enable verification.")
 	}
 	if mollieAPIKey != "" {
 		baseURL := os.Getenv("MOLLIE_BASE_URL")

@@ -26,6 +26,9 @@ spec:
         - name: ghcr-pull
       containers:
         - name: dashboard
+          # SECURITY: Pin to SHA digest in production when available.
+          #   image: ghcr.io/spscreations/euroscale-dashboard@sha256:...
+          # Tag-based pulls are mutable; digests guarantee immutability.
           image: ghcr.io/spscreations/euroscale-dashboard:v1.2
           imagePullPolicy: Always
           ports:

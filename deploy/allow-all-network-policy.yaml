@@ -3,6 +3,24 @@
 # local-path-provisioner) that need broad network access.
 # Application namespaces (euroscale) use least-privilege policies defined in
 # euroscale-network-policy.yaml.
+#
+# RATIONALE:
+# - kube-system: CoreDNS, metrics-server, and Traefik ingress controller need
+#   unrestricted egress to resolve DNS for the entire cluster and scrape metrics
+#   from all nodes. Restricting this namespace would break cluster DNS and
+#   monitoring. Traefik also needs ingress from all sources (the internet).
+#
+# - local-path-storage: Rancher's local-path-provisioner creates PVs on node
+#   disks and needs to communicate with the K8s API server and kubelet on any
+#   node. Its helper pods run dynamically on each node and the provisioner
+#   itself needs egress to the API server. Tightening this is impractical
+#   without a complete replacement of the storage provisioner.
+#
+# FUTURE IMPROVEMENT:
+# If you migrate to a CSI driver (e.g., Hetzner Cloud CSI) and replace
+# CoreDNS with a solution that doesn't need cluster-wide DNS forwarding,
+# kube-system can be tightened. Until then, these broad policies are
+# operationally necessary.
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

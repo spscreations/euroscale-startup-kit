@@ -33,6 +33,9 @@ spec:
         fsGroup: 1000
       containers:
         - name: api
+          # SECURITY: Pin to SHA digest in production when available.
+          #   image: ghcr.io/spscreations/euroscale-api@sha256:...
+          # Tag-based pulls are mutable; digests guarantee immutability.
           image: ghcr.io/spscreations/euroscale-api:v1.2
           imagePullPolicy: Always
           ports:
@@ -96,10 +99,25 @@ spec:
                 secretKeyRef:
                   name: euroscale-mollie
                   key: api_key
+            - name: MOLLIE_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: euroscale-mollie
+                  key: webhook_secret
+                  optional: true
           volumeMounts:
             - name: tls-certs
               mountPath: /etc/euroscale/tls
               readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
           resources:
             requests:
               cpu: 100m
@@ -128,3 +146,5 @@ spec:
             items:
               - key: ca.crt
                 path: ca.crt
+        - name: tmp
+          emptyDir: {}

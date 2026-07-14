@@ -226,7 +226,7 @@ export default function BillingPage() {
     setInvoicesLoading(true);
     setInvoicesError(null);
 
-    fetch(`${API_BASE_URL}/api/v1/invoices?user_id=${encodeURIComponent(session.id)}`)
+    fetch(`${API_BASE_URL}/api/v1/invoices`)
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed to load invoices");
         const body = await res.json();

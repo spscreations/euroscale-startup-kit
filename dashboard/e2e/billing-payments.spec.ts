@@ -8,9 +8,9 @@ const DASHBOARD_URL = "/dashboard";
 
 // ── Test credentials (use environment variables or defaults for local dev) ──
 const TEST_EMAIL =
-  process.env.E2E_TEST_EMAIL ?? "spyros@euroscale.app";
+  process.env.E2E_TEST_EMAIL ?? "j.doe@company.com";
 const TEST_PASSWORD =
-  process.env.E2E_TEST_PASSWORD ?? "testpassword123";
+  process.env.E2E_TEST_PASSWORD ?? "Testb2c!";
 
 // ── Helper: Login ─────────────────────────────────────────────────────────
 async function loginToDashboard(page: Page): Promise<string[]> {
@@ -395,6 +395,315 @@ test.describe("Billing & Payments", () => {
     if (pageErrors.length > 0) {
       console.warn(`JS errors during redirect test: ${pageErrors.join("; ")}`);
     }
+  });
+
+  test.describe("UPGRADE PERSISTENCE DIAGNOSTIC", () => {
+    // ── Test credentials for the diagnostic user ──
+    const DIAG_EMAIL = "j.doe@company.com";
+    const DIAG_PASSWORD = "Testb2c!";
+
+    // ── Mollie test card details ──
+    const TEST_CARD_NUMBER = "4917610000000000";
+    const TEST_CARD_EXPIRY = "12/28"; // future date
+    const TEST_CARD_CVC = "123";
+
+    async function diagnosticLogin(page: Page, email: string, password: string): Promise<void> {
+      await page.goto("/login", { waitUntil: "networkidle" });
+      await page.waitForTimeout(2000);
+
+      // Take screenshot of login page
+      await page.screenshot({ path: "e2e/diag-01-login-page.png", fullPage: true });
+
+      const emailInput = page.locator('input[type="email"], input[name="email"]');
+      const passwordInput = page.locator('input[type="password"], input[name="password"]');
+
+      if ((await emailInput.count()) > 0) {
+        await emailInput.first().fill(email);
+      }
+      if ((await passwordInput.count()) > 0) {
+        await passwordInput.first().fill(password);
+      }
+
+      const submitBtn = page.getByRole("button", { name: /sign in|login|continue|submit/i });
+      if ((await submitBtn.count()) > 0) {
+        await submitBtn.first().click();
+      }
+
+      // Wait for redirect after login
+      try {
+        await page.waitForURL(/\/dashboard/, { timeout: 20_000 });
+      } catch {
+        console.log("⚠️ Did not redirect to /dashboard after login — may be on login error");
+      }
+      await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
+      await page.waitForTimeout(3000);
+    }
+
+    test("DIAGNOSTIC: Full upgrade flow — screenshots at every step", async ({ page }) => {
+      console.log("══════════════════════════════════════════════════");
+      console.log("  UPGRADE PERSISTENCE DIAGNOSTIC");
+      console.log("  User: j.doe@company.com");
+      console.log("══════════════════════════════════════════════════");
+
+      // ── STEP 1: Login ──────────────────────────────────────────────────
+      console.log("\n[STEP 1] Logging in...");
+      await diagnosticLogin(page, DIAG_EMAIL, DIAG_PASSWORD);
+      const postLoginUrl = page.url();
+      console.log(`  Post-login URL: ${postLoginUrl}`);
+
+      // ── STEP 2: Dashboard — check current plan ─────────────────────────
+      console.log("\n[STEP 2] Checking dashboard current plan...");
+      await page.goto(DASHBOARD_URL, { waitUntil: "networkidle" });
+      await page.waitForTimeout(3000);
+      await page.screenshot({ path: "e2e/diag-02-dashboard.png", fullPage: true });
+
+      // Extract visible plan info from the TierCard
+      const pageBody = await page.locator("body").innerText();
+      console.log(`  Dashboard body excerpt: ${pageBody.slice(0, 500).replace(/\n/g, " | ")}`);
+
+      // Look for tier info
+      for (const tier of ["Free", "Scale", "Team", "Business", "Enterprise"]) {
+        if (pageBody.includes(`${tier} Plan`) || pageBody.includes(tier)) {
+          console.log(`  ✅ Found tier reference: "${tier}"`);
+        }
+      }
+
+      // ── STEP 3: Navigate to Billing page ───────────────────────────────
+      console.log("\n[STEP 3] Navigating to billing page...");
+      await page.goto(BILLING_URL, { waitUntil: "networkidle" });
+      await page.waitForTimeout(3000);
+      await page.screenshot({ path: "e2e/diag-03-billing-page.png", fullPage: true });
+
+      const billingBody = await page.locator("body").innerText();
+      console.log(`  Billing body excerpt: ${billingBody.slice(0, 500).replace(/\n/g, " | ")}`);
+
+      // Find upgrade buttons
+      const upgradeButtons = page.getByRole("button", { name: /upgrade/i });
+      const upgradeCount = await upgradeButtons.count();
+      console.log(`  Upgrade buttons found: ${upgradeCount}`);
+
+      // Check for "Current Plan" indicators
+      const currentPlanBtns = page.getByRole("button", { name: /current plan/i });
+      const currentPlanCount = await currentPlanBtns.count();
+      console.log(`  "Current Plan" buttons found: ${currentPlanCount}`);
+
+      // ── STEP 4: Click Scale upgrade button ─────────────────────────────
+      console.log("\n[STEP 4] Attempting to click Scale upgrade...");
+
+      // Look specifically for the Scale plan card
+      const scaleSection = page.locator("text=Scale").locator("..");
+      let clicked = false;
+
+      if (upgradeCount > 0) {
+        const scaleUpgradeBtn = page.locator("button", { hasText: /upgrade/i }).filter({ hasText: /scale|€29/i });
+        const scaleUpCount = await scaleUpgradeBtn.count();
+        if (scaleUpCount > 0) {
+          console.log("  Clicking Scale upgrade button...");
+          try {
+            await Promise.all([
+              page.waitForURL((url) => url.hostname.includes("mollie.com") || url.pathname.includes("checkout"), { timeout: 30_000 }),
+              scaleUpgradeBtn.first().click(),
+            ]);
+            clicked = true;
+            console.log("  ✅ Redirected to Mollie checkout!");
+          } catch (err: any) {
+            console.log(`  Mollie redirect failed: ${err.message?.slice(0, 150)}`);
+            console.log(`  Current URL: ${page.url()}`);
+          }
+        } else {
+          // Try any upgrade button
+          console.log("  No Scale-specific upgrade button, trying any upgrade...");
+          try {
+            await Promise.all([
+              page.waitForURL((url) => url.hostname.includes("mollie.com"), { timeout: 30_000 }),
+              upgradeButtons.first().click(),
+            ]);
+            clicked = true;
+            console.log("  ✅ Redirected to external checkout!");
+          } catch (err: any) {
+            console.log(`  Redirect failed: ${err.message?.slice(0, 150)}`);
+            console.log(`  Current URL: ${page.url()}`);
+          }
+        }
+      } else {
+        console.log("  ⚠️ No upgrade buttons found — user may already be on max tier or API is down");
+      }
+
+      // ── STEP 5: Mollie checkout page ────────────────────────────────────
+      if (clicked || page.url().includes("mollie.com")) {
+        console.log("\n[STEP 5] On Mollie checkout page...");
+        await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
+        await page.waitForTimeout(3000);
+        await page.screenshot({ path: "e2e/diag-05-mollie-checkout.png", fullPage: true });
+        console.log(`  Mollie URL: ${page.url()}`);
+
+        const mollieBody = await page.locator("body").innerText();
+        console.log(`  Mollie body excerpt: ${mollieBody.slice(0, 400).replace(/\n/g, " | ")}`);
+
+        // Try to fill in card details
+        const cardInput = page.locator('input[name="cardNumber"], input[autocomplete="cc-number"]');
+        if ((await cardInput.count()) > 0) {
+          console.log("  Filling test card details...");
+          await cardInput.first().fill(TEST_CARD_NUMBER);
+          await page.waitForTimeout(500);
+
+          const expiryInput = page.locator('input[name="cardExpiry"], input[autocomplete="cc-exp"]');
+          if ((await expiryInput.count()) > 0) {
+            await expiryInput.first().fill(TEST_CARD_EXPIRY);
+          }
+
+          const cvcInput = page.locator('input[name="cardCvc"], input[autocomplete="cc-csc"]');
+          if ((await cvcInput.count()) > 0) {
+            await cvcInput.first().fill(TEST_CARD_CVC);
+          }
+
+          const payBtn = page.getByRole("button", { name: /pay|place order|continue/i });
+          if ((await payBtn.count()) > 0) {
+            await payBtn.first().click();
+            console.log("  Clicked pay button...");
+
+            // Wait for redirect back
+            try {
+              await page.waitForURL(/dashboard.*billing/i, { timeout: 30_000 });
+              console.log("  ✅ Redirected back to billing!");
+            } catch {
+              console.log("  ⚠️ Did not redirect back to billing");
+            }
+          }
+        } else {
+          console.log("  ⚠️ Card input fields not found — Mollie may have a different checkout flow");
+        }
+      }
+
+      // ── STEP 6: Check post-upgrade state ───────────────────────────────
+      console.log("\n[STEP 6] Checking post-upgrade state...");
+      await page.goto(BILLING_URL, { waitUntil: "networkidle" });
+      await page.waitForTimeout(3000);
+      await page.screenshot({ path: "e2e/diag-06-post-upgrade-billing.png", fullPage: true });
+
+      const postBody = await page.locator("body").innerText();
+      console.log(`  Post-upgrade billing body: ${postBody.slice(0, 500).replace(/\n/g, " | ")}`);
+
+      // Check for toast
+      const toastEl = page.locator('[data-sonner-toast]');
+      const toastCount = await toastEl.count();
+      console.log(`  Toast elements found: ${toastCount}`);
+      if (toastCount > 0) {
+        const toastText = await toastEl.first().innerText();
+        console.log(`  Toast text: "${toastText}"`);
+      }
+
+      // Navigate to dashboard and check TierCard
+      await page.goto(DASHBOARD_URL, { waitUntil: "networkidle" });
+      await page.waitForTimeout(3000);
+      await page.screenshot({ path: "e2e/diag-07-post-upgrade-dashboard.png", fullPage: true });
+
+      const dashBody = await page.locator("body").innerText();
+      console.log(`  Post-upgrade dashboard: ${dashBody.slice(0, 500).replace(/\n/g, " | ")}`);
+
+      // ── STEP 7: Monitor network for API calls ──────────────────────────
+      console.log("\n[STEP 7] Capturing network activity...");
+      const apiLogs: string[] = [];
+      page.on("response", (response) => {
+        const url = response.url();
+        if (url.includes("api/v1") || url.includes("mollie")) {
+          apiLogs.push(`  [${response.status()}] ${url}`);
+        }
+      });
+
+      // Force refetch the billing data
+      await page.goto(BILLING_URL, { waitUntil: "networkidle" });
+      await page.waitForTimeout(2000);
+
+      console.log("  Recent API calls:");
+      apiLogs.slice(-30).forEach((l) => console.log(l));
+
+      // ── SUMMARY ────────────────────────────────────────────────────────
+      console.log("\n══════════════════════════════════════════════════");
+      console.log("  DIAGNOSTIC COMPLETE");
+      console.log("  Screenshots saved to e2e/diag-*.png");
+      console.log("══════════════════════════════════════════════════");
+    });
+
+    test("DIAGNOSTIC: Intercept confirm-payment API call", async ({ page }) => {
+      console.log("\n═══ CONFIRM-PAYMENT API INTERCEPT DIAGNOSTIC ═══");
+
+      // Capture confirm-payment responses
+      const confirmResponses: { status: number; body: string }[] = [];
+      page.on("response", async (response) => {
+        if (response.url().includes("confirm-payment")) {
+          try {
+            const body = await response.text();
+            confirmResponses.push({ status: response.status(), body });
+            console.log(`\n[CONFIRM-PAYMENT RESPONSE] Status: ${response.status()}`);
+            console.log(`  Body: ${body.slice(0, 500)}`);
+          } catch {
+            console.log(`[CONFIRM-PAYMENT] Status: ${response.status()} (could not read body)`);
+          }
+        }
+      });
+
+      // Also capture request
+      page.on("request", (request) => {
+        if (request.url().includes("confirm-payment")) {
+          console.log(`\n[CONFIRM-PAYMENT REQUEST] ${request.url()}`);
+        }
+      });
+
+      await diagnosticLogin(page, DIAG_EMAIL, DIAG_PASSWORD);
+
+      // Navigate to billing with a fake payment=success to trigger confirm-payment
+      await page.goto(`${BILLING_URL}?payment=success&id=tr_fake_test`, { waitUntil: "networkidle" });
+      await page.waitForTimeout(5000);
+
+      // Try without payment ID (the success toast only path)
+      await page.goto(`${BILLING_URL}?payment=success`, { waitUntil: "networkidle" });
+      await page.waitForTimeout(3000);
+
+      console.log(`\n  Total confirm-payment responses captured: ${confirmResponses.length}`);
+      if (confirmResponses.length === 0) {
+        console.log("  ⚠️ No confirm-payment API calls were detected!");
+        console.log("  This means either:");
+        console.log("    1. The billing page never called /api/v1/confirm-payment");
+        console.log("    2. The success redirect doesn't include the payment ID");
+        console.log("    3. The useEffect condition never matched");
+      }
+    });
+
+    test("DIAGNOSTIC: Check user tier via API and console", async ({ page }) => {
+      console.log("\n═══ USER TIER API DIAGNOSTIC ═══");
+
+      await diagnosticLogin(page, DIAG_EMAIL, DIAG_PASSWORD);
+
+      // Check the GetUsage or tier API in console
+      const tierData = await page.evaluate(async () => {
+        try {
+          // Try common API endpoints
+          const endpoints = [
+            "/api/v1/usage",
+            "/api/v1/tier",
+            "/api/v1/me",
+            "/api/v1/user",
+          ];
+          const results: Record<string, any> = {};
+          for (const ep of endpoints) {
+            try {
+              const r = await fetch(ep);
+              const text = await r.text();
+              results[ep] = { status: r.status, body: text.slice(0, 500) };
+            } catch (e: any) {
+              results[ep] = { error: e.message };
+            }
+          }
+          return results;
+        } catch (e: any) {
+          return { error: e.message };
+        }
+      });
+
+      console.log("  API results from browser context:");
+      console.log(JSON.stringify(tierData, null, 2));
+    });
   });
 
   test("Mollie payment cancelled redirect shows error toast", async ({

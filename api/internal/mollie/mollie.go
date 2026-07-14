@@ -8,11 +8,13 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
+	"crypto/tls"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -50,7 +52,23 @@ func NewClient(config MollieConfig) (*Client, error) {
 	return &Client{
 		apiKey:  config.APIKey,
 		baseURL: strings.TrimRight(config.BaseURL, "/"),
-		http:    &http.Client{Timeout: 30 * time.Second},
+		http: &http.Client{
+			Timeout: 30 * time.Second,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					MinVersion: tls.VersionTLS12,
+				},
+				DialContext: (&net.Dialer{
+					Timeout:   10 * time.Second,
+					KeepAlive: 30 * time.Second,
+				}).DialContext,
+				TLSHandshakeTimeout:   10 * time.Second,
+				ResponseHeaderTimeout: 15 * time.Second,
+				ExpectContinueTimeout: 1 * time.Second,
+				MaxIdleConns:          10,
+				IdleConnTimeout:       90 * time.Second,
+			},
+		},
 	}, nil
 }
 
@@ -144,7 +162,8 @@ func (c *Client) do(ctx context.Context, method, path string, body interface{}) 
 	}
 	defer resp.Body.Close()
 
-	data, err := io.ReadAll(resp.Body)
+	// Limit response body to 1MB (Mollie API responses are typically < 10KB).
+	data, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
 		return nil, fmt.Errorf("mollie: failed to read response: %w", err)
 	}
@@ -272,6 +291,8 @@ func (h *Handler) HandleCreatePayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Limit request body to 32KB.
+	r.Body = http.MaxBytesReader(w, r.Body, 32<<10)
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"message": "failed to read request body"})
@@ -366,6 +387,9 @@ func (h *Handler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+
+	// Limit webhook body to 64KB (Mollie webhooks are small).
+	r.Body = http.MaxBytesReader(w, r.Body, 64<<10)
 
 	// Read the raw body for signature verification.
 	rawBody, err := io.ReadAll(r.Body)
