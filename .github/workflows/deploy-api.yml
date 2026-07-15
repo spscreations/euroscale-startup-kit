@@ -71,8 +71,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # Hetzner CAX is ARM64; build for both amd64 (CI runners) and arm64 (production)
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: true                                  # SLSA provenance
@@ -164,8 +163,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # Hetzner CAX is ARM64; build for both amd64 (CI runners) and arm64 (production)
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           build-args: |
             NEXT_PUBLIC_API_BASE_URL=https://api.euroscale.app
             NEXT_PUBLIC_RPC_BASE_URL=https://api.euroscale.app
