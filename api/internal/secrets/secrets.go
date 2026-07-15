@@ -225,6 +225,16 @@ func (s *Store) GetUserID(ctx context.Context, databaseID string) string {
 	return secret.Labels["user_id"]
 }
 
+// GetAnnotations returns the annotations map from a database's K8s Secret.
+// Returns nil if the secret is not found or has no annotations.
+func (s *Store) GetAnnotations(ctx context.Context, databaseID string) map[string]string {
+	secret, err := s.clientset.CoreV1().Secrets(s.namespace).Get(ctx, secretNameFor(databaseID), metav1.GetOptions{})
+	if err != nil {
+		return nil
+	}
+	return secret.Annotations
+}
+
 // GetIPWhitelist retrieves the IP whitelist entries from the database's K8s Secret.
 // If the "ip_whitelist" key does not exist, it returns an empty slice.
 func (s *Store) GetIPWhitelist(ctx context.Context, databaseID string) ([]models.IPWhitelistEntry, error) {

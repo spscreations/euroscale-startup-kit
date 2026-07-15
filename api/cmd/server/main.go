@@ -376,16 +376,27 @@ func (s *server) GetDatabase(ctx context.Context, req *pb.GetDatabaseRequest) (*
 		return nil, status.Error(codes.NotFound, "database not found")
 	}
 
+	dbEntry := &pb.Database{
+		DatabaseId: creds.DatabaseID,
+		Name:       extractDBName(creds.ConnectionString),
+		Engine:     models.EngineMySQL,
+		Host:       s.host,
+		Port:       3306,
+		Username:   creds.Username,
+		Status:     models.StatusReady,
+	}
+
+	// Get the creation timestamp from the secret annotation.
+	if ann := s.secrets.GetAnnotations(ctx, req.DatabaseId); ann != nil {
+		if ts, ok := ann["euroscale.app/created-at"]; ok {
+			if t, err := time.Parse(time.RFC3339, ts); err == nil {
+				dbEntry.CreatedAt = t.Format(time.RFC3339)
+			}
+		}
+	}
+
 	return &pb.GetDatabaseResponse{
-		Database: &pb.Database{
-			DatabaseId: creds.DatabaseID,
-			Name:       extractDBName(creds.ConnectionString),
-			Engine:     models.EngineMySQL,
-			Host:       s.host,
-			Port:       3306,
-			Username:   creds.Username,
-			Status:     models.StatusReady,
-		},
+		Database: dbEntry,
 	}, nil
 }
 
