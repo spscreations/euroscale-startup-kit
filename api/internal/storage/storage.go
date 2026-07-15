@@ -76,6 +76,19 @@ func (r *Resizer) ResizePVC(ctx context.Context, dbID string, additionalGB int32
 		return 0, fmt.Errorf("failed to parse current PVC capacity for %q: %w", dbID, err)
 	}
 
+	// If PVC is Pending (not yet bound, capacity=0), provision at requested size.
+	if currentGB == 0 {
+		newGB := int64(additionalGB)
+		patch := []byte(fmt.Sprintf(`{"spec":{"resources":{"requests":{"storage":"%dGi"}}}}`, newGB))
+		_, err = r.clientset.CoreV1().PersistentVolumeClaims(r.namespace).Patch(
+			ctx, pvc.Name, types.MergePatchType, patch, metav1.PatchOptions{})
+		if err != nil {
+			return 0, fmt.Errorf("failed to update pending PVC %q: %w", pvc.Name, err)
+		}
+		log.Printf("INFO: updated pending PVC %q from 0 Gi to %d Gi (awaiting provisioner)", pvc.Name, newGB)
+		return newGB, nil
+	}
+
 	// 3. Compute new size.
 	newGB := currentGB + int64(additionalGB)
 
@@ -114,7 +127,7 @@ func pvcNameFor(dbID string) string {
 
 // CreatePVC provisions a new PVC for a database.
 func (r *Resizer) CreatePVC(ctx context.Context, cfg PVCConfig) (*corev1.PersistentVolumeClaim, error) {
-	storageClassName := "local-path" // default for development; overridden by env
+	storageClassName := "hcloud-volumes" // Hetzner Cloud Volumes CSI — matches Vitess operator
 	if sc := os.Getenv("EUROSCALE_STORAGE_CLASS"); sc != "" {
 		storageClassName = sc
 	}
@@ -177,8 +190,8 @@ func (r *Resizer) findPVCByDatabaseID(ctx context.Context, dbID string) (*corev1
 // gigabytes.
 func parseCapacityGB(qty string) (int64, error) {
 	q := strings.TrimSpace(qty)
-	if q == "" {
-		return 0, fmt.Errorf("empty capacity string")
+	if q == "" || q == "0" {
+		return 0, nil // PVC is Pending/not yet bound — treat as 0 GB
 	}
 
 	multiplier := int64(1)
