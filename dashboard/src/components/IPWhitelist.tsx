@@ -76,6 +76,17 @@ interface AddEntryDialogProps {
   isAdding: boolean;
 }
 
+function isIPv4(ip: string): boolean {
+  const octets = ip.split(".");
+  if (octets.length !== 4) return false;
+  for (const octet of octets) {
+    const num = parseInt(octet!, 10);
+    if (isNaN(num) || num < 0 || num > 255) return false;
+    if (String(num) !== octet) return false;
+  }
+  return true;
+}
+
 function AddEntryDialog({
   open,
   onClose,
@@ -85,6 +96,7 @@ function AddEntryDialog({
   const [cidr, setCidr] = useState("");
   const [description, setDescription] = useState("");
   const [cidrError, setCidrError] = useState<string | null>(null);
+  const [isDetectingIp, setIsDetectingIp] = useState(false);
 
   const validateAndSetCidr = useCallback((value: string) => {
     setCidr(value);
@@ -92,6 +104,39 @@ function AddEntryDialog({
       setCidrError("Invalid CIDR format (e.g., 192.168.1.0/24)");
     } else {
       setCidrError(null);
+    }
+  }, []);
+
+  const handleUseCurrentIp = useCallback(async () => {
+    setIsDetectingIp(true);
+    try {
+      let data: { ip?: string } | null = null;
+      try {
+        const res = await fetch("https://api.ipify.org?format=json");
+        if (!res.ok) throw new Error("ipify failed");
+        data = (await res.json()) as { ip?: string };
+      } catch {
+        const res = await fetch("https://api64.ipify.org?format=json");
+        if (!res.ok) throw new Error("ipify64 failed");
+        data = (await res.json()) as { ip?: string };
+      }
+
+      const ip = data?.ip?.trim();
+      if (!ip) throw new Error("No IP in response");
+
+      if (!isIPv4(ip)) {
+        toast.error("Only IPv4 is supported for now");
+        return;
+      }
+
+      const nextCidr = `${ip}/32`;
+      setCidr(nextCidr);
+      setCidrError(null);
+      setDescription((prev) => (prev.trim() ? prev : "My current IP"));
+    } catch {
+      toast.error("Could not detect public IP");
+    } finally {
+      setIsDetectingIp(false);
     }
   }, []);
 
@@ -119,6 +164,7 @@ function AddEntryDialog({
     setCidr("");
     setDescription("");
     setCidrError(null);
+    setIsDetectingIp(false);
     onClose();
   }, [onClose]);
 
@@ -134,12 +180,29 @@ function AddEntryDialog({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label
-              htmlFor="cidr-input"
-              className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-text-muted"
-            >
-              CIDR Range
-            </label>
+            <div className="mb-1.5 flex items-center justify-between">
+              <label
+                htmlFor="cidr-input"
+                className="text-xs font-medium uppercase tracking-wider text-text-muted"
+              >
+                CIDR Range
+              </label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleUseCurrentIp}
+                disabled={isAdding || isDetectingIp}
+                className="h-7 gap-1.5 px-2 text-[11px]"
+              >
+                {isDetectingIp ? (
+                  <Loader2 size={12} className="animate-spin" />
+                ) : (
+                  <Globe size={12} />
+                )}
+                Use my current IP
+              </Button>
+            </div>
             <Input
               id="cidr-input"
               type="text"
@@ -150,7 +213,7 @@ function AddEntryDialog({
                 cidrError && "border-error-subtle focus:border-error focus:ring-error",
               )}
               autoFocus
-              disabled={isAdding}
+              disabled={isAdding || isDetectingIp}
             />
             {cidrError && (
               <p className="mt-1 text-[11px] text-error-text">{cidrError}</p>
