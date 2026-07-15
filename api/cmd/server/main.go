@@ -245,11 +245,9 @@ func (s *server) CreateDatabase(ctx context.Context, req *pb.CreateDatabaseReque
 		// Non-fatal — the database was created, just logging is fine.
 	}
 
-	// Track initial storage (256 MB default for new databases).
-	if err := s.tierStore.AddStorageBytes(ctx, userID, 256*1024*1024); err != nil {
-		log.Printf("ERROR: failed to track initial storage for user %q: %v", userID, err)
-	}
-
+	// New databases start with zero actual storage usage — provisioning
+	// the PVC (10 Gi) is separate from real data stored.  Usage tracking
+	// will reflect real bytes once metrics instrumentation is live.
 	log.Printf("INFO: created database %q (id=%s, user=%s, region=%s)", dbName, dbID, userID, region)
 
 	return &pb.CreateDatabaseResponse{

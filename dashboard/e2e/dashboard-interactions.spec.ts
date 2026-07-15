@@ -433,14 +433,14 @@ test.describe('EuroScale Dashboard Interactions', () => {
     console.log('✅ Create database flow verified');
   });
 
-  test('Stats Cards render Total Databases, Active Connections, and Storage Used', async ({
+  test('Stats Cards render Total Databases, Active Connections, and Storage Provisioned', async ({
     page,
   }) => {
     const pageErrors = await loginToDashboard(page);
 
     await expect(page.getByText('Total Databases')).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText('Active Connections')).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByText('Storage Used')).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText('Storage Provisioned')).toBeVisible({ timeout: 5_000 });
 
     await page.screenshot({
       path: path.join(SCREENSHOT_DIR, 'stats-cards.png'),

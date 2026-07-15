@@ -25,7 +25,7 @@ const statConfigs = [
       p.activeConnections !== undefined ? String(p.activeConnections) : "—",
   },
   {
-    label: "Storage Used",
+    label: "Storage Provisioned",
     icon: HardDrive,
     getValue: (p: StatsCardsProps) => p.storageUsed ?? "—",
   },

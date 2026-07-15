@@ -379,16 +379,25 @@ function BackupsContent() {
 
             {/* Empty state */}
             {!backupsLoading && !backupsError && backups.length === 0 && (
-              <Card className="py-10 px-6 text-center space-y-2">
+              <Card className="py-10 px-6 text-center space-y-3">
                 <Database size={28} className="mx-auto text-text-disabled" />
                 <p className="text-sm font-medium">
-                  No backups available
+                  No backups captured yet
                 </p>
                 <p className="text-xs text-text-muted max-w-sm mx-auto">
-                  Backups run daily at 2AM UTC. Once backups are created, they will
-                  appear here and you can restore to any point within the retention
-                  window.
+                  The first backup will appear after the next scheduled run.
                 </p>
+                <div className="mx-auto max-w-xs rounded-md bg-surface-2 border border-border-subtle px-4 py-3 text-left text-xs text-text-muted space-y-1.5">
+                  <p className="font-medium text-text-secondary">Backup schedule</p>
+                  <div className="flex items-center gap-2">
+                    <Clock size={13} className="shrink-0 text-accent-text" />
+                    <span>Full backup: daily at 02:00 UTC</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RefreshCw size={13} className="shrink-0 text-accent-text" />
+                    <span>Incremental: every 15 minutes</span>
+                  </div>
+                </div>
               </Card>
             )}
 
