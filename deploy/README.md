@@ -128,6 +128,32 @@ The dashboard stores Better Auth users in **MariaDB** (`euroscale-auth-db`),
 
 Template (placeholders only): `infra/secrets/auth-db-secret.yaml`
 
+Manifest: `infra/k3s/auth-db.yaml` (Deployment + Service + **PVC**).
+
+### Persistence (critical)
+
+**Never use `emptyDir` for auth-db data.** MariaDB data lives on PVC
+`euroscale-auth-db-data` (`local-path`, 5Gi, RWO) mounted at `/var/lib/mysql`.
+
+- Pod recreate / node drain with `emptyDir` wiped Better Auth users (incident
+  2026-07-15: users recreated with new IDs and free tier).
+- Deployment strategy is `Recreate` (required for single RWO volume).
+- Do **not** scale auth-db above 1 replica while on RWO local-path.
+
+```bash
+export KUBECONFIG=infra/k3s/kubeconfig
+
+# Apply / update auth-db (PVC + Deployment + Service)
+kubectl apply -f infra/k3s/auth-db.yaml
+kubectl rollout status deployment/euroscale-auth-db -n euroscale --timeout=180s
+
+# Optional backup before any risky change
+PASS=$(kubectl -n euroscale get secret euroscale-auth-db-credentials -o jsonpath='{.data.password}' | base64 -d)
+kubectl -n euroscale exec deploy/euroscale-auth-db -- \
+  mariadb-dump -uroot -p"$PASS" --single-transaction euroscale_auth \
+  > /tmp/euroscale_auth_$(date +%Y%m%d).sql
+```
+
 ### Operator runbook (cluster only — never git)
 
 ```bash
