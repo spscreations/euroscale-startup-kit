@@ -12,43 +12,61 @@ test.describe('EuroScale Bug Reproduction', () => {
     }
   }
 
-  test('Bug 1: Upgrade button shows "unknown tier free"', async ({ page }) => {
-    await page.goto('https://euroscale.app/login', { waitUntil: 'load', timeout: 20000 });
+  /** Resilient login — retries once under parallel suite load. */
+  async function login(page: Page): Promise<void> {
+    await page.goto('https://euroscale.app/login', { waitUntil: 'load', timeout: 30_000 });
+    await page.waitForTimeout(500);
 
-    // shadcn/ui inputs use data-slot="input"
-    await page.fill('input[type="email"]', 'j.doe@company.com');
-    await page.fill('input[type="password"]', 'Testb2c!');
-    await page.click('button[type="submit"]');
-    await page.waitForURL(/\/dashboard/, { timeout: 15000 });
+    const email = page.locator('input[type="email"]');
+    const password = page.locator('input[type="password"]');
+    await email.waitFor({ state: 'visible', timeout: 10_000 });
+    await email.fill('j.doe@company.com');
+    await password.fill('Testb2c!');
+    await page.locator('button[type="submit"]').click();
+
+    try {
+      await page.waitForURL(/\/dashboard/, { timeout: 30_000 });
+    } catch {
+      console.log('Login redirect slow — retrying...');
+      await page.goto('https://euroscale.app/login', { waitUntil: 'load', timeout: 30_000 });
+      await page.waitForTimeout(500);
+      await page.locator('input[type="email"]').fill('j.doe@company.com');
+      await page.locator('input[type="password"]').fill('Testb2c!');
+      await page.locator('button[type="submit"]').click();
+      await page.waitForURL(/\/dashboard/, { timeout: 30_000 });
+    }
+    await page.waitForLoadState('domcontentloaded').catch(() => {});
     await page.waitForTimeout(3000);
+  }
+
+  test('Bug 1: Upgrade button shows "unknown tier free"', async ({ page }) => {
+    await login(page);
 
     if (await checkApiError(page)) return;
 
     // Look for Upgrade button (shadcn/ui Button component, data-slot="button")
     const upgradeBtn = page.locator('button:has-text("Upgrade")');
     const upgradeVisible = await upgradeBtn.isVisible({ timeout: 5000 }).catch(() => false);
-    
+
     if (!upgradeVisible) {
       console.log('Bug 1 - No Upgrade button visible (user likely on paid tier)');
       console.log('Bug 1 reproduced: ❌ (not applicable)');
       return;
     }
 
-    // Accept the dialog that may appear
-    page.on('dialog', async dialog => {
+    page.on('dialog', async (dialog) => {
       console.log(`Dialog: ${dialog.message()}`);
       await dialog.accept();
     });
 
-    // Click Upgrade
     await upgradeBtn.click();
     await page.waitForTimeout(3000);
 
-    // Check for error toast — sonner Toast uses data-sonner-toast with role="status"
     const body = await page.locator('body').innerText();
     console.log(`Bug 1 - Body after Upgrade click: ${body.slice(0, 300).replace(/\n/g, ' | ')}`);
 
-    const sonnerToast = page.locator('[data-sonner-toast], [role="status"]')
+    const sonnerToast = page
+      .locator('[data-sonner-toast], [role="status"]')
       .filter({ hasText: /unknown tier|Failed|error/i })
       .first();
     const toastVisible = await sonnerToast.isVisible({ timeout: 2000 }).catch(() => false);
@@ -59,29 +77,11 @@ test.describe('EuroScale Bug Reproduction', () => {
   });
 
   test('Bug 2: Apply Changes shows "Storage resized to 0 GB"', async ({ page }) => {
-    await page.goto('https://euroscale.app/login', { waitUntil: 'load', timeout: 30000 });
-    await page.waitForTimeout(1000);
-
-    // shadcn/ui inputs use data-slot="input"
-    await page.fill('input[type="email"]', 'j.doe@company.com');
-    await page.fill('input[type="password"]', 'Testb2c!');
-    await page.click('button[type="submit"]');
-    try {
-      await page.waitForURL(/\/dashboard/, { timeout: 30000 });
-    } catch {
-      // Retry once on flaky auth under parallel load
-      console.log('Bug 2 - login redirect slow, retrying...');
-      await page.goto('https://euroscale.app/login', { waitUntil: 'load', timeout: 30000 });
-      await page.fill('input[type="email"]', 'j.doe@company.com');
-      await page.fill('input[type="password"]', 'Testb2c!');
-      await page.click('button[type="submit"]');
-      await page.waitForURL(/\/dashboard/, { timeout: 30000 });
-    }
-    await page.waitForTimeout(5000);
+    await login(page);
+    await page.waitForTimeout(2000);
 
     if (await checkApiError(page)) return;
 
-    // Find and click "Apply Changes" button (shadcn/ui Button, data-slot="button")
     const applyBtn = page.locator('button:has-text("Apply Changes")');
     if (await applyBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
       await applyBtn.click();
@@ -89,13 +89,17 @@ test.describe('EuroScale Bug Reproduction', () => {
       const body = await page.locator('body').innerText();
       console.log(`Bug 2 - Body after Apply: ${body.slice(0, 300).replace(/\n/g, ' | ')}`);
 
-      const resizeToast = page.locator('[data-sonner-toast], [role="status"]')
+      const resizeToast = page
+        .locator('[data-sonner-toast], [role="status"]')
         .filter({ hasText: /Storage resized|resized to 0|0 GB/i })
         .first();
       const toastVisible = await resizeToast.isVisible({ timeout: 2000 }).catch(() => false);
       console.log(`Bug 2 - Resize toast visible: ${toastVisible ? '✅' : '❌'}`);
 
-      const hasResized0 = body.includes('Storage resized to 0GB') || body.includes('resized to 0 GB') || toastVisible;
+      const hasResized0 =
+        body.includes('Storage resized to 0GB') ||
+        body.includes('resized to 0 GB') ||
+        toastVisible;
       console.log(`Bug 2 reproduced: ${hasResized0 ? '✅' : '❌'}`);
     } else {
       console.log('Bug 2 - Apply Changes button not visible (add-ons section not rendered)');
@@ -103,17 +107,11 @@ test.describe('EuroScale Bug Reproduction', () => {
   });
 
   test('Bug 3: Browse Data shows error', async ({ page }) => {
-    await page.goto('https://euroscale.app/login', { waitUntil: 'load', timeout: 20000 });
+    await login(page);
 
-    // shadcn/ui inputs use data-slot="input"
-    await page.fill('input[type="email"]', 'j.doe@company.com');
-    await page.fill('input[type="password"]', 'Testb2c!');
-    await page.click('button[type="submit"]');
-    await page.waitForURL(/\/dashboard/, { timeout: 15000 });
-    await page.waitForTimeout(3000);
-
-    // Click Browse Data link — sidebar nav uses shadcn/ui Button
-    const browseLink = page.locator('a[href*="browse"], a:has-text("Browse Data"), button:has-text("Browse Data")').first();
+    const browseLink = page
+      .locator('a[href*="browse"], a:has-text("Browse Data"), button:has-text("Browse Data")')
+      .first();
     await browseLink.waitFor({ state: 'visible', timeout: 5000 });
     await browseLink.click();
     await page.waitForURL(/\/browse/, { timeout: 10000 });
@@ -122,28 +120,27 @@ test.describe('EuroScale Bug Reproduction', () => {
     const body = await page.locator('body').innerText();
     console.log(`Bug 3 - Browse page: ${body.slice(0, 300).replace(/\n/g, ' | ')}`);
 
-    const errorToast = page.locator('[data-sonner-toast], [role="status"]')
+    const errorToast = page
+      .locator('[data-sonner-toast], [role="status"]')
       .filter({ hasText: /Failed to load|no valid credentials|error/i })
       .first();
     const toastVisible = await errorToast.isVisible({ timeout: 2000 }).catch(() => false);
     console.log(`Bug 3 - Error toast visible: ${toastVisible ? '✅' : '❌'}`);
 
-    const hasError = body.includes('Failed to load databases') || body.includes('no valid credentials') || toastVisible;
+    const hasError =
+      body.includes('Failed to load databases') ||
+      body.includes('no valid credentials') ||
+      toastVisible;
     console.log(`Bug 3 reproduced: ${hasError ? '✅' : '❌'}`);
   });
 
   test('Bug 4: Billing page redirects to wrong domain', async ({ page }) => {
-    await page.goto('https://euroscale.app/login', { waitUntil: 'load', timeout: 20000 });
+    await login(page);
 
-    // shadcn/ui inputs use data-slot="input"
-    await page.fill('input[type="email"]', 'j.doe@company.com');
-    await page.fill('input[type="password"]', 'Testb2c!');
-    await page.click('button[type="submit"]');
-    await page.waitForURL(/\/dashboard/, { timeout: 15000 });
-    await page.waitForTimeout(3000);
-
-    // Navigate to billing page with payment=success
-    await page.goto('https://euroscale.app/dashboard/billing?payment=success', { waitUntil: 'networkidle', timeout: 20000 });
+    await page.goto('https://euroscale.app/dashboard/billing?payment=success', {
+      waitUntil: 'load',
+      timeout: 30_000,
+    });
     await page.waitForTimeout(3000);
 
     const url = page.url();
@@ -153,5 +150,8 @@ test.describe('EuroScale Bug Reproduction', () => {
 
     const hasWrongDomain = url.includes('dashboard.euroscale.app');
     console.log(`Bug 4 reproduced (wrong domain): ${hasWrongDomain ? '✅' : '❌'}`);
+    // Soft assert: stay on euroscale.app (not wrong subdomain)
+    expect(url).toMatch(/euroscale\.app/);
+    expect(hasWrongDomain).toBe(false);
   });
 });

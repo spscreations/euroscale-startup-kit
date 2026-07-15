@@ -29,18 +29,34 @@ async function loginToDashboard(page: import('@playwright/test').Page): Promise<
   const emailInput = page.locator(
     'input[type="email"], input[name="email"], input[placeholder*="email" i], [data-slot="input"][type="email"]',
   );
-  await emailInput.waitFor({ state: 'visible', timeout: 15_000 });
-  await emailInput.fill(CREDS.email);
-
   const passwordInput = page.locator('input[type="password"], input[name="password"]');
-  await passwordInput.waitFor({ state: 'visible', timeout: 5_000 });
-  await passwordInput.fill(CREDS.password);
-
   const submitBtn = page
     .locator(
       'button[type="submit"], button:has-text("Sign in"), button:has-text("Login"), button:has-text("Log in"), button:has-text("Continue")',
     )
     .first();
+
+  // Wait for login form OR an auth redirect to dashboard
+  try {
+    await Promise.race([
+      emailInput.first().waitFor({ state: 'visible', timeout: 20_000 }),
+      page.waitForURL(/\/dashboard/, { timeout: 20_000 }),
+    ]);
+  } catch {
+    // one more goto
+    await page.goto('https://euroscale.app/login', { waitUntil: 'domcontentloaded', timeout: 30_000 });
+    await page.waitForTimeout(1500);
+  }
+
+  if (/\/dashboard/.test(page.url())) {
+    await page.waitForTimeout(1000);
+    return pageErrors;
+  }
+
+  await emailInput.first().waitFor({ state: 'visible', timeout: 15_000 });
+  await emailInput.first().fill(CREDS.email);
+  await passwordInput.first().waitFor({ state: 'visible', timeout: 5_000 });
+  await passwordInput.first().fill(CREDS.password);
   await submitBtn.waitFor({ state: 'visible', timeout: 5_000 });
   await submitBtn.click();
 
@@ -49,11 +65,13 @@ async function loginToDashboard(page: import('@playwright/test').Page): Promise<
   } catch {
     console.warn('[loginToDashboard] retry after failed redirect');
     await page.goto('https://euroscale.app/login', { waitUntil: 'domcontentloaded', timeout: 30_000 });
-    await page.waitForTimeout(1000);
-    await emailInput.fill(CREDS.email);
-    await passwordInput.fill(CREDS.password);
-    await submitBtn.click();
-    await page.waitForURL(/\/dashboard/, { timeout: 25_000 });
+    await page.waitForTimeout(1500);
+    if (!/\/dashboard/.test(page.url())) {
+      await emailInput.first().fill(CREDS.email);
+      await passwordInput.first().fill(CREDS.password);
+      await submitBtn.click();
+      await page.waitForURL(/\/dashboard/, { timeout: 25_000 });
+    }
   }
   await page.waitForLoadState('domcontentloaded', { timeout: 15_000 }).catch(() => {});
 

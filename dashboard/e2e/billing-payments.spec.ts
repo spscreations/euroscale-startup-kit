@@ -46,13 +46,11 @@ async function loginToDashboard(page: Page): Promise<string[]> {
   } catch {
     console.warn("[loginToDashboard] retry after failed redirect");
     await page.goto("/login", { waitUntil: "domcontentloaded", timeout: 30_000 });
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(1500);
     await emailInput.first().fill(TEST_EMAIL);
     await passwordInput.first().fill(TEST_PASSWORD);
     await submitBtn.first().click();
-    await page.waitForURL(/\/dashboard/, { timeout: 25_000 }).catch(() => {
-      console.log("Warning: did not redirect to /dashboard after login retry");
-    });
+    await page.waitForURL(/\/dashboard/, { timeout: 30_000 });
   }
 
   await page.waitForLoadState("domcontentloaded", { timeout: 15_000 }).catch(() => {});
@@ -285,13 +283,16 @@ test.describe("Billing & Payments", () => {
     const stalePrice = page.getByText(/^€9(\/mo)?$/);
     await expect(stalePrice).toHaveCount(0);
 
-    // Upgrade for free/scale/team/business; "Current plan" / Contact sales for enterprise
+    // Upgrade for free/scale; "Current plan" text/button for paid TierCard
     const upgradeBtn = page.getByRole("button", { name: /upgrade/i });
-    const altCta = page.getByText(/current plan|contact sales/i);
-    const hasUpgrade = (await upgradeBtn.count()) > 0;
-    const hasAlt = (await altCta.count()) > 0;
+    const currentPlanText = page.getByText(/current plan/i);
+    const contactSales = page.getByText(/contact sales/i);
+    const hasUpgrade = await upgradeBtn.first().isVisible({ timeout: 5000 }).catch(() => false);
+    const hasAlt =
+      (await currentPlanText.first().isVisible({ timeout: 3000 }).catch(() => false)) ||
+      (await contactSales.first().isVisible({ timeout: 2000 }).catch(() => false));
     console.log(`TierCard CTA: upgrade=${hasUpgrade} alt=${hasAlt}`);
-    // Soft: at least one CTA path is fine after TierCard fix (Team shows Upgrade)
+    // Paid Team tier shows "Current plan"; free/scale show Upgrade
     expect(hasUpgrade || hasAlt).toBeTruthy();
 
     if (pageErrors.length > 0) {
