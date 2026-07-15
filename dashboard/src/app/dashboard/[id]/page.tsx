@@ -22,10 +22,11 @@ import {
   ShieldAlert,
   WifiOff,
 } from "lucide-react";
-import { cn, copyToClipboard, formatDate } from "@/lib/utils";
+import { cn, copyToClipboard, formatDate, formatBytes } from "@/lib/utils";
 import { useDatabase } from "@/hooks/useDatabase";
 import { useDeleteDatabase } from "@/hooks/useDeleteDatabase";
 import { useRotateCredentials } from "@/hooks/useRotateCredentials";
+import { useUsage } from "@/hooks/useUsage";
 import IPWhitelist from "@/components/IPWhitelist";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -219,6 +220,7 @@ export default function DatabaseDetailPage() {
   const id = params?.id;
 
   const { data, isLoading, error } = useDatabase(id);
+  const { data: usageData } = useUsage();
   const deleteMutation = useDeleteDatabase();
   const rotateMutation = useRotateCredentials();
 
@@ -233,6 +235,21 @@ export default function DatabaseDetailPage() {
     sslCaPem: string;
     connectionString: string;
   } | null>(null);
+
+  // Account-level storage from GetUsage (per-DB metrics not instrumented yet)
+  const storageBytes = usageData?.usage?.storageBytes;
+  const maxStorageBytes = usageData?.limits?.maxStorageBytes;
+  const hasStorageMetric = storageBytes !== undefined && storageBytes !== null;
+  const storageUsedNum = hasStorageMetric ? Number(storageBytes) : null;
+  const storageLimitNum =
+    maxStorageBytes !== undefined && maxStorageBytes !== null
+      ? Number(maxStorageBytes)
+      : null;
+  const hasStorageLimit = storageLimitNum !== null && storageLimitNum > 0;
+  const storageProgress =
+    storageUsedNum !== null && hasStorageLimit
+      ? Math.min(100, Math.round((storageUsedNum / storageLimitNum!) * 100))
+      : 0;
 
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (isLoading) return <DetailSkeleton />;
@@ -306,14 +323,19 @@ export default function DatabaseDetailPage() {
   const db = data.database!;
   const badge = statusBadge(db.status);
 
-  const stats = {
-    storageUsedMB: 142,
-    storageLimitMB: 500,
-    activeConnections: 3,
-    maxConnections: 25,
-    queriesLastHour: 1240,
-    queriesLimit: 5000,
-  };
+  // Real account usage when available; connections/queries not instrumented yet
+  const storageBytes = usageData?.usage?.storageBytes;
+  const maxStorageBytes = usageData?.limits?.maxStorageBytes;
+  const hasStorage =
+    storageBytes !== undefined && maxStorageBytes !== undefined;
+  const storageUsedNum = hasStorage ? Number(storageBytes) : null;
+  const storageLimitNum = hasStorage ? Number(maxStorageBytes) : null;
+  const storageProgress =
+    storageUsedNum !== null &&
+    storageLimitNum !== null &&
+    storageLimitNum > 0
+      ? Math.round((storageUsedNum / storageLimitNum) * 100)
+      : 0;
 
   // ── Actions ─────────────────────────────────────────────────────────────────
   async function handleDelete() {
@@ -510,7 +532,7 @@ export default function DatabaseDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Usage Stats */}
+        {/* Usage Stats — real GetUsage storage only; no invented metrics */}
         <Card className="overflow-hidden">
           <CardHeader className="border-b border-border-subtle px-5 py-3.5">
             <div className="flex items-center gap-2">
@@ -526,13 +548,30 @@ export default function DatabaseDetailPage() {
                   Storage
                 </span>
               </div>
-              <p className="text-base font-semibold text-text-primary">
-                {stats.storageUsedMB}{" "}
-                <span className="text-xs text-text-muted font-normal">
-                  / {stats.storageLimitMB} MB
-                </span>
-              </p>
-              <Progress value={Math.round((stats.storageUsedMB / stats.storageLimitMB) * 100)} className="h-1.5" />
+              {hasStorageMetric && storageUsedNum !== null ? (
+                <>
+                  <p className="text-base font-semibold text-text-primary">
+                    {formatBytes(storageUsedNum)}
+                    {hasStorageLimit && (
+                      <span className="text-xs text-text-muted font-normal">
+                        {" "}
+                        / {formatBytes(storageLimitNum!)}
+                      </span>
+                    )}
+                  </p>
+                  {hasStorageLimit && (
+                    <Progress value={storageProgress} className="h-1.5" />
+                  )}
+                  <p className="text-[11px] text-text-muted">Account total</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-base font-semibold text-text-primary">—</p>
+                  <p className="text-[11px] text-text-muted">
+                    Metrics not available yet
+                  </p>
+                </>
+              )}
             </div>
 
             <div className="p-3.5 rounded-lg bg-surface-2 border border-border-subtle space-y-1.5">
@@ -542,13 +581,10 @@ export default function DatabaseDetailPage() {
                   Connections
                 </span>
               </div>
-              <p className="text-base font-semibold text-text-primary">
-                {stats.activeConnections}{" "}
-                <span className="text-xs text-text-muted font-normal">
-                  / {stats.maxConnections} active
-                </span>
+              <p className="text-base font-semibold text-text-primary">—</p>
+              <p className="text-[11px] text-text-muted">
+                Metrics not available yet
               </p>
-              <Progress value={Math.round((stats.activeConnections / stats.maxConnections) * 100)} className="h-1.5" />
             </div>
 
             <div className="p-3.5 rounded-lg bg-surface-2 border border-border-subtle space-y-1.5">
@@ -558,13 +594,10 @@ export default function DatabaseDetailPage() {
                   Queries
                 </span>
               </div>
-              <p className="text-base font-semibold text-text-primary">
-                {stats.queriesLastHour.toLocaleString()}{" "}
-                <span className="text-xs text-text-muted font-normal">
-                  / hour
-                </span>
+              <p className="text-base font-semibold text-text-primary">—</p>
+              <p className="text-[11px] text-text-muted">
+                Metrics not available yet
               </p>
-              <Progress value={Math.round((stats.queriesLastHour / stats.queriesLimit) * 100)} className="h-1.5" />
             </div>
           </CardContent>
         </Card>
