@@ -138,14 +138,20 @@ function BackupsContent() {
 
   // ── Fetch backups ──────────────────────────────────────────────────────
 
+  // Depend on session?.id (stable string), not the whole session object —
+  // auth context may recreate session every render, which would recreate
+  // these callbacks and re-fire the effects → infinite loading blink.
+  const sessionId = session?.id;
+
   const fetchBackups = useCallback(async () => {
-    if (!selectedDbId || !session?.id) return;
+    if (!selectedDbId || !sessionId) return;
     setBackupsLoading(true);
     setBackupsError(null);
     try {
       const url = `/api/rest/api/v1/backups?database_id=${encodeURIComponent(selectedDbId)}`;
       const res = await fetch(url);
       if (!res.ok) {
+        // Stable error UI — do not auto-retry on 401/502 (would loop).
         const body = await res.json().catch(() => ({}));
         throw new Error(body.message ?? `Backups fetch failed (${res.status})`);
       }
@@ -158,22 +164,22 @@ function BackupsContent() {
     } finally {
       setBackupsLoading(false);
     }
-  }, [selectedDbId, session]);
+  }, [selectedDbId, sessionId]);
 
-  // Fetch on DB selection change
+  // Fetch on DB selection / session readiness change (stable deps only)
   useEffect(() => {
-    if (selectedDbId) {
+    if (selectedDbId && sessionId) {
       fetchBackups();
-    } else {
+    } else if (!selectedDbId) {
       setBackups([]);
       setBackupsError(null);
     }
-  }, [selectedDbId, fetchBackups]);
+  }, [selectedDbId, sessionId, fetchBackups]);
 
   // ── Fetch restores ─────────────────────────────────────────────────────
 
   const fetchRestores = useCallback(async () => {
-    if (!selectedDbId || !session?.id) return;
+    if (!selectedDbId || !sessionId) return;
     setRestoresLoading(true);
     try {
       const url = `/api/rest/api/v1/restores?database_id=${encodeURIComponent(selectedDbId)}`;
@@ -187,19 +193,19 @@ function BackupsContent() {
         (a: RestoreRecord, b: RestoreRecord) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       ));
     } catch {
-      // Restore history is non-critical; silent fail
+      // Restore history is non-critical; silent fail (no auto-retry loop)
     } finally {
       setRestoresLoading(false);
     }
-  }, [selectedDbId, session]);
+  }, [selectedDbId, sessionId]);
 
   useEffect(() => {
-    if (selectedDbId) {
+    if (selectedDbId && sessionId) {
       fetchRestores();
-    } else {
+    } else if (!selectedDbId) {
       setRestores([]);
     }
-  }, [selectedDbId, fetchRestores]);
+  }, [selectedDbId, sessionId, fetchRestores]);
 
   // ── PITR Restore ───────────────────────────────────────────────────────
 
@@ -230,7 +236,7 @@ function BackupsContent() {
     } finally {
       setRestoring(false);
     }
-  }, [selectedDbId, pitrTime, session, fetchRestores]);
+  }, [selectedDbId, pitrTime, fetchRestores]);
 
   // ── Backup coverage range ──────────────────────────────────────────────
 
