@@ -612,6 +612,28 @@ func (s *server) GetUsage(ctx context.Context, req *pb.GetUsageRequest) (*pb.Get
 		return nil, status.Error(codes.Internal, "failed to get usage")
 	}
 
+	// Source of truth for database count: owned K8s database secrets.
+	// Usage secret can drift after auth-db re-labels or manual secret fixes.
+	allDBs, err := s.secrets.ListAll(ctx)
+	if err != nil {
+		log.Printf("WARN: failed to list databases for usage reconcile (user %q): %v", userID, err)
+	} else {
+		var owned int32
+		for _, db := range allDBs {
+			if db.UserID == userID {
+				owned++
+			}
+		}
+		if usage.DatabaseCount != owned {
+			log.Printf("INFO: reconciling usage database_count for user %q: stored=%d actual=%d", userID, usage.DatabaseCount, owned)
+			// Best-effort write-back so counters stay consistent for create/delete paths.
+			if err := s.tierStore.SetDatabaseCount(ctx, userID, owned); err != nil {
+				log.Printf("WARN: failed to write back reconciled database_count for user %q: %v", userID, err)
+			}
+			usage.DatabaseCount = owned
+		}
+	}
+
 	limits := &pb.TierLimits{
 		MaxDatabases:              int32(tier.MaxDatabases),
 		MaxStorageBytes:           tier.MaxStorageGB * 1_073_741_824, // GB to bytes

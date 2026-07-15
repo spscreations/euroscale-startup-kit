@@ -160,6 +160,23 @@ func (s *Store) DecrementDatabaseCount(ctx context.Context, userID string) error
 	return s.writeUsage(ctx, userID, usage)
 }
 
+// SetDatabaseCount sets the database count for a user to an absolute value.
+// Used to reconcile usage counters against actual owned K8s database secrets.
+func (s *Store) SetDatabaseCount(ctx context.Context, userID string, n int32) error {
+	if n < 0 {
+		n = 0
+	}
+	usage, err := s.readUsage(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if usage.DatabaseCount == n {
+		return nil
+	}
+	usage.DatabaseCount = n
+	return s.writeUsage(ctx, userID, usage)
+}
+
 // AddStorageBytes adds the given number of bytes to the user's storage usage.
 // The delta can be positive (increment) or negative (decrement).
 func (s *Store) AddStorageBytes(ctx context.Context, userID string, delta int64) error {
