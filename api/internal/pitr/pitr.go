@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os/exec"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -54,6 +55,8 @@ type RestoreRequest struct {
 	DatabaseID       string `json:"database_id"`
 	RestoreTimestamp string `json:"restore_timestamp"` // PITR target, ISO 8601
 	RestoreType      string `json:"restore_type"`      // "pitr" or "latest"
+	Keyspace         string `json:"keyspace,omitempty"`  // Vitess keyspace name (default "main")
+	Shard            string `json:"shard,omitempty"`     // Vitess shard name (default "-")
 }
 
 // RestoreInfo tracks the state of a single restore operation.
@@ -170,7 +173,7 @@ func (h *Handler) HandleTriggerBackup(w http.ResponseWriter, r *http.Request) {
 	keyspace := "main"
 	shard := "-"
 
-	log.Printf("INFO: triggering backup for keyspace=%s shard=%s", keyspace, shard)
+	log.Printf("INFO: triggering full backup for keyspace=%s shard=%s", keyspace, shard)
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
 
@@ -193,6 +196,96 @@ func (h *Handler) HandleTriggerBackup(w http.ResponseWriter, r *http.Request) {
 		"message": "backup started",
 		"detail":  output,
 	})
+}
+
+// HandleTriggerIncrementalBackup handles POST /api/v1/incremental-backup-trigger
+// — triggers an incremental backup via vtctldclient BackupShard --incremental-from-pos.
+//
+// Request body (optional):
+//
+//	{
+//	  "from_position": "MySQL56/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx:1-N"
+//	}
+//
+// If from_position is omitted, the current GTID position is auto-detected.
+func (h *Handler) HandleTriggerIncrementalBackup(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	keyspace := "main"
+	shard := "-"
+
+	// Parse optional body for explicit position.
+	var body struct {
+		FromPosition string `json:"from_position"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&body)
+
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+
+	// If no explicit position, fetch current GTID.
+	fromPos := body.FromPosition
+	if fromPos == "" {
+		log.Printf("INFO: no from_position provided — auto-detecting current GTID...")
+		pos, err := h.fetchCurrentGTID(ctx, keyspace, shard)
+		if err != nil {
+			log.Printf("ERROR: failed to get current GTID: %v", err)
+			writeJSON(w, http.StatusInternalServerError, map[string]string{
+				"message": "failed to get GTID position: " + err.Error(),
+			})
+			return
+		}
+		fromPos = pos
+		log.Printf("INFO: auto-detected GTID: %s", fromPos)
+	}
+
+	log.Printf("INFO: triggering incremental backup for %s/%s from pos=%s", keyspace, shard, fromPos)
+
+	output, err := runCommand(ctx, "vtctldclient",
+		"--server", h.vtctldAddr,
+		"BackupShard",
+		"--incremental-from-pos="+fromPos,
+		keyspace+"/"+shard,
+	)
+	if err != nil {
+		log.Printf("ERROR: incremental BackupShard failed: %v output=%s", err, output)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{
+			"message": "incremental backup failed: " + err.Error(),
+		})
+		return
+	}
+
+	log.Printf("INFO: incremental backup triggered: %s", output)
+	writeJSON(w, http.StatusAccepted, map[string]string{
+		"status":       "triggered",
+		"message":      "incremental backup started",
+		"from_position": fromPos,
+		"detail":       output,
+	})
+}
+
+// fetchCurrentGTID queries the current GTID position from the shard primary
+// via vtctldclient ShardReplicationPositions.
+func (h *Handler) fetchCurrentGTID(ctx context.Context, keyspace, shard string) (string, error) {
+	output, err := runCommand(ctx, "vtctldclient",
+		"--server", h.vtctldAddr,
+		"ShardReplicationPositions",
+		keyspace+"/"+shard,
+	)
+	if err != nil {
+		return "", fmt.Errorf("ShardReplicationPositions: %w", err)
+	}
+
+	// Extract MySQL56/... GTID set from the output.
+	re := regexp.MustCompile(`MySQL56/[0-9a-f\-:]+`)
+	matches := re.FindString(output)
+	if matches == "" {
+		return "", fmt.Errorf("no GTID position found in output: %s", output)
+	}
+	return matches, nil
 }
 
 // HandleTriggerRestore handles POST /api/v1/restore
@@ -229,6 +322,20 @@ func (h *Handler) HandleTriggerRestore(w http.ResponseWriter, r *http.Request) {
 	if req.RestoreType != "pitr" && req.RestoreType != "latest" {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"message": "restore_type must be 'pitr' or 'latest'"})
 		return
+	}
+
+	// Validate PITR requires a timestamp.
+	if req.RestoreType == "pitr" && req.RestoreTimestamp == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"message": "restore_timestamp is required for pitr restore type"})
+		return
+	}
+
+	// Default keyspace and shard.
+	if req.Keyspace == "" {
+		req.Keyspace = "main"
+	}
+	if req.Shard == "" {
+		req.Shard = "-"
 	}
 
 	restoreID := uuid.New().String()
@@ -459,11 +566,23 @@ func parseVtctlBackupList(output, keyspace string) []BackupInfo {
 
 // createRestoreJob creates a K8s Job that runs vtctlclient RestoreFromBackup.
 func (h *Handler) createRestoreJob(ctx context.Context, jobName string, req RestoreRequest) error {
-	// Resolve keyspace from database ID.
-	keyspace := req.DatabaseID
+	// Build the shard reference: keyspace/shard (e.g. "main/-").
+	shardRef := req.Keyspace + "/" + req.Shard
 
 	backoffLimit := int32(0)
 	ttlSeconds := int32(3600) // clean up after 1 hour
+
+	// Build the vtctlclient command.
+	command := []string{
+		"vtctlclient",
+		"--server", h.vtctldAddr,
+		"RestoreFromBackup",
+	}
+	// Add PITR timestamp if specified.
+	if req.RestoreType == "pitr" && req.RestoreTimestamp != "" {
+		command = append(command, "--restore_to_timestamp", req.RestoreTimestamp)
+	}
+	command = append(command, shardRef)
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -489,12 +608,7 @@ func (h *Handler) createRestoreJob(ctx context.Context, jobName string, req Rest
 						{
 							Name:  "restore",
 							Image: "vitess/vtctld:latest",
-							Command: []string{
-								"vtctlclient",
-								"--server", h.vtctldAddr,
-								"RestoreFromBackup",
-								keyspace + "/0",
-							},
+							Command: command,
 							Env: []corev1.EnvVar{
 								{Name: "VTCTLD_ADDR", Value: h.vtctldAddr},
 							},

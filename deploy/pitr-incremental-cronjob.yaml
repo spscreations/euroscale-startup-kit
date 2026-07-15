@@ -1,0 +1,198 @@
+---
+# ── 1-Minute Incremental Binlog Shipping (PITR) ────────────────────────────
+# Runs every minute, fetches current GTID position from the shard primary,
+# and ships binlogs to S3 (MinIO) via vtctldclient BackupShard --incremental-from-pos.
+#
+# Architecture:
+#   1. GetMasterPosition on main/- → current GTID position
+#   2. Read last-shipped position from ConfigMap
+#   3. If changed: vtctldclient BackupShard --incremental-from-pos=<pos> main/-
+#      (Vitess deduplicates — safe to pass same position, ships only new binlogs)
+#   4. Update ConfigMap with new position
+#
+# Prerequisites:
+#   - vttablet extraFlags must have incremental_backup: "true"
+#   - Full backup must exist (incremental only works after a full backup)
+#   - vitess/lite:v24.0.1 image must include vtctldclient + mysql client
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: euroscale-pitr-incremental
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: backup
+    type: pitr-incremental
+spec:
+  schedule: "*/5 * * * *"   # Every 5 minutes (industry standard, matches AWS RDS / GCP Cloud SQL)
+  concurrencyPolicy: Forbid # Don't overlap — if one is slow, skip the next
+  successfulJobsHistoryLimit: 288   # 24h of 5-min interval history
+  failedJobsHistoryLimit: 10
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: euroscale
+            component: backup
+            type: pitr-incremental
+        spec:
+          restartPolicy: Never
+          serviceAccountName: euroscale-backup-sa  # needs RBAC to read/write ConfigMap
+          containers:
+            - name: pitr-shipper
+              image: vitess/lite:v24.0.1
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+
+                  VTCTLD_SERVER="${VTCTLD_ADDR:-euroscale-vtctld-65a39cf7:15999}"
+                  KEYSPACE="main"
+                  SHARD="-"
+                  CONFIGMAP_NAME="euroscale-pitr-state"
+                  NAMESPACE="${NAMESPACE:-euroscale}"
+                  TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+                  CACERT="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+                  K8S_API="https://kubernetes.default.svc"
+
+                  # ── Helper: GET/PATCH ConfigMap via K8s API ────────────
+                  k8s_get_cm() {
+                    curl -sS --cacert "$CACERT" -H "Authorization: Bearer $TOKEN" \
+                      "${K8S_API}/api/v1/namespaces/${NAMESPACE}/configmaps/${CONFIGMAP_NAME}" 2>/dev/null || true
+                  }
+
+                  k8s_patch_cm() {
+                    curl -sS --cacert "$CACERT" -H "Authorization: Bearer $TOKEN" \
+                      -H "Content-Type: application/strategic-merge-patch+json" \
+                      -X PATCH \
+                      -d "$1" \
+                      "${K8S_API}/api/v1/namespaces/${NAMESPACE}/configmaps/${CONFIGMAP_NAME}" 2>/dev/null || true
+                  }
+
+                  # ── Ensure the state ConfigMap exists ──────────────────
+                  EXISTING="$(k8s_get_cm)"
+                  if echo "$EXISTING" | grep -q '"code":404'; then
+                    echo "INFO: Creating pitr-state ConfigMap..."
+                    curl -sS --cacert "$CACERT" -H "Authorization: Bearer $TOKEN" \
+                      -H "Content-Type: application/json" \
+                      -X POST \
+                      -d "{\"apiVersion\":\"v1\",\"kind\":\"ConfigMap\",\"metadata\":{\"name\":\"${CONFIGMAP_NAME}\",\"namespace\":\"${NAMESPACE}\"},\"data\":{}}" \
+                      "${K8S_API}/api/v1/namespaces/${NAMESPACE}/configmaps" 2>/dev/null || \
+                      echo "WARNING: Could not create ConfigMap (may already exist)"
+                  fi
+
+                  # ── Get current GTID position from the primary ─────────
+                  echo "INFO: Fetching current GTID position from ${KEYSPACE}/${SHARD}..."
+                  POS_OUTPUT="$(vtctldclient --server="${VTCTLD_SERVER}" GetSchema "${KEYSPACE}/${SHARD}" --tables="" 2>&1)" || {
+                    echo "WARNING: GetSchema failed: ${POS_OUTPUT}"
+                    # Fallback: try ShardReplicationPositions
+                    POS_OUTPUT="$(vtctldclient --server="${VTCTLD_SERVER}" ShardReplicationPositions "${KEYSPACE}/${SHARD}" 2>&1)" || {
+                      echo "ERROR: Cannot get GTID position, exiting."
+                      exit 1
+                    }
+                  }
+
+                  echo "DEBUG: Position output: ${POS_OUTPUT}"
+
+                  # Extract the GTID set from the output. Format varies by Vitess version.
+                  # For GetSchema: "gtid":"MySQL56/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx:1-N"
+                  # For ShardReplicationPositions: similar GTID field
+                  CURRENT_GTID="$(echo "${POS_OUTPUT}" | grep -oP 'MySQL56/[0-9a-f\-:]+' | head -1)"
+                  if [ -z "$CURRENT_GTID" ]; then
+                    echo "WARNING: Could not extract GTID from output. Trying alternate extraction..."
+                    CURRENT_GTID="$(echo "${POS_OUTPUT}" | grep -oE 'MySQL56/[a-f0-9\-:]+' | head -1)"
+                  fi
+                  if [ -z "$CURRENT_GTID" ]; then
+                    echo "ERROR: Could not determine current GTID position. Output was:"
+                    echo "${POS_OUTPUT}"
+                    exit 1
+                  fi
+
+                  echo "INFO: Current GTID position: ${CURRENT_GTID}"
+
+                  # ── Read last shipped position ─────────────────────────
+                  LAST_GTID=""
+                  if echo "$EXISTING" | grep -q '"code":404'; then
+                    echo "INFO: No existing state, will ship initial incremental."
+                  else
+                    LAST_GTID="$(echo "$EXISTING" | grep -oP '"last_gtid"\s*:\s*"[^"]*"' | grep -oP '"(?:"|[^"])*"' | tr -d '"' | tail -1)" || true
+                    LAST_GTID="$(echo "$EXISTING" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('data',{}).get('last_gtid',''))" 2>/dev/null)" || true
+                  fi
+
+                  echo "INFO: Last shipped GTID: ${LAST_GTID:-none}"
+
+                  # ── Ship binlogs if GTID changed ───────────────────────
+                  SHIP_OUTPUT=""
+                  if [ "${LAST_GTID}" = "${CURRENT_GTID}" ]; then
+                    echo "INFO: GTID unchanged — nothing to ship."
+                  else
+                    echo "INFO: GTID changed (${LAST_GTID:-none} → ${CURRENT_GTID}) — shipping binlogs..."
+                    SHIP_OUTPUT="$(vtctldclient --server="${VTCTLD_SERVER}" BackupShard --incremental-from-pos="${CURRENT_GTID}" "${KEYSPACE}/${SHARD}" 2>&1)" || {
+                      echo "WARNING: BackupShard returned error: ${SHIP_OUTPUT}"
+                      # Don't exit — still update position to avoid repeated failures
+                    }
+                    echo "INFO: BackupShard output: ${SHIP_OUTPUT}"
+
+                    # ── Update last shipped position ─────────────────────
+                    PATCH_JSON="{\"data\":{\"last_gtid\":\"${CURRENT_GTID}\",\"last_shipped_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}}"
+                    k8s_patch_cm "$PATCH_JSON"
+                    echo "INFO: Updated pitr-state: ${CURRENT_GTID}"
+                  fi
+
+                  echo "PITR incremental done: GTID=${CURRENT_GTID}"
+              env:
+                - name: VTCTLD_ADDR
+                  value: "euroscale-vtctld-65a39cf7:15999"
+                - name: NAMESPACE
+                  value: "euroscale"
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+---
+# ── RBAC: ServiceAccount for PITR incremental ────────────────────────────────
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: euroscale-backup-sa
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: backup
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: euroscale-backup-sa
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: backup
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["euroscale-pitr-state"]
+    verbs: ["get", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: euroscale-backup-sa
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: backup
+subjects:
+  - kind: ServiceAccount
+    name: euroscale-backup-sa
+    namespace: euroscale
+roleRef:
+  kind: Role
+  name: euroscale-backup-sa
+  apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,429 @@
+# ─────────────────────────────────────────────────────────────────────
+# EuroScale — S3 Credential Mutating Webhook for vttablet Pods
+# ─────────────────────────────────────────────────────────────────────
+# Intercepts Pod CREATE in euroscale namespace, matches vttablet pods,
+# injects AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION,
+# and AWS_ENDPOINT_URL_S3 from the vitess-backup-creds secret.
+#
+# Uses cert-manager for TLS (already installed in cluster).
+# No image build needed — Python inline script.
+#
+# Apply:  kubectl apply -f deploy/webhook-s3-injector.yaml
+# Verify: kubectl rollout status deploy/s3-injector -n euroscale-webhook
+# ─────────────────────────────────────────────────────────────────────
+---
+# ═════════════════════════════════════════════════════════════════════
+# 1. Namespace
+# ═════════════════════════════════════════════════════════════════════
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: euroscale-webhook
+  labels:
+    app.kubernetes.io/name: s3-injector
+    app.kubernetes.io/part-of: euroscale
+
+---
+# ═════════════════════════════════════════════════════════════════════
+# 2. ServiceAccount
+# ═════════════════════════════════════════════════════════════════════
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: s3-injector
+  namespace: euroscale-webhook
+  labels:
+    app: s3-injector
+
+---
+# ═════════════════════════════════════════════════════════════════════
+# 3. RBAC — read vitess-backup-creds in euroscale namespace
+# ═════════════════════════════════════════════════════════════════════
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: s3-injector-secret-reader
+  namespace: euroscale
+  labels:
+    app: s3-injector
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  resourceNames: ["vitess-backup-creds"]
+  verbs: ["get", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: s3-injector-secret-reader
+  namespace: euroscale
+  labels:
+    app: s3-injector
+subjects:
+- kind: ServiceAccount
+  name: s3-injector
+  namespace: euroscale-webhook
+roleRef:
+  kind: Role
+  name: s3-injector-secret-reader
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# ═════════════════════════════════════════════════════════════════════
+# 4. cert-manager: SelfSigned Issuer
+# ═════════════════════════════════════════════════════════════════════
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: s3-injector-selfsigned
+  namespace: euroscale-webhook
+  labels:
+    app: s3-injector
+spec:
+  selfSigned: {}
+
+---
+# ═════════════════════════════════════════════════════════════════════
+# 5. cert-manager: Certificate (TLS keypair stored in Secret)
+# ═════════════════════════════════════════════════════════════════════
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: s3-injector-tls
+  namespace: euroscale-webhook
+  labels:
+    app: s3-injector
+spec:
+  secretName: s3-injector-tls
+  duration: 2160h   # 90 days
+  renewBefore: 720h  # 30 days
+  dnsNames:
+    - s3-injector
+    - s3-injector.euroscale-webhook
+    - s3-injector.euroscale-webhook.svc
+    - s3-injector.euroscale-webhook.svc.cluster.local
+  issuerRef:
+    name: s3-injector-selfsigned
+    kind: Issuer
+
+---
+# ═════════════════════════════════════════════════════════════════════
+# 6. Service
+# ═════════════════════════════════════════════════════════════════════
+apiVersion: v1
+kind: Service
+metadata:
+  name: s3-injector
+  namespace: euroscale-webhook
+  labels:
+    app: s3-injector
+spec:
+  ports:
+    - name: webhook
+      port: 443
+      targetPort: 8443
+      protocol: TCP
+  selector:
+    app: s3-injector
+
+---
+# ═════════════════════════════════════════════════════════════════════
+# 7. Deployment — Python webhook (inline script, no image build)
+# ═════════════════════════════════════════════════════════════════════
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: s3-injector
+  namespace: euroscale-webhook
+  labels:
+    app: s3-injector
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: s3-injector
+  template:
+    metadata:
+      labels:
+        app: s3-injector
+    spec:
+      serviceAccountName: s3-injector
+      automountServiceAccountToken: true
+      containers:
+        - name: webhook
+          image: python:3.12-alpine
+          command: ["python3", "-u", "-c"]
+          args:
+            - |
+              import base64, json, os, re, ssl, sys
+              from http.server import HTTPServer, BaseHTTPRequestHandler
+              from urllib.request import Request, urlopen
+
+              # ── Kubernetes API client (in-cluster) ──────────────────────
+              K8S_HOST = os.environ.get('KUBERNETES_SERVICE_HOST', 'kubernetes.default.svc')
+              K8S_PORT = os.environ.get('KUBERNETES_SERVICE_PORT', '443')
+              K8S_API  = f'https://{K8S_HOST}:{K8S_PORT}'
+              TOKEN_FILE = '/var/run/secrets/kubernetes.io/serviceaccount/token'
+              CA_FILE    = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
+
+              with open(TOKEN_FILE) as f:
+                  TOKEN = f.read().strip()
+
+              def k8s_get(path):
+                  """GET a Kubernetes API path, return parsed JSON."""
+                  url = f'{K8S_API}{path}'
+                  req = Request(url)
+                  req.add_header('Authorization', f'Bearer {TOKEN}')
+                  ctx = ssl.create_default_context(cafile=CA_FILE)
+                  with urlopen(req, context=ctx) as resp:
+                      return json.loads(resp.read())
+
+              # ── Load credentials from vitess-backup-creds secret ─────────
+              # Parse the 'credentials' key (INI-style rclone config) that
+              # contains aws_access_key_id and aws_secret_access_key.
+              # Fall back to access-key / secret-key top-level keys.
+              def load_credentials():
+                  try:
+                      secret = k8s_get('/api/v1/namespaces/euroscale/secrets/vitess-backup-creds')
+                  except Exception as e:
+                      print(f'FATAL: cannot read vitess-backup-creds: {e}', file=sys.stderr)
+                      return None, None
+
+                  data = {}
+                  for k, v in secret.get('data', {}).items():
+                      data[k] = base64.b64decode(v).decode('utf-8')
+
+                  ak = None
+                  sk = None
+
+                  # Primary: parse 'credentials' key
+                  creds_text = data.get('credentials', '')
+                  for line in creds_text.split('\n'):
+                      m = re.match(r'^\s*aws_access_key_id\s*=\s*(.+)$', line)
+                      if m:
+                          ak = m.group(1).strip()
+                      m = re.match(r'^\s*aws_secret_access_key\s*=\s*(.+)$', line)
+                      if m:
+                          sk = m.group(1).strip()
+
+                  # Fallback: use top-level keys
+                  if not ak:
+                      ak = data.get('access-key', data.get('access_key', ''))
+                  if not sk:
+                      sk = data.get('secret-key', data.get('secret_key', ''))
+
+                  return ak, sk
+
+              ACCESS_KEY, SECRET_KEY = load_credentials()
+              if not ACCESS_KEY or not SECRET_KEY:
+                  print('FATAL: could not extract credentials from vitess-backup-creds', file=sys.stderr)
+                  sys.exit(1)
+
+              REGION   = os.environ.get('AWS_REGION', 'nbg1')
+              ENDPOINT = os.environ.get('AWS_ENDPOINT_URL_S3', 'https://nbg1.your-objectstorage.com')
+
+              # Log startup (mask secret key)
+              print(f's3-injector ready  |  access_key={ACCESS_KEY[:8]}…  '
+                    f'secret_key_len={len(SECRET_KEY)}  region={REGION}  '
+                    f'endpoint={ENDPOINT}', flush=True)
+
+              # ── Webhook HTTP handler ────────────────────────────────────
+              class WebhookHandler(BaseHTTPRequestHandler):
+                  def log_message(self, fmt, *args):
+                      """Quieter logging."""
+                      print(f'[webhook] {args[0]}', flush=True)
+
+                  def do_GET(self):
+                      if self.path in ('/healthz', '/health') or self.path.startswith('/healthz') or self.path.startswith('/health'):
+                          self.send_response(200)
+                          self.send_header('Content-Type', 'text/plain')
+                          self.end_headers()
+                          self.wfile.write(b'ok')
+                      else:
+                          self.send_response(404)
+                          self.end_headers()
+
+                  def do_POST(self):
+                      if not self.path.startswith('/mutate'):
+                          self.send_response(404)
+                          self.end_headers()
+                          return
+
+                      try:
+                          content_length = int(self.headers.get('Content-Length', 0))
+                          body = self.rfile.read(content_length)
+                      except Exception:
+                          self.send_response(400)
+                          self.end_headers()
+                          return
+
+                      try:
+                          review = json.loads(body)
+                      except json.JSONDecodeError:
+                          self.send_response(400)
+                          self.end_headers()
+                          return
+
+                      req_obj = review.get('request', {})
+                      uid = req_obj.get('uid', '')
+                      pod_obj = req_obj.get('object', {})
+                      pod_spec = pod_obj.get('spec', {})
+
+                      # Debug: log what we received
+                      namespace = req_obj.get('namespace', '?')
+                      pod_name = req_obj.get('name', pod_obj.get('metadata', {}).get('name', '?'))
+                      containers = pod_spec.get('containers', [])
+                      container_names = [c.get('name', '?') for c in containers]
+                      operation = req_obj.get('operation', '?')
+                      print(f'[webhook] {operation} {namespace}/{pod_name}  containers={container_names}', flush=True)
+
+                      response = {
+                          'uid': uid,
+                          'allowed': True,
+                      }
+
+                      # Match: any container named 'vttablet'
+                      containers = pod_spec.get('containers', [])
+                      vttablet_idx = None
+                      for i, c in enumerate(containers):
+                          if c.get('name') == 'vttablet':
+                              vttablet_idx = i
+                              break
+
+                      if vttablet_idx is not None:
+                          patches = []
+                          env_vars = [
+                              {'name': 'AWS_ACCESS_KEY_ID',     'value': ACCESS_KEY},
+                              {'name': 'AWS_SECRET_ACCESS_KEY', 'value': SECRET_KEY},
+                              {'name': 'AWS_REGION',            'value': REGION},
+                              {'name': 'AWS_ENDPOINT_URL_S3',   'value': ENDPOINT},
+                          ]
+
+                          base_path = f'/spec/containers/{vttablet_idx}/env'
+                          existing_env = containers[vttablet_idx].get('env')
+
+                          if existing_env is None:
+                              patches.append({
+                                  'op':    'add',
+                                  'path':  base_path,
+                                  'value': env_vars,
+                              })
+                          else:
+                              for ev in env_vars:
+                                  patches.append({
+                                      'op':    'add',
+                                      'path':  f'{base_path}/-',
+                                      'value': ev,
+                                  })
+
+                          if patches:
+                              raw_patch = json.dumps(patches).encode()
+                              response['patch']     = base64.b64encode(raw_patch).decode()
+                              response['patchType'] = 'JSONPatch'
+                              print(f'[webhook] injected {len(patches)} env vars → '
+                                    f'{req_obj.get("namespace","?")}/{req_obj.get("name","?")}',
+                                    flush=True)
+
+                      review['response'] = response
+                      resp_bytes = json.dumps(review).encode()
+
+                      self.send_response(200)
+                      self.send_header('Content-Type', 'application/json')
+                      self.send_header('Content-Length', str(len(resp_bytes)))
+                      self.end_headers()
+                      self.wfile.write(resp_bytes)
+
+              # ── Start HTTPS server ──────────────────────────────────────
+              CERT_FILE = '/etc/webhook/certs/tls.crt'
+              KEY_FILE  = '/etc/webhook/certs/tls.key'
+
+              httpd = HTTPServer(('0.0.0.0', 8443), WebhookHandler)
+              ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+              ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+              ctx.load_cert_chain(CERT_FILE, KEY_FILE)
+              httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
+
+              print('s3-injector listening on :8443', flush=True)
+              try:
+                  httpd.serve_forever()
+              except KeyboardInterrupt:
+                  httpd.server_close()
+
+          ports:
+            - name: https
+              containerPort: 8443
+              protocol: TCP
+          env:
+            - name: AWS_REGION
+              value: "nbg1"
+            - name: AWS_ENDPOINT_URL_S3
+              value: "https://nbg1.your-objectstorage.com"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8443
+              scheme: HTTPS
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8443
+              scheme: HTTPS
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          volumeMounts:
+            - name: certs
+              mountPath: /etc/webhook/certs
+              readOnly: true
+      volumes:
+        - name: certs
+          secret:
+            secretName: s3-injector-tls
+
+---
+# ═════════════════════════════════════════════════════════════════════
+# 8. MutatingWebhookConfiguration
+#    cert-manager CA injector adds caBundle automatically via annotation.
+# ═════════════════════════════════════════════════════════════════════
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: s3-injector
+  labels:
+    app: s3-injector
+  annotations:
+    cert-manager.io/inject-ca-from: euroscale-webhook/s3-injector-tls
+webhooks:
+  - name: s3-injector.euroscale-webhook.svc
+    clientConfig:
+      service:
+        name: s3-injector
+        namespace: euroscale-webhook
+        path: /mutate
+        port: 443
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: euroscale
+    objectSelector:
+      matchLabels:
+        planetscale.com/component: vttablet
+    admissionReviewVersions: ["v1"]
+    sideEffects: None
+    failurePolicy: Ignore
+    timeoutSeconds: 5

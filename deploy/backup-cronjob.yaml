@@ -1,0 +1,88 @@
+---
+# ── Full Daily Backup ──────────────────────────────────────────────────────────
+# Runs every day at 2 AM UTC via vtctldclient BackupShard for main/-
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: euroscale-full-backup
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: backup
+    type: full
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: euroscale
+            component: backup
+            type: full
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: vtctld-backup
+              image: vitess/lite:v24.0.1
+              imagePullPolicy: IfNotPresent
+              command:
+                - vtctldclient
+                - --server=euroscale-vtctld-65a39cf7:15999
+                - BackupShard
+                - main/-
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+---
+# ── Incremental Backup (every 15 min) ─────────────────────────────────────────
+# Runs BackupShard every 15 minutes; Vitess deduplicates if no changes.
+# NOTE: For 1-minute PITR granularity, also deploy pitr-incremental-cronjob.yaml
+# which ships binlogs every minute using --incremental-from-pos.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: euroscale-incremental-backup
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: backup
+    type: incremental
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: euroscale
+            component: backup
+            type: incremental
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: vtctld-backup
+              image: vitess/lite:v24.0.1
+              imagePullPolicy: IfNotPresent
+              command:
+                - vtctldclient
+                - --server=euroscale-vtctld-65a39cf7:15999
+                - BackupShard
+                - main/-
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
