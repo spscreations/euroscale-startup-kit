@@ -159,6 +159,42 @@ func (h *Handler) HandleListBackups(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, listBackupsResponse{Backups: deduped})
 }
 
+// HandleTriggerBackup handles POST /api/v1/backups-trigger — triggers a full backup
+// via vtctldclient BackupShard for the main/- keyspace.
+func (h *Handler) HandleTriggerBackup(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	keyspace := "main"
+	shard := "-"
+
+	log.Printf("INFO: triggering backup for keyspace=%s shard=%s", keyspace, shard)
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+
+	output, err := runCommand(ctx, "vtctldclient",
+		"--server", h.vtctldAddr,
+		"BackupShard",
+		keyspace+"/"+shard,
+	)
+	if err != nil {
+		log.Printf("ERROR: BackupShard failed: %v output=%s", err, output)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{
+			"message": "backup failed: " + err.Error(),
+		})
+		return
+	}
+
+	log.Printf("INFO: backup triggered: %s", output)
+	writeJSON(w, http.StatusAccepted, map[string]string{
+		"status":  "triggered",
+		"message": "backup started",
+		"detail":  output,
+	})
+}
+
 // HandleTriggerRestore handles POST /api/v1/restore
 //
 // Request body:

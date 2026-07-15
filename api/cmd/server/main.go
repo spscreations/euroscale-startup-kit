@@ -1372,7 +1372,9 @@ func main() {
 	httpMux.HandleFunc("/api/v1/restore/", withHTTPAuth(jwtSecret, srv.pitrHandler.HandleTriggerRestore))
 	httpMux.HandleFunc("/api/v1/restores", withHTTPAuth(jwtSecret, srv.pitrHandler.HandleRestoreStatus))
 	httpMux.HandleFunc("/api/v1/restores/", withHTTPAuth(jwtSecret, srv.pitrHandler.HandleRestoreStatus))
-	log.Println("PITR endpoints registered: /api/v1/backups, /api/v1/restore, /api/v1/restores")
+	// POST /api/v1/backups-trigger — trigger a new backup
+	httpMux.HandleFunc("/api/v1/backups-trigger", withHTTPAuth(jwtSecret, srv.pitrHandler.HandleTriggerBackup))
+	log.Println("PITR endpoints registered: /api/v1/backups, /api/v1/backups-trigger, /api/v1/restore, /api/v1/restores")
 
 	// Build and register Connect/gRPC-web handler on the same port.
 	// This makes the DatabaseService available to browsers via HTTP/1.1
