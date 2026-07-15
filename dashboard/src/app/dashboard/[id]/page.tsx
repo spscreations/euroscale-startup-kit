@@ -533,23 +533,27 @@ export default function DatabaseDetailPage() {
                   Storage
                 </span>
               </div>
-              <p className="text-base font-semibold text-text-primary">
-                {hasStorage &&
-                storageUsedNum !== null &&
-                storageLimitNum !== null ? (
-                  <>
+              {hasStorage && storageUsedNum !== null && storageLimitNum !== null ? (
+                <>
+                  <p className="text-base font-semibold text-text-primary">
                     {formatBytes(storageUsedNum)}{" "}
                     <span className="text-xs text-text-muted font-normal">
                       / {formatBytes(storageLimitNum)}
                     </span>
-                  </>
-                ) : (
-                  <span className="text-text-muted">—</span>
-                )}
-              </p>
-              {hasStorage ? (
-                <Progress value={storageProgress} className="h-1.5" />
-              ) : null}
+                  </p>
+                  {storageLimitNum > 0 && (
+                    <Progress value={storageProgress} className="h-1.5" />
+                  )}
+                  <p className="text-[11px] text-text-muted">Account total</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-base font-semibold text-text-primary">—</p>
+                  <p className="text-[11px] text-text-muted">
+                    Metrics not available yet
+                  </p>
+                </>
+              )}
             </div>
 
             <div className="p-3.5 rounded-lg bg-surface-2 border border-border-subtle space-y-1.5">
@@ -560,7 +564,9 @@ export default function DatabaseDetailPage() {
                 </span>
               </div>
               <p className="text-base font-semibold text-text-primary">—</p>
-              <p className="text-[11px] text-text-muted">Not instrumented yet</p>
+              <p className="text-[11px] text-text-muted">
+                Metrics not available yet
+              </p>
             </div>
 
             <div className="p-3.5 rounded-lg bg-surface-2 border border-border-subtle space-y-1.5">
@@ -571,7 +577,9 @@ export default function DatabaseDetailPage() {
                 </span>
               </div>
               <p className="text-base font-semibold text-text-primary">—</p>
-              <p className="text-[11px] text-text-muted">Not instrumented yet</p>
+              <p className="text-[11px] text-text-muted">
+                Metrics not available yet
+              </p>
             </div>
           </CardContent>
         </Card>

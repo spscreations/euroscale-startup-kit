@@ -99,19 +99,19 @@ export default function DBStats({ databaseId }: DBStatsProps) {
               icon={HardDrive}
               label="Storage"
               value="—"
-              subtext="Not instrumented yet"
+              subtext="Live metrics not instrumented yet"
             />
             <StatCard
               icon={Database}
               label="Active Connections"
               value="—"
-              subtext="Not instrumented yet"
+              subtext="Live metrics not instrumented yet"
             />
             <StatCard
               icon={Activity}
               label="Queries / sec"
               value="—"
-              subtext="Not instrumented yet"
+              subtext="Live metrics not instrumented yet"
             />
             <StatCard
               icon={Calendar}
