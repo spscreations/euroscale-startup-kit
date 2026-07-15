@@ -689,6 +689,7 @@ func (x *RotateCredentialsResponse) GetPort() int32 {
 }
 
 // Database metadata. Never contains credentials.
+// SSL CA certificate is safe to include — it is the cluster-wide CA, not per-database.
 type Database struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Unique ID (UUID v4).
@@ -708,7 +709,10 @@ type Database struct {
 	// Status: "creating", "ready", "deleting", "deleted", "error".
 	Status string `protobuf:"bytes,8,opt,name=status,proto3" json:"status,omitempty"`
 	// Creation timestamp (RFC 3339).
-	CreatedAt     string `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	CreatedAt string `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	// PEM-encoded CA certificate for TLS verification (base64).
+	// This is the cluster-wide VTGate CA, safe to include in metadata responses.
+	SslCaPem      string `protobuf:"bytes,10,opt,name=ssl_ca_pem,json=sslCaPem,proto3" json:"ssl_ca_pem,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -802,6 +806,13 @@ func (x *Database) GetStatus() string {
 func (x *Database) GetCreatedAt() string {
 	if x != nil {
 		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *Database) GetSslCaPem() string {
+	if x != nil {
+		return x.SslCaPem
 	}
 	return ""
 }
@@ -1563,6 +1574,123 @@ func (x *SetUserTierResponse) GetSuccess() bool {
 	return false
 }
 
+type ResizeStorageRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID of the database whose PVC to resize.
+	DatabaseId string `protobuf:"bytes,1,opt,name=database_id,json=databaseId,proto3" json:"database_id,omitempty"`
+	// GB to add to the current PVC (not the total new size).
+	AdditionalGb  int32 `protobuf:"varint,2,opt,name=additional_gb,json=additionalGb,proto3" json:"additional_gb,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResizeStorageRequest) Reset() {
+	*x = ResizeStorageRequest{}
+	mi := &file_euroscale_v1_database_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResizeStorageRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResizeStorageRequest) ProtoMessage() {}
+
+func (x *ResizeStorageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_euroscale_v1_database_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResizeStorageRequest.ProtoReflect.Descriptor instead.
+func (*ResizeStorageRequest) Descriptor() ([]byte, []int) {
+	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *ResizeStorageRequest) GetDatabaseId() string {
+	if x != nil {
+		return x.DatabaseId
+	}
+	return ""
+}
+
+func (x *ResizeStorageRequest) GetAdditionalGb() int32 {
+	if x != nil {
+		return x.AdditionalGb
+	}
+	return 0
+}
+
+type ResizeStorageResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Whether the resize was accepted by the storage provider.
+	Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	// New total PVC size in GB after the resize.
+	NewTotalGb int64 `protobuf:"varint,2,opt,name=new_total_gb,json=newTotalGb,proto3" json:"new_total_gb,omitempty"`
+	// Human-readable message (e.g. reason for failure).
+	Message       string `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResizeStorageResponse) Reset() {
+	*x = ResizeStorageResponse{}
+	mi := &file_euroscale_v1_database_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResizeStorageResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResizeStorageResponse) ProtoMessage() {}
+
+func (x *ResizeStorageResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_euroscale_v1_database_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResizeStorageResponse.ProtoReflect.Descriptor instead.
+func (*ResizeStorageResponse) Descriptor() ([]byte, []int) {
+	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *ResizeStorageResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *ResizeStorageResponse) GetNewTotalGb() int64 {
+	if x != nil {
+		return x.NewTotalGb
+	}
+	return 0
+}
+
+func (x *ResizeStorageResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_euroscale_v1_database_proto protoreflect.FileDescriptor
 
 const file_euroscale_v1_database_proto_rawDesc = "" +
@@ -1621,7 +1749,7 @@ const file_euroscale_v1_database_proto_rawDesc = "" +
 	"\n" +
 	"ssl_ca_pem\x18\x05 \x01(\tR\bsslCaPem\x12\x12\n" +
 	"\x04host\x18\x06 \x01(\tR\x04host\x12\x12\n" +
-	"\x04port\x18\a \x01(\x05R\x04port\"\xea\x01\n" +
+	"\x04port\x18\a \x01(\x05R\x04port\"\x88\x02\n" +
 	"\bDatabase\x12\x1f\n" +
 	"\vdatabase_id\x18\x01 \x01(\tR\n" +
 	"databaseId\x12\x12\n" +
@@ -1633,7 +1761,10 @@ const file_euroscale_v1_database_proto_rawDesc = "" +
 	"\busername\x18\a \x01(\tR\busername\x12\x16\n" +
 	"\x06status\x18\b \x01(\tR\x06status\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\t \x01(\tR\tcreatedAt\"g\n" +
+	"created_at\x18\t \x01(\tR\tcreatedAt\x12\x1c\n" +
+	"\n" +
+	"ssl_ca_pem\x18\n" +
+	" \x01(\tR\bsslCaPem\"g\n" +
 	"\x10IPWhitelistEntry\x12\x12\n" +
 	"\x04cidr\x18\x01 \x01(\tR\x04cidr\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x1d\n" +
@@ -1683,7 +1814,16 @@ const file_euroscale_v1_database_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x12\n" +
 	"\x04tier\x18\x02 \x01(\tR\x04tier\"/\n" +
 	"\x13SetUserTierResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess2\xbc\a\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\\\n" +
+	"\x14ResizeStorageRequest\x12\x1f\n" +
+	"\vdatabase_id\x18\x01 \x01(\tR\n" +
+	"databaseId\x12#\n" +
+	"\radditional_gb\x18\x02 \x01(\x05R\fadditionalGb\"m\n" +
+	"\x15ResizeStorageResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12 \n" +
+	"\fnew_total_gb\x18\x02 \x01(\x03R\n" +
+	"newTotalGb\x12\x18\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage2\x96\b\n" +
 	"\x0fDatabaseService\x12[\n" +
 	"\x0eCreateDatabase\x12#.euroscale.v1.CreateDatabaseRequest\x1a$.euroscale.v1.CreateDatabaseResponse\x12[\n" +
 	"\x0eDeleteDatabase\x12#.euroscale.v1.DeleteDatabaseRequest\x1a$.euroscale.v1.DeleteDatabaseResponse\x12X\n" +
@@ -1694,7 +1834,8 @@ const file_euroscale_v1_database_proto_rawDesc = "" +
 	"\x13AddIPWhitelistEntry\x12(.euroscale.v1.AddIPWhitelistEntryRequest\x1a).euroscale.v1.AddIPWhitelistEntryResponse\x12s\n" +
 	"\x16RemoveIPWhitelistEntry\x12+.euroscale.v1.RemoveIPWhitelistEntryRequest\x1a,.euroscale.v1.RemoveIPWhitelistEntryResponse\x12I\n" +
 	"\bGetUsage\x12\x1d.euroscale.v1.GetUsageRequest\x1a\x1e.euroscale.v1.GetUsageResponse\x12R\n" +
-	"\vSetUserTier\x12 .euroscale.v1.SetUserTierRequest\x1a!.euroscale.v1.SetUserTierResponseBPZNgithub.com/spscreations/euroscale-startup-kit/api/gen/euroscale/v1;euroscalev1b\x06proto3"
+	"\vSetUserTier\x12 .euroscale.v1.SetUserTierRequest\x1a!.euroscale.v1.SetUserTierResponse\x12X\n" +
+	"\rResizeStorage\x12\".euroscale.v1.ResizeStorageRequest\x1a#.euroscale.v1.ResizeStorageResponseBPZNgithub.com/spscreations/euroscale-startup-kit/api/gen/euroscale/v1;euroscalev1b\x06proto3"
 
 var (
 	file_euroscale_v1_database_proto_rawDescOnce sync.Once
@@ -1708,7 +1849,7 @@ func file_euroscale_v1_database_proto_rawDescGZIP() []byte {
 	return file_euroscale_v1_database_proto_rawDescData
 }
 
-var file_euroscale_v1_database_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_euroscale_v1_database_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_euroscale_v1_database_proto_goTypes = []any{
 	(*CreateDatabaseRequest)(nil),          // 0: euroscale.v1.CreateDatabaseRequest
 	(*CreateDatabaseResponse)(nil),         // 1: euroscale.v1.CreateDatabaseResponse
@@ -1734,6 +1875,8 @@ var file_euroscale_v1_database_proto_goTypes = []any{
 	(*GetUsageResponse)(nil),               // 21: euroscale.v1.GetUsageResponse
 	(*SetUserTierRequest)(nil),             // 22: euroscale.v1.SetUserTierRequest
 	(*SetUserTierResponse)(nil),            // 23: euroscale.v1.SetUserTierResponse
+	(*ResizeStorageRequest)(nil),           // 24: euroscale.v1.ResizeStorageRequest
+	(*ResizeStorageResponse)(nil),          // 25: euroscale.v1.ResizeStorageResponse
 }
 var file_euroscale_v1_database_proto_depIdxs = []int32{
 	10, // 0: euroscale.v1.ListDatabasesResponse.databases:type_name -> euroscale.v1.Database
@@ -1752,18 +1895,20 @@ var file_euroscale_v1_database_proto_depIdxs = []int32{
 	16, // 13: euroscale.v1.DatabaseService.RemoveIPWhitelistEntry:input_type -> euroscale.v1.RemoveIPWhitelistEntryRequest
 	18, // 14: euroscale.v1.DatabaseService.GetUsage:input_type -> euroscale.v1.GetUsageRequest
 	22, // 15: euroscale.v1.DatabaseService.SetUserTier:input_type -> euroscale.v1.SetUserTierRequest
-	1,  // 16: euroscale.v1.DatabaseService.CreateDatabase:output_type -> euroscale.v1.CreateDatabaseResponse
-	3,  // 17: euroscale.v1.DatabaseService.DeleteDatabase:output_type -> euroscale.v1.DeleteDatabaseResponse
-	5,  // 18: euroscale.v1.DatabaseService.ListDatabases:output_type -> euroscale.v1.ListDatabasesResponse
-	7,  // 19: euroscale.v1.DatabaseService.GetDatabase:output_type -> euroscale.v1.GetDatabaseResponse
-	9,  // 20: euroscale.v1.DatabaseService.RotateCredentials:output_type -> euroscale.v1.RotateCredentialsResponse
-	13, // 21: euroscale.v1.DatabaseService.GetIPWhitelist:output_type -> euroscale.v1.GetIPWhitelistResponse
-	15, // 22: euroscale.v1.DatabaseService.AddIPWhitelistEntry:output_type -> euroscale.v1.AddIPWhitelistEntryResponse
-	17, // 23: euroscale.v1.DatabaseService.RemoveIPWhitelistEntry:output_type -> euroscale.v1.RemoveIPWhitelistEntryResponse
-	21, // 24: euroscale.v1.DatabaseService.GetUsage:output_type -> euroscale.v1.GetUsageResponse
-	23, // 25: euroscale.v1.DatabaseService.SetUserTier:output_type -> euroscale.v1.SetUserTierResponse
-	16, // [16:26] is the sub-list for method output_type
-	6,  // [6:16] is the sub-list for method input_type
+	24, // 16: euroscale.v1.DatabaseService.ResizeStorage:input_type -> euroscale.v1.ResizeStorageRequest
+	1,  // 17: euroscale.v1.DatabaseService.CreateDatabase:output_type -> euroscale.v1.CreateDatabaseResponse
+	3,  // 18: euroscale.v1.DatabaseService.DeleteDatabase:output_type -> euroscale.v1.DeleteDatabaseResponse
+	5,  // 19: euroscale.v1.DatabaseService.ListDatabases:output_type -> euroscale.v1.ListDatabasesResponse
+	7,  // 20: euroscale.v1.DatabaseService.GetDatabase:output_type -> euroscale.v1.GetDatabaseResponse
+	9,  // 21: euroscale.v1.DatabaseService.RotateCredentials:output_type -> euroscale.v1.RotateCredentialsResponse
+	13, // 22: euroscale.v1.DatabaseService.GetIPWhitelist:output_type -> euroscale.v1.GetIPWhitelistResponse
+	15, // 23: euroscale.v1.DatabaseService.AddIPWhitelistEntry:output_type -> euroscale.v1.AddIPWhitelistEntryResponse
+	17, // 24: euroscale.v1.DatabaseService.RemoveIPWhitelistEntry:output_type -> euroscale.v1.RemoveIPWhitelistEntryResponse
+	21, // 25: euroscale.v1.DatabaseService.GetUsage:output_type -> euroscale.v1.GetUsageResponse
+	23, // 26: euroscale.v1.DatabaseService.SetUserTier:output_type -> euroscale.v1.SetUserTierResponse
+	25, // 27: euroscale.v1.DatabaseService.ResizeStorage:output_type -> euroscale.v1.ResizeStorageResponse
+	17, // [17:28] is the sub-list for method output_type
+	6,  // [6:17] is the sub-list for method input_type
 	6,  // [6:6] is the sub-list for extension type_name
 	6,  // [6:6] is the sub-list for extension extendee
 	0,  // [0:6] is the sub-list for field type_name
@@ -1780,7 +1925,7 @@ func file_euroscale_v1_database_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_euroscale_v1_database_proto_rawDesc), len(file_euroscale_v1_database_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   24,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

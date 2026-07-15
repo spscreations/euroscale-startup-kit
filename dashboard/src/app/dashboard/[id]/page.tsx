@@ -472,7 +472,19 @@ export default function DatabaseDetailPage() {
                 SSL CA
               </span>
               <div className="flex items-center ml-2 overflow-hidden">
-                {rotatedCreds?.sslCaPem ? (
+                {db.sslCaPem ? (
+                  <>
+                    <span className="text-xs text-text-primary truncate max-w-[180px] sm:max-w-sm font-mono">
+                      {db.sslCaPem.slice(0, 30)}…
+                    </span>
+                    <CopyButton
+                      value={db.sslCaPem}
+                      label="SSL CA"
+                      copied={copied}
+                      onCopy={copy}
+                    />
+                  </>
+                ) : rotatedCreds?.sslCaPem ? (
                   <>
                     <span className="text-xs text-text-primary truncate max-w-[180px] sm:max-w-sm font-mono">
                       {rotatedCreds.sslCaPem.slice(0, 30)}…
@@ -484,10 +496,6 @@ export default function DatabaseDetailPage() {
                       onCopy={copy}
                     />
                   </>
-                ) : db.status === "ready" ? (
-                  <span className="text-xs text-text-disabled italic">
-                    Not available — shown only once
-                  </span>
                 ) : (
                   <span className="text-xs text-text-disabled italic">—</span>
                 )}

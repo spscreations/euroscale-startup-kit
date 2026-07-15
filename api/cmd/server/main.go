@@ -384,9 +384,10 @@ func (s *server) GetDatabase(ctx context.Context, req *pb.GetDatabaseRequest) (*
 		Port:       3306,
 		Username:   creds.Username,
 		Status:     models.StatusReady,
+		SslCaPem:   s.sslCAPem,
 	}
 
-	// Get the creation timestamp from the secret annotation.
+	// Populate createdAt from the secret annotation.
 	if ann := s.secrets.GetAnnotations(ctx, req.DatabaseId); ann != nil {
 		if ts, ok := ann["euroscale.app/created-at"]; ok {
 			if t, err := time.Parse(time.RFC3339, ts); err == nil {

@@ -689,6 +689,7 @@ func (x *RotateCredentialsResponse) GetPort() int32 {
 }
 
 // Database metadata. Never contains credentials.
+// SSL CA certificate is safe to include — it is the cluster-wide CA, not per-database.
 type Database struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Unique ID (UUID v4).
@@ -708,7 +709,10 @@ type Database struct {
 	// Status: "creating", "ready", "deleting", "deleted", "error".
 	Status string `protobuf:"bytes,8,opt,name=status,proto3" json:"status,omitempty"`
 	// Creation timestamp (RFC 3339).
-	CreatedAt     string `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	CreatedAt string `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	// PEM-encoded CA certificate for TLS verification (base64).
+	// This is the cluster-wide VTGate CA, safe to include in metadata responses.
+	SslCaPem      string `protobuf:"bytes,10,opt,name=ssl_ca_pem,json=sslCaPem,proto3" json:"ssl_ca_pem,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -802,6 +806,13 @@ func (x *Database) GetStatus() string {
 func (x *Database) GetCreatedAt() string {
 	if x != nil {
 		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *Database) GetSslCaPem() string {
+	if x != nil {
+		return x.SslCaPem
 	}
 	return ""
 }
@@ -1738,7 +1749,7 @@ const file_euroscale_v1_database_proto_rawDesc = "" +
 	"\n" +
 	"ssl_ca_pem\x18\x05 \x01(\tR\bsslCaPem\x12\x12\n" +
 	"\x04host\x18\x06 \x01(\tR\x04host\x12\x12\n" +
-	"\x04port\x18\a \x01(\x05R\x04port\"\xea\x01\n" +
+	"\x04port\x18\a \x01(\x05R\x04port\"\x88\x02\n" +
 	"\bDatabase\x12\x1f\n" +
 	"\vdatabase_id\x18\x01 \x01(\tR\n" +
 	"databaseId\x12\x12\n" +
@@ -1750,7 +1761,10 @@ const file_euroscale_v1_database_proto_rawDesc = "" +
 	"\busername\x18\a \x01(\tR\busername\x12\x16\n" +
 	"\x06status\x18\b \x01(\tR\x06status\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\t \x01(\tR\tcreatedAt\"g\n" +
+	"created_at\x18\t \x01(\tR\tcreatedAt\x12\x1c\n" +
+	"\n" +
+	"ssl_ca_pem\x18\n" +
+	" \x01(\tR\bsslCaPem\"g\n" +
 	"\x10IPWhitelistEntry\x12\x12\n" +
 	"\x04cidr\x18\x01 \x01(\tR\x04cidr\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x1d\n" +

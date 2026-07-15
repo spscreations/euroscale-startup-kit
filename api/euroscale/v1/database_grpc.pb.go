@@ -29,6 +29,7 @@ const (
 	DatabaseService_RemoveIPWhitelistEntry_FullMethodName = "/euroscale.v1.DatabaseService/RemoveIPWhitelistEntry"
 	DatabaseService_GetUsage_FullMethodName               = "/euroscale.v1.DatabaseService/GetUsage"
 	DatabaseService_SetUserTier_FullMethodName            = "/euroscale.v1.DatabaseService/SetUserTier"
+	DatabaseService_ResizeStorage_FullMethodName          = "/euroscale.v1.DatabaseService/ResizeStorage"
 )
 
 // DatabaseServiceClient is the client API for DatabaseService service.
@@ -59,6 +60,8 @@ type DatabaseServiceClient interface {
 	GetUsage(ctx context.Context, in *GetUsageRequest, opts ...grpc.CallOption) (*GetUsageResponse, error)
 	// SetUserTier updates the subscription tier for a user (admin only).
 	SetUserTier(ctx context.Context, in *SetUserTierRequest, opts ...grpc.CallOption) (*SetUserTierResponse, error)
+	// ResizeStorage expands a database's persistent volume by the specified GB.
+	ResizeStorage(ctx context.Context, in *ResizeStorageRequest, opts ...grpc.CallOption) (*ResizeStorageResponse, error)
 }
 
 type databaseServiceClient struct {
@@ -169,6 +172,16 @@ func (c *databaseServiceClient) SetUserTier(ctx context.Context, in *SetUserTier
 	return out, nil
 }
 
+func (c *databaseServiceClient) ResizeStorage(ctx context.Context, in *ResizeStorageRequest, opts ...grpc.CallOption) (*ResizeStorageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResizeStorageResponse)
+	err := c.cc.Invoke(ctx, DatabaseService_ResizeStorage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DatabaseServiceServer is the server API for DatabaseService service.
 // All implementations must embed UnimplementedDatabaseServiceServer
 // for forward compatibility.
@@ -197,6 +210,8 @@ type DatabaseServiceServer interface {
 	GetUsage(context.Context, *GetUsageRequest) (*GetUsageResponse, error)
 	// SetUserTier updates the subscription tier for a user (admin only).
 	SetUserTier(context.Context, *SetUserTierRequest) (*SetUserTierResponse, error)
+	// ResizeStorage expands a database's persistent volume by the specified GB.
+	ResizeStorage(context.Context, *ResizeStorageRequest) (*ResizeStorageResponse, error)
 	mustEmbedUnimplementedDatabaseServiceServer()
 }
 
@@ -236,6 +251,9 @@ func (UnimplementedDatabaseServiceServer) GetUsage(context.Context, *GetUsageReq
 }
 func (UnimplementedDatabaseServiceServer) SetUserTier(context.Context, *SetUserTierRequest) (*SetUserTierResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetUserTier not implemented")
+}
+func (UnimplementedDatabaseServiceServer) ResizeStorage(context.Context, *ResizeStorageRequest) (*ResizeStorageResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ResizeStorage not implemented")
 }
 func (UnimplementedDatabaseServiceServer) mustEmbedUnimplementedDatabaseServiceServer() {}
 func (UnimplementedDatabaseServiceServer) testEmbeddedByValue()                         {}
@@ -438,6 +456,24 @@ func _DatabaseService_SetUserTier_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DatabaseService_ResizeStorage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResizeStorageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DatabaseServiceServer).ResizeStorage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DatabaseService_ResizeStorage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DatabaseServiceServer).ResizeStorage(ctx, req.(*ResizeStorageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DatabaseService_ServiceDesc is the grpc.ServiceDesc for DatabaseService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -484,6 +520,10 @@ var DatabaseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetUserTier",
 			Handler:    _DatabaseService_SetUserTier_Handler,
+		},
+		{
+			MethodName: "ResizeStorage",
+			Handler:    _DatabaseService_ResizeStorage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

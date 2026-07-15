@@ -178,6 +178,7 @@ message RotateCredentialsResponse {
 // ── Shared Types ────────────────────────────────────────────────────────────
 
 // Database metadata. Never contains credentials.
+// SSL CA certificate is safe to include — it is the cluster-wide CA, not per-database.
 message Database {
   // Unique ID (UUID v4).
   string database_id = 1;
@@ -205,6 +206,10 @@ message Database {
 
   // Creation timestamp (RFC 3339).
   string created_at = 9;
+
+  // PEM-encoded CA certificate for TLS verification (base64).
+  // This is the cluster-wide VTGate CA, safe to include in metadata responses.
+  string ssl_ca_pem = 10;
 }
 
 // ── IP Whitelist ────────────────────────────────────────────────────────────
