@@ -113,6 +113,44 @@ kubectl logs -n euroscale -l component=api --tail=50 | grep -i mollie
 
 ---
 
+## Auth DB credentials (dashboard Better Auth)
+
+The dashboard stores Better Auth users in **MariaDB** (`euroscale-auth-db`),
+**not** customer Vitess databases.
+
+| Env | Source |
+|-----|--------|
+| `AUTH_DB_HOST` | `euroscale-auth-db` |
+| `AUTH_DB_PORT` | `3306` |
+| `AUTH_DB_USER` | `root` (plain value in deploy YAML) |
+| `AUTH_DB_NAME` | `euroscale_auth` |
+| `AUTH_DB_PASS` | secret `euroscale-auth-db-credentials` key `password` |
+
+Template (placeholders only): `infra/secrets/auth-db-secret.yaml`
+
+### Operator runbook (cluster only — never git)
+
+```bash
+export KUBECONFIG=infra/k3s/kubeconfig
+
+# Create/update secret (use the real MariaDB root password; default from first init was euroscale-auth)
+kubectl create secret generic euroscale-auth-db-credentials \
+  --namespace euroscale \
+  --from-literal=username=root \
+  --from-literal=password='REPLACE_ME' \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+# Dashboard already references the secret via AUTH_DB_PASS secretKeyRef.
+# After creating/rotating the secret:
+kubectl rollout restart deployment/euroscale-dashboard -n euroscale
+kubectl rollout status deployment/euroscale-dashboard -n euroscale --timeout=180s
+```
+
+**Do not** wire `AUTH_DB_*` to customer Vitess secrets (`db-*-creds`). That was a
+production outage cause (login failed because dashboard hit the wrong DB credentials).
+
+---
+
 ## Network Policies
 
 - `allow-all-network-policy.yaml` — **system namespaces only** (kube-system, local-path-storage).

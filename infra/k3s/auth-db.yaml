@@ -17,8 +17,13 @@ spec:
       - name: mariadb
         image: mariadb:11.4
         env:
+        # Password lives in euroscale-auth-db-credentials (see infra/secrets/auth-db-secret.yaml).
+        # Only applied on first MariaDB init; changing the secret later requires a password rotation.
         - name: MARIADB_ROOT_PASSWORD
-          value: euroscale-auth
+          valueFrom:
+            secretKeyRef:
+              name: euroscale-auth-db-credentials
+              key: password
         - name: MARIADB_DATABASE
           value: euroscale_auth
         ports:

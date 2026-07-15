@@ -48,18 +48,20 @@ spec:
               value: "https://api.euroscale.app"
             - name: HOST
               value: "0.0.0.0"
+            # Auth DB is MariaDB (euroscale-auth-db), NOT customer Vitess.
+            # Secret: euroscale-auth-db-credentials (see infra/secrets/auth-db-secret.yaml)
             - name: AUTH_DB_HOST
               value: "euroscale-auth-db"
             - name: AUTH_DB_PORT
               value: "3306"
             - name: AUTH_DB_USER
-              value: "io8vw118xqyz"
+              value: "root"
             - name: AUTH_DB_NAME
               value: "euroscale_auth"
             - name: AUTH_DB_PASS
               valueFrom:
                 secretKeyRef:
-                  name: db-56ef192d-1af1-47b2-a8e5-d47176eba77f-creds
+                  name: euroscale-auth-db-credentials
                   key: password
             - name: DB_SSL_CERT
               value: "/etc/euroscale/tls/tls.crt"
