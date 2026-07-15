@@ -169,13 +169,16 @@ export default function TierCard() {
   const readsUsed = bigintToNumber(usage?.readUnitsUsed);
   const writesUsed = bigintToNumber(usage?.writeUnitsUsed);
 
-  const showUpgrade = tier === "free" || tier === "scale";
   const isEnterprise = tier === "enterprise";
+  // Free/Scale/Team/Business can upgrade; Enterprise shows Contact sales
+  const showUpgrade = ["free", "scale", "team", "business"].includes(tier);
 
   // Map current tier → target upgrade tier
   const upgradeTarget: Record<string, string> = {
     free: "scale",
     scale: "team",
+    team: "business",
+    business: "enterprise",
   };
 
   // Pricing from limits

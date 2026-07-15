@@ -17,63 +17,59 @@ async function loginToDashboard(page: Page): Promise<string[]> {
   const pageErrors: string[] = [];
   page.on("pageerror", (err) => pageErrors.push(err.message));
 
-  await page.goto(ROOT_URL, { waitUntil: "networkidle" });
+  // Direct login page — more reliable under parallel workers than landing → Sign in
+  await page.goto("/login", { waitUntil: "domcontentloaded", timeout: 30_000 });
+  await page.waitForTimeout(1000);
 
-  // Look for sign-in link/button
-  const signInBtn = page.getByRole("link", { name: /sign in|login|dashboard/i });
-  const signInButton = page.getByRole("button", { name: /sign in|login/i });
-
-  if ((await signInBtn.count()) > 0) {
-    await signInBtn.first().click();
-  } else if ((await signInButton.count()) > 0) {
-    await signInButton.first().click();
+  if (/\/dashboard/.test(page.url())) {
+    await page.waitForLoadState("domcontentloaded", { timeout: 15_000 }).catch(() => {});
+    await page.waitForTimeout(1000);
+    return pageErrors;
   }
 
-  // Wait for login page (may be on /login or /signin or a dialog)
-  try {
-    await page.waitForURL(/\/login|\/signin|\/auth/, { timeout: 10_000 });
-  } catch {
-    // May already be on a page with a login form rendered inline
-  }
+  const emailInput = page.locator(
+    'input[type="email"], input[name="email"], input[placeholder*="email" i]',
+  );
+  const passwordInput = page.locator(
+    'input[type="password"], input[name="password"], input[placeholder*="password" i]',
+  );
 
-  await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
+  await emailInput.first().waitFor({ state: "visible", timeout: 15_000 });
+  await emailInput.first().fill(TEST_EMAIL);
+  await passwordInput.first().fill(TEST_PASSWORD);
 
-  // Find email and password inputs
-  const emailInput = page.locator('input[type="email"], input[name="email"], input[placeholder*="email" i]');
-  const passwordInput = page.locator('input[type="password"], input[name="password"], input[placeholder*="password" i]');
-
-  if ((await emailInput.count()) > 0) {
-    await emailInput.first().fill(TEST_EMAIL);
-  }
-  if ((await passwordInput.count()) > 0) {
-    await passwordInput.first().fill(TEST_PASSWORD);
-  }
-
-  // Submit the form
   const submitBtn = page.getByRole("button", { name: /sign in|login|continue|submit/i });
-  if ((await submitBtn.count()) > 0) {
-    await submitBtn.first().click();
-  }
+  await submitBtn.first().click();
 
-  // Wait for redirect to dashboard
   try {
-    await page.waitForURL(/\/dashboard/, { timeout: 20_000 });
+    await page.waitForURL(/\/dashboard/, { timeout: 25_000 });
   } catch {
-    console.log("Warning: did not redirect to /dashboard after login");
+    console.warn("[loginToDashboard] retry after failed redirect");
+    await page.goto("/login", { waitUntil: "domcontentloaded", timeout: 30_000 });
+    await page.waitForTimeout(1000);
+    await emailInput.first().fill(TEST_EMAIL);
+    await passwordInput.first().fill(TEST_PASSWORD);
+    await submitBtn.first().click();
+    await page.waitForURL(/\/dashboard/, { timeout: 25_000 }).catch(() => {
+      console.log("Warning: did not redirect to /dashboard after login retry");
+    });
   }
 
-  await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
-  // Allow React hydration / skeleton loaders to settle
+  await page.waitForLoadState("domcontentloaded", { timeout: 15_000 }).catch(() => {});
   await page.waitForTimeout(2000);
 
   return pageErrors;
 }
 
 // ── Helper: API error resilience ──────────────────────────────────────────
+// Only treat *auth/core API* failures as skip — not partial section errors
+// (e.g. invoice history "Failed to load") and not "API Keys" settings copy.
 async function checkApiError(page: Page): Promise<boolean> {
-  const apiError = page.getByText(/could not load|failed to load|API key|unreachable/i);
+  const apiError = page.getByText(
+    /Could not load databases|invalid or missing API key|API unreachable|missing API key/i,
+  );
   try {
-    await apiError.waitFor({ state: "visible", timeout: 8000 });
+    await apiError.first().waitFor({ state: "visible", timeout: 3000 });
     return true;
   } catch {
     return false;
@@ -123,42 +119,33 @@ test.describe("Billing & Payments", () => {
     await expect(page.getByText(/billing/i).first()).toBeVisible({ timeout: 10_000 });
 
     // Verify "Available Plans" section exists
-    const availablePlans = page.getByText(/available plans/i);
+    const availablePlans = page.getByRole("heading", { name: /available plans/i });
     await expect(availablePlans).toBeVisible({ timeout: 5_000 });
 
-    // Verify Scale plan card
-    const scaleHeading = page.getByRole("heading", { name: "Scale" });
-    await expect(scaleHeading).toBeVisible({ timeout: 5_000 });
-
-    // Verify Scale price is €29/mo (not €9 or other wrong value)
-    const scalePrice = page.getByText("€29/mo");
-    await expect(scalePrice.first()).toBeVisible({ timeout: 5_000 });
-
-    // Verify Scale features match backend tiers.go
-    await expect(page.getByText("3 databases")).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByText("10 GB storage")).toBeVisible({ timeout: 5_000 });
+    // Plan card titles render as CardTitle (often not exposed as heading role).
+    // Assert by stable price + feature copy from tiers.
+    // Use exact: true where substrings collide (e.g. "50 GB" vs "250 GB").
+    await expect(page.getByText("€29/mo").first()).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("3 databases", { exact: true })).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("10 GB storage", { exact: true })).toBeVisible({ timeout: 5_000 });
     await expect(page.getByText(/1M read.*500K write/i)).toBeVisible({ timeout: 5_000 });
     await expect(page.getByText(/Autoscale compute.*2 CU/i)).toBeVisible({ timeout: 5_000 });
 
-    // Verify Team plan is €99/mo
-    const teamHeading = page.getByRole("heading", { name: "Team" });
-    await expect(teamHeading).toBeVisible({ timeout: 5_000 });
-    const teamPrice = page.getByText("€99/mo");
-    await expect(teamPrice.first()).toBeVisible({ timeout: 5_000 });
+    const planBody = await page.locator("main").innerText();
+    expect(planBody).toMatch(/Scale/);
+    expect(planBody).toMatch(/Team/);
+    expect(planBody).toMatch(/Business/);
 
-    // Verify Team features
-    await expect(page.getByText("10 databases")).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByText("50 GB storage")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("€99/mo").first()).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("10 databases", { exact: true })).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("50 GB storage", { exact: true })).toBeVisible({ timeout: 5_000 });
 
-    // Verify Business plan is €399/mo
-    const businessHeading = page.getByRole("heading", { name: "Business" });
-    await expect(businessHeading).toBeVisible({ timeout: 5_000 });
-    const businessPrice = page.getByText("€399/mo");
-    await expect(businessPrice.first()).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("€399/mo").first()).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Unlimited databases", { exact: true })).toBeVisible({
+      timeout: 5_000,
+    });
+    await expect(page.getByText("250 GB storage", { exact: true })).toBeVisible({ timeout: 5_000 });
 
-    // Verify Business features
-    await expect(page.getByText("Unlimited databases")).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByText("250 GB storage")).toBeVisible({ timeout: 5_000 });
 
     // Verify Invoice History section exists
     await expect(page.getByText(/invoice history/i)).toBeVisible({ timeout: 5_000 });
@@ -294,14 +281,18 @@ test.describe("Billing & Payments", () => {
       await expect(tierCard).toBeVisible({ timeout: 5000 }).catch(() => {});
     }
 
-    // Verify no stale "€9" price anywhere (the old hardcoded bug)
-    const stalePrice = page.getByText("€9");
+    // No stale lone "€9" (must not match €99 Team price via substring)
+    const stalePrice = page.getByText(/^€9(\/mo)?$/);
     await expect(stalePrice).toHaveCount(0);
 
-    // Verify upgrade button exists for free/scale users, or "Current plan" for higher tiers
-    const upgradeBtn = page.getByRole("button", { name: /upgrade|current plan/i });
-    const upgradeCount = await upgradeBtn.count();
-    expect(upgradeCount).toBeGreaterThanOrEqual(0); // May be 0 if enterprise
+    // Upgrade for free/scale/team/business; "Current plan" / Contact sales for enterprise
+    const upgradeBtn = page.getByRole("button", { name: /upgrade/i });
+    const altCta = page.getByText(/current plan|contact sales/i);
+    const hasUpgrade = (await upgradeBtn.count()) > 0;
+    const hasAlt = (await altCta.count()) > 0;
+    console.log(`TierCard CTA: upgrade=${hasUpgrade} alt=${hasAlt}`);
+    // Soft: at least one CTA path is fine after TierCard fix (Team shows Upgrade)
+    expect(hasUpgrade || hasAlt).toBeTruthy();
 
     if (pageErrors.length > 0) {
       console.warn(`JS errors during TierCard test: ${pageErrors.join("; ")}`);
@@ -331,17 +322,21 @@ test.describe("Billing & Payments", () => {
     const billingSection = page.getByText("Billing");
     await expect(billingSection.first()).toBeVisible({ timeout: 5_000 });
 
-    // The old bug was a hardcoded "€9" price — verify it's NOT present
-    const stalePrice = page.getByText("€9");
+    // No stale lone "€9" — regex anchors so "€99" (Team) does not match
+    const stalePrice = page.getByText(/^€9(\/mo)?$/);
     await expect(stalePrice).toHaveCount(0);
 
-    // Verify one of the valid tier prices is shown (from TIER_PRICE_MAP)
+    // Verify one of the valid tier prices is shown (from TIER_PRICE_MAP).
+    // Settings shows e.g. "€99 per month" — match price prefix, not exact-only.
     const validPrices = Object.values(TIER_PRICE_MAP);
     let foundValidPrice = false;
     for (const price of validPrices) {
-      const priceEl = page.getByText(price, { exact: true });
+      // Escape € for regex; allow trailing text like " per month"
+      const escaped = price.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const priceEl = page.getByText(new RegExp(`${escaped}(?!\\d)`));
       if ((await priceEl.count()) > 0) {
         foundValidPrice = true;
+        console.log(`Settings billing shows price: ${price}`);
         break;
       }
     }

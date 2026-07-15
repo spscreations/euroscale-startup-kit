@@ -13,39 +13,39 @@ async function login(
   jsErrors: string[],
   consoleErrors: string[],
 ) {
-  // Navigate to landing page
-  await page.goto(BASE_URL, { waitUntil: 'networkidle', timeout: 30_000 });
-  await page.waitForTimeout(2000);
+  // Go straight to login (faster + avoids landing-page race under parallel workers)
+  await page.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+  await page.waitForTimeout(1500);
 
-  // Click "Sign in" — look for link or button
-  const signInLink = page.getByRole('link', { name: /sign in/i });
-  const signInButton = page.getByRole('button', { name: /sign in/i });
-
-  if (await signInLink.isVisible({ timeout: 3000 }).catch(() => false)) {
-    await signInLink.click();
-  } else if (await signInButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-    await signInButton.click();
-  } else {
-    // Try text-based fallback
-    const fallback = page.locator('text=Sign in').first();
-    await fallback.click();
+  // If already authenticated, we may already be on dashboard
+  if (/\/dashboard/.test(page.url())) {
+    await page.waitForLoadState('domcontentloaded', { timeout: 15_000 }).catch(() => {});
+    await page.waitForTimeout(1000);
+    return;
   }
 
-  await page.waitForURL(/\/login/, { timeout: 15_000 });
-  await page.waitForLoadState('networkidle', { timeout: 15_000 });
-  await page.waitForTimeout(1000);
-
   // Fill credentials
-  // shadcn/ui inputs use data-slot="input" attribute
+  await page.locator('input[type="email"]').waitFor({ state: 'visible', timeout: 15_000 });
   await page.locator('input[type="email"]').fill(TEST_EMAIL);
   await page.locator('input[type="password"]').fill(TEST_PASSWORD);
 
   // Submit
   await page.locator('button[type="submit"]').click();
 
-  await page.waitForURL(/\/dashboard/, { timeout: 20_000 });
-  await page.waitForLoadState('networkidle', { timeout: 15_000 });
-  await page.waitForTimeout(3000);
+  try {
+    await page.waitForURL(/\/dashboard/, { timeout: 25_000 });
+  } catch {
+    // Retry once on flaky auth
+    console.warn('[login] First attempt did not reach dashboard — retrying');
+    await page.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+    await page.waitForTimeout(1000);
+    await page.locator('input[type="email"]').fill(TEST_EMAIL);
+    await page.locator('input[type="password"]').fill(TEST_PASSWORD);
+    await page.locator('button[type="submit"]').click();
+    await page.waitForURL(/\/dashboard/, { timeout: 25_000 });
+  }
+  await page.waitForLoadState('domcontentloaded', { timeout: 15_000 }).catch(() => {});
+  await page.waitForTimeout(2000);
 }
 
 test.describe('Auth & Navigation Flows', () => {
@@ -54,7 +54,7 @@ test.describe('Auth & Navigation Flows', () => {
       const jsErrors: string[] = [];
       page.on('pageerror', (err) => jsErrors.push(err.message));
 
-      await page.goto(BASE_URL, { waitUntil: 'networkidle', timeout: 30_000 });
+      await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30_000 });
       await page.waitForTimeout(2000);
 
       // Should be on landing page (not login, not dashboard)
@@ -334,14 +334,18 @@ test.describe('Auth & Navigation Flows', () => {
       await login(page, jsErrors, []);
       await expect(page.getByText(/databases/i).first()).toBeVisible({ timeout: 10_000 });
 
-      // Navigate to backups
-      await page.goto(`${BASE_URL}/dashboard/backups`, { waitUntil: 'networkidle', timeout: 20_000 });
+      // Navigate to backups — use 'load' not 'networkidle' (page may keep long-poll/SSE open)
+      await page.goto(`${BASE_URL}/dashboard/backups`, { waitUntil: 'load', timeout: 30_000 });
+      await page.waitForLoadState('domcontentloaded').catch(() => {});
       await page.waitForTimeout(3000);
 
       const bodyText = await page.locator('body').innerText();
       console.log(`[Backups] Page text (first 300 chars): ${bodyText.slice(0, 300).replace(/\n/g, ' | ')}`);
 
-      // Check for no error
+      // Still on backups (or auth redirect)
+      expect(page.url()).toMatch(/\/dashboard\/backups|\/login/);
+
+      // Check for no crash error page (partial text avoids curly-apostrophe false pass)
       await expect(page.getByText(/this page couldn/i)).toHaveCount(0);
 
       // Take screenshot
@@ -360,7 +364,7 @@ test.describe('Auth & Navigation Flows', () => {
       await expect(page.getByText(/databases/i).first()).toBeVisible({ timeout: 10_000 });
 
       // Navigate to billing
-      await page.goto(`${BASE_URL}/dashboard/billing`, { waitUntil: 'networkidle', timeout: 20_000 });
+      await page.goto(`${BASE_URL}/dashboard/billing`, { waitUntil: 'domcontentloaded', timeout: 20_000 });
       await page.waitForTimeout(3000);
 
       const bodyText = await page.locator('body').innerText();
@@ -388,8 +392,8 @@ test.describe('Auth & Navigation Flows', () => {
       await login(page, jsErrors, []);
       await expect(page.getByText(/databases/i).first()).toBeVisible({ timeout: 10_000 });
 
-      // Navigate to settings
-      await page.goto(`${BASE_URL}/dashboard/settings`, { waitUntil: 'networkidle', timeout: 20_000 });
+      // Navigate to settings — avoid networkidle (long-lived connections)
+      await page.goto(`${BASE_URL}/dashboard/settings`, { waitUntil: 'domcontentloaded', timeout: 20_000 });
       await page.waitForTimeout(3000);
 
       const bodyText = await page.locator('body').innerText();

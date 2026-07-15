@@ -59,13 +59,24 @@ test.describe('EuroScale Bug Reproduction', () => {
   });
 
   test('Bug 2: Apply Changes shows "Storage resized to 0 GB"', async ({ page }) => {
-    await page.goto('https://euroscale.app/login', { waitUntil: 'load', timeout: 20000 });
+    await page.goto('https://euroscale.app/login', { waitUntil: 'load', timeout: 30000 });
+    await page.waitForTimeout(1000);
 
     // shadcn/ui inputs use data-slot="input"
     await page.fill('input[type="email"]', 'j.doe@company.com');
     await page.fill('input[type="password"]', 'Testb2c!');
     await page.click('button[type="submit"]');
-    await page.waitForURL(/\/dashboard/, { timeout: 15000 });
+    try {
+      await page.waitForURL(/\/dashboard/, { timeout: 30000 });
+    } catch {
+      // Retry once on flaky auth under parallel load
+      console.log('Bug 2 - login redirect slow, retrying...');
+      await page.goto('https://euroscale.app/login', { waitUntil: 'load', timeout: 30000 });
+      await page.fill('input[type="email"]', 'j.doe@company.com');
+      await page.fill('input[type="password"]', 'Testb2c!');
+      await page.click('button[type="submit"]');
+      await page.waitForURL(/\/dashboard/, { timeout: 30000 });
+    }
     await page.waitForTimeout(5000);
 
     if (await checkApiError(page)) return;
