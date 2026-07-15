@@ -38,7 +38,13 @@ func secretNameFor(databaseID string) string {
 // The Secret is named "db-{databaseID}-creds" and carries labels:
 //
 //	app=euroscale, database=<databaseID>, managed=true
+//
+// UserID must be non-empty so ownership labels are always set (prevents
+// ownerless secrets that break ACL checks).
 func (s *Store) SaveCredentials(ctx context.Context, db *models.Database, creds *models.DatabaseCredentials) error {
+	if db == nil || db.UserID == "" {
+		return fmt.Errorf("user_id is required to save database credentials")
+	}
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretNameFor(creds.DatabaseID),

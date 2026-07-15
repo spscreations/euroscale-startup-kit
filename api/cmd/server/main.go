@@ -419,6 +419,10 @@ func (s *server) RotateCredentials(ctx context.Context, req *pb.RotateCredential
 	connStr := fmt.Sprintf("mysql://%s:***@%s:3306/%s?ssl-mode=%s",
 		username, s.host, dbName, sslMode)
 
+	// Preserve ownership from the existing secret so UpdateCredentials does
+	// not wipe the user_id label (empty UserID would clear ownership).
+	ownerID := s.secrets.GetUserID(ctx, req.DatabaseId)
+
 	// Build database model with preserved metadata.
 	db := &models.Database{
 		ID:        req.DatabaseId,
@@ -429,7 +433,7 @@ func (s *server) RotateCredentials(ctx context.Context, req *pb.RotateCredential
 		Port:      3306,
 		Username:  username,
 		Status:    models.StatusReady,
-		UserID:    "", // preserved from original
+		UserID:    ownerID,
 		CreatedAt: time.Now(), // not overwritten in practice
 	}
 
@@ -1440,8 +1444,9 @@ var rateLimiterStore = struct {
 }{limiters: make(map[string]*rate.Limiter)}
 
 // withHTTPAuth wraps an http.HandlerFunc with JWT Bearer token validation.
-// It extracts the token from the Authorization header and validates it before
-// calling the wrapped handler. If validation fails, it returns 401.
+// It extracts the token from the Authorization header, validates it, and
+// injects the authenticated user ID and role into the request context
+// (mirroring JWTUnaryInterceptor for gRPC). If validation fails, it returns 401.
 func withHTTPAuth(jwtSecret string, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Validate JWT Bearer token from Authorization header.
@@ -1455,12 +1460,14 @@ func withHTTPAuth(jwtSecret string, next http.HandlerFunc) http.HandlerFunc {
 			writeJSON(w, http.StatusUnauthorized, map[string]string{"message": "invalid Authorization header format"})
 			return
 		}
-		_, _, _, err := auth.ValidateJWT(tokenStr, jwtSecret)
+		userID, _, role, err := auth.ValidateJWT(tokenStr, jwtSecret)
 		if err != nil {
 			writeJSON(w, http.StatusUnauthorized, map[string]string{"message": "invalid token"})
 			return
 		}
-		next(w, r)
+		ctx := auth.SetUserID(r.Context(), userID)
+		ctx = auth.SetUserRole(ctx, role)
+		next(w, r.WithContext(ctx))
 	}
 }
 

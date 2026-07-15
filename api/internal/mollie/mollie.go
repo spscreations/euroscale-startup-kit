@@ -21,6 +21,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/spscreations/euroscale-startup-kit/api/internal/auth"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/tiers"
 )
 
@@ -224,10 +225,11 @@ type PaymentInfo struct {
 
 // ── Request / response shapes ────────────────────────────────────────────────
 
+// createPaymentRequest is the body for POST /api/v1/create-payment.
+// user_id is taken from the JWT context (withHTTPAuth), not the body, to prevent IDOR.
 type createPaymentRequest struct {
-	UserID string `json:"user_id"`
-	Email  string `json:"email"`
-	Tier   string `json:"tier"`
+	Email string `json:"email"`
+	Tier  string `json:"tier"`
 }
 
 type createPaymentResponse struct {
@@ -277,10 +279,16 @@ func NewHandler(client *Client, tierStore *tiers.Store, webhookSecret string) *H
 // ── Create Payment ───────────────────────────────────────────────────────────
 
 // HandleCreatePayment processes POST /api/v1/create-payment and returns a
-// Mollie hosted checkout URL.
+// Mollie hosted checkout URL. The payer is always the JWT-authenticated user.
 func (h *Handler) HandleCreatePayment(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID := auth.GetUserID(r.Context())
+	if userID == "" {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"message": "unauthenticated"})
 		return
 	}
 
@@ -306,9 +314,9 @@ func (h *Handler) HandleCreatePayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.UserID == "" || req.Email == "" || req.Tier == "" {
+	if req.Email == "" || req.Tier == "" {
 		writeJSON(w, http.StatusBadRequest, map[string]string{
-			"message": "user_id, email, and tier are required",
+			"message": "email and tier are required",
 		})
 		return
 	}
@@ -344,7 +352,7 @@ func (h *Handler) HandleCreatePayment(w http.ResponseWriter, r *http.Request) {
 		description,
 		redirectURL,
 		webhookURL,
-		req.UserID,
+		userID,
 		req.Tier,
 		req.Email,
 	)
@@ -361,7 +369,7 @@ func (h *Handler) HandleCreatePayment(w http.ResponseWriter, r *http.Request) {
 	h.mu.Lock()
 	h.payments[paymentID] = &PaymentInfo{
 		PaymentID: paymentID,
-		UserID:    req.UserID,
+		UserID:    userID,
 		Tier:      req.Tier,
 		Amount:    amountStr,
 		Status:    "pending",
@@ -369,7 +377,7 @@ func (h *Handler) HandleCreatePayment(w http.ResponseWriter, r *http.Request) {
 	}
 	h.mu.Unlock()
 
-	log.Printf("INFO: Mollie payment created: id=%s user=%s tier=%s", paymentID, req.UserID, req.Tier)
+	log.Printf("INFO: Mollie payment created: id=%s user=%s tier=%s", paymentID, userID, req.Tier)
 
 	writeJSON(w, http.StatusOK, createPaymentResponse{
 		CheckoutURL: checkoutURL,
@@ -559,9 +567,16 @@ func (h *Handler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 // redirect. It verifies the payment status with the Mollie API and upgrades
 // the user's tier immediately, bypassing the webhook (which may not reach
 // this server if it's behind a firewall).
+// The payment must belong to the JWT-authenticated user (IDOR protection).
 func (h *Handler) HandleConfirmPayment(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	authUserID := auth.GetUserID(r.Context())
+	if authUserID == "" {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"message": "unauthenticated"})
 		return
 	}
 
@@ -622,6 +637,12 @@ func (h *Handler) HandleConfirmPayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Only the payment owner may confirm (prevents cross-user confirm IDOR).
+	if userID != authUserID {
+		writeJSON(w, http.StatusForbidden, map[string]string{"message": "access denied"})
+		return
+	}
+
 	// Upgrade the user's tier.
 	if err := h.tierStore.SetUserTier(r.Context(), userID, tierName); err != nil {
 		log.Printf("ERROR: confirm-payment: failed to upgrade user %q to tier %q: %v", userID, tierName, err)
@@ -669,19 +690,23 @@ func (h *Handler) HandleConfirmPayment(w http.ResponseWriter, r *http.Request) {
 
 // ── List Invoices ────────────────────────────────────────────────────────────
 
-// HandleListInvoices processes GET /api/v1/invoices?user_id=xxx and returns
-// all in-memory payments for the given user.
+// HandleListInvoices processes GET /api/v1/invoices and returns all in-memory
+// payments for the JWT-authenticated user. Query param user_id is ignored
+// (and rejected if it does not match the JWT subject) to prevent IDOR.
 func (h *Handler) HandleListInvoices(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	userID := r.URL.Query().Get("user_id")
+	userID := auth.GetUserID(r.Context())
 	if userID == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{
-			"message": "user_id query parameter is required",
-		})
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"message": "unauthenticated"})
+		return
+	}
+	// Defense in depth: reject mismatched query user_id if a client still sends it.
+	if q := r.URL.Query().Get("user_id"); q != "" && q != userID {
+		writeJSON(w, http.StatusForbidden, map[string]string{"message": "access denied"})
 		return
 	}
 
