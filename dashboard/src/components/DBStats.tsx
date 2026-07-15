@@ -99,19 +99,19 @@ export default function DBStats({ databaseId }: DBStatsProps) {
               icon={HardDrive}
               label="Storage"
               value="—"
-              subtext="Not instrumented yet"
+              subtext="Live metrics not instrumented yet"
             />
             <StatCard
               icon={Database}
               label="Active Connections"
               value="—"
-              subtext="Not instrumented yet"
+              subtext="Live metrics not instrumented yet"
             />
             <StatCard
               icon={Activity}
               label="Queries / sec"
               value="—"
-              subtext="Not instrumented yet"
+              subtext="Live metrics not instrumented yet"
             />
             <StatCard
               icon={Calendar}
@@ -151,7 +151,7 @@ export default function DBStats({ databaseId }: DBStatsProps) {
         </CardHeader>
         <CardContent className="p-5 pt-3.5">
           <p className="text-xs text-text-muted">
-            No backups available yet.
+            Backups not yet configured.
           </p>
         </CardContent>
       </Card>
@@ -166,7 +166,7 @@ export default function DBStats({ databaseId }: DBStatsProps) {
         </CardHeader>
         <CardContent className="p-5 pt-3.5">
           <p className="text-xs text-text-muted">
-            No branches created yet.
+            Branches not available yet.
           </p>
         </CardContent>
       </Card>

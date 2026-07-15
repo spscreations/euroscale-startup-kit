@@ -323,20 +323,6 @@ export default function DatabaseDetailPage() {
   const db = data.database!;
   const badge = statusBadge(db.status);
 
-  // Real account usage when available; connections/queries not instrumented yet
-  const storageBytes = usageData?.usage?.storageBytes;
-  const maxStorageBytes = usageData?.limits?.maxStorageBytes;
-  const hasStorage =
-    storageBytes !== undefined && maxStorageBytes !== undefined;
-  const storageUsedNum = hasStorage ? Number(storageBytes) : null;
-  const storageLimitNum = hasStorage ? Number(maxStorageBytes) : null;
-  const storageProgress =
-    storageUsedNum !== null &&
-    storageLimitNum !== null &&
-    storageLimitNum > 0
-      ? Math.round((storageUsedNum / storageLimitNum) * 100)
-      : 0;
-
   // ── Actions ─────────────────────────────────────────────────────────────────
   async function handleDelete() {
     try {
