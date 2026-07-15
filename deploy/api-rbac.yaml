@@ -82,3 +82,39 @@ subjects:
   - kind: ServiceAccount
     name: euroscale-api
     namespace: euroscale
+
+---
+# Role granting the API permission to list VitessBackup CRDs (backups page / PITR).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: euroscale-api-vitess-backups
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: api
+rules:
+  - apiGroups: ["planetscale.com"]
+    resources:
+      - vitessbackups
+      - vitessbackupstorages
+    verbs: ["get", "list", "watch"]
+
+---
+# RoleBinding attaching VitessBackup Role to the ServiceAccount.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: euroscale-api-vitess-backups
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: api
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: euroscale-api-vitess-backups
+subjects:
+  - kind: ServiceAccount
+    name: euroscale-api
+    namespace: euroscale
