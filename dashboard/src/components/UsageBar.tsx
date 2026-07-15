@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cn, formatBytes } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 
 interface UsageBarProps {
@@ -54,7 +54,9 @@ export default function UsageBar({ label, used, limit, unit }: UsageBarProps) {
         >
           {isUnlimited
             ? "Unlimited"
-            : `${formatNumber(used)} / ${formatNumber(limit)} ${unit}`}
+            : unit === "B"
+              ? `${formatBytes(used, 1)} / ${formatBytes(limit, 1)}`
+              : `${formatNumber(used)} / ${formatNumber(limit)} ${unit}`}
         </span>
       </div>
       <Progress

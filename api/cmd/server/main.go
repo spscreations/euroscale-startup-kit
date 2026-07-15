@@ -709,10 +709,7 @@ func (s *server) ResizeStorage(ctx context.Context, req *pb.ResizeStorageRequest
 		return nil, err
 	}
 
-	// Find the user who owns this database to update tier usage.
-	userID, _ := authenticatedUserID(ctx)
 
-	// Resize the PVC.
 	newTotalGB, err := s.resizer.ResizePVC(ctx, req.DatabaseId, req.AdditionalGb)
 	if err != nil {
 		log.Printf("ERROR: failed to resize PVC for database %q: %v", req.DatabaseId, err)
@@ -720,12 +717,6 @@ func (s *server) ResizeStorage(ctx context.Context, req *pb.ResizeStorageRequest
 			Success: false,
 			Message: fmt.Sprintf("resize failed: %v", err),
 		}, nil
-	}
-
-	// Update the usage tracking (add the delta to storage_bytes).
-	if err := s.tierStore.AddStorageBytes(ctx, userID, int64(req.AdditionalGb)*1_073_741_824); err != nil {
-		log.Printf("ERROR: failed to update storage usage for user %q: %v", userID, err)
-		// Non-fatal — the PVC was already resized.
 	}
 
 	log.Printf("INFO: resized storage for database %q by %d GB (new total: %d GB)",
