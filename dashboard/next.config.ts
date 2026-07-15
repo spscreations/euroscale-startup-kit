@@ -38,6 +38,9 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value:
+              // Note: Mollie checkout uses top-level navigation (window.location),
+              // not form POSTs — form-action 'self' does not block Mollie redirects.
+              // connect-src covers same-origin better-auth + public API.
               "default-src 'self'; " +
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
               "style-src 'self' 'unsafe-inline'; " +
