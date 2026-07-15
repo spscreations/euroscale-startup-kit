@@ -258,6 +258,133 @@ kubectl rollout status deployment/euroscale-api --namespace euroscale --timeout=
 
 ---
 
+## MinIO Backup Storage
+
+Vitess backups require S3-compatible object storage. MinIO runs as a single-node
+deployment in the cluster.
+
+### Deploy
+
+```bash
+export KUBECONFIG=infra/k3s/kubeconfig
+kubectl apply -f deploy/minio.yaml
+kubectl rollout status deployment/minio -n euroscale --timeout=120s
+```
+
+The deployment creates:
+- **PVC** `minio-data` (10Gi, local-path) for backup data
+- **Secret** `minio-root-credentials` with root user `admin` and an auto-generated password
+- **Service** `euroscale-backups:9000` — the endpoint used by VitessBackupStorage
+- **Service** `minio:9000` + `minio:9001` (console) — for direct access
+- **Bucket** `euroscale-backups` — created automatically on startup
+
+### Verify
+
+```bash
+# Minio health
+kubectl run minio-test --rm -it --restart=Never --image=curlimages/curl -n euroscale -- \
+  curl -s http://euroscale-backups:9000/minio/health/live
+
+# List bucket contents
+kubectl exec deploy/minio -n euroscale -- mc ls local/euroscale-backups/
+
+# Check backup schedule status
+kubectl get vitessbackupstorage -n euroscale
+kubectl get vitessbackupschedule -n euroscale
+```
+
+### Rotate credentials
+
+```bash
+# Generate new password
+NEW_PASS=$(openssl rand -base64 24)
+
+# Update Minio root credentials
+kubectl create secret generic minio-root-credentials \
+  --namespace euroscale \
+  --from-literal=root-user=admin \
+  --from-literal=root-password="$NEW_PASS" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+# Update Vitess backup creds (must match Minio root)
+kubectl create secret generic vitess-backup-creds \
+  --namespace euroscale \
+  --from-literal=access-key=admin \
+  --from-literal=secret-key="$NEW_PASS" \
+  --from-literal=credentials="[default]
+aws_access_key_id = admin
+aws_secret_access_key = $NEW_PASS" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+# Restart Minio
+kubectl rollout restart deployment/minio -n euroscale
+```
+
+---
+
+## VTGate MySQL TLS
+
+VTGate has `secureTransport` enabled (mTLS) on port 3306. MySQL clients must
+present a valid TLS certificate signed by the cluster CA.
+
+### Connection from inside the cluster (API pods)
+
+The API mounts the CA cert from Secret `euroscale-vtgate-tls` at
+`/etc/euroscale/tls/ca.crt` and connects with `ssl-mode=VERIFY_IDENTITY`.
+No manual setup needed — this is handled by `api-deployment.yaml`.
+
+### Connection from external clients
+
+External MySQL clients connecting to `db.euroscale.app:3306` must use TLS:
+
+```bash
+# 1. Extract the CA certificate from the cluster
+kubectl -n euroscale get secret euroscale-vtgate-tls \
+  -o jsonpath='{.data.ca\.crt}' | base64 -d > euroscale-ca.crt
+
+# 2. Connect with the CA as trust anchor
+mysql -h db.euroscale.app -P 3306 \
+  -u <username> -p \
+  --ssl-ca=euroscale-ca.crt \
+  --ssl-mode=VERIFY_IDENTITY
+```
+
+### CA certificate source
+
+The CA cert is stored in the `euroscale-vtgate-tls` Kubernetes Secret
+(key: `ca.crt`). It is also available in the repo at
+`infra/vitess/tls/euroscale-vtgate-ca.crt` for reference (public file).
+
+### Regenerating TLS certificates
+
+See `infra/vitess/tls/README.md` for the full certificate generation and
+rotation procedure.
+
+```bash
+cd infra/vitess/tls
+./generate-certs.sh .
+kubectl -n euroscale create secret generic euroscale-vtgate-tls \
+  --from-file=ca.crt=euroscale-vtgate-ca.crt \
+  --from-file=tls.crt=euroscale-vtgate.crt \
+  --from-file=tls.key=euroscale-vtgate.key \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+### Troubleshooting TLS
+
+**"Lost connection to MySQL server"** — The client is not sending TLS.
+Use `--ssl-mode=VERIFY_IDENTITY` with the CA cert.
+
+**"SSL certificate validation failed"** — Wrong or missing CA cert.
+Extract it from the cluster or use the one in `infra/vitess/tls/`.
+
+**Verify vtgate TLS is enabled:**
+```bash
+kubectl -n euroscale get secret euroscale-vtgate-tls -o jsonpath='{.data.tls\.crt}' | base64 -d | openssl x509 -text -noout | head -5
+```
+
+---
+
 ## Troubleshooting
 
 **Rollout stuck / ImagePullBackOff**
