@@ -236,21 +236,6 @@ export default function DatabaseDetailPage() {
     connectionString: string;
   } | null>(null);
 
-  // Account-level storage from GetUsage (per-DB metrics not instrumented yet)
-  const storageBytes = usageData?.usage?.storageBytes;
-  const maxStorageBytes = usageData?.limits?.maxStorageBytes;
-  const hasStorageMetric = storageBytes !== undefined && storageBytes !== null;
-  const storageUsedNum = hasStorageMetric ? Number(storageBytes) : null;
-  const storageLimitNum =
-    maxStorageBytes !== undefined && maxStorageBytes !== null
-      ? Number(maxStorageBytes)
-      : null;
-  const hasStorageLimit = storageLimitNum !== null && storageLimitNum > 0;
-  const storageProgress =
-    storageUsedNum !== null && hasStorageLimit
-      ? Math.min(100, Math.round((storageUsedNum / storageLimitNum!) * 100))
-      : 0;
-
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (isLoading) return <DetailSkeleton />;
 
@@ -322,6 +307,20 @@ export default function DatabaseDetailPage() {
   // ── Data ─────────────────────────────────────────────────────────────────────
   const db = data.database!;
   const badge = statusBadge(db.status);
+
+  // Real account usage when available; connections/queries not instrumented yet
+  const storageBytes = usageData?.usage?.storageBytes;
+  const maxStorageBytes = usageData?.limits?.maxStorageBytes;
+  const hasStorage =
+    storageBytes !== undefined && maxStorageBytes !== undefined;
+  const storageUsedNum = hasStorage ? Number(storageBytes) : null;
+  const storageLimitNum = hasStorage ? Number(maxStorageBytes) : null;
+  const storageProgress =
+    storageUsedNum !== null &&
+    storageLimitNum !== null &&
+    storageLimitNum > 0
+      ? Math.round((storageUsedNum / storageLimitNum) * 100)
+      : 0;
 
   // ── Actions ─────────────────────────────────────────────────────────────────
   async function handleDelete() {
@@ -518,7 +517,7 @@ export default function DatabaseDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Usage Stats — real GetUsage storage only; no invented metrics */}
+        {/* Usage Stats */}
         <Card className="overflow-hidden">
           <CardHeader className="border-b border-border-subtle px-5 py-3.5">
             <div className="flex items-center gap-2">
@@ -534,30 +533,23 @@ export default function DatabaseDetailPage() {
                   Storage
                 </span>
               </div>
-              {hasStorageMetric && storageUsedNum !== null ? (
-                <>
-                  <p className="text-base font-semibold text-text-primary">
-                    {formatBytes(storageUsedNum)}
-                    {hasStorageLimit && (
-                      <span className="text-xs text-text-muted font-normal">
-                        {" "}
-                        / {formatBytes(storageLimitNum!)}
-                      </span>
-                    )}
-                  </p>
-                  {hasStorageLimit && (
-                    <Progress value={storageProgress} className="h-1.5" />
-                  )}
-                  <p className="text-[11px] text-text-muted">Account total</p>
-                </>
-              ) : (
-                <>
-                  <p className="text-base font-semibold text-text-primary">—</p>
-                  <p className="text-[11px] text-text-muted">
-                    Metrics not available yet
-                  </p>
-                </>
-              )}
+              <p className="text-base font-semibold text-text-primary">
+                {hasStorage &&
+                storageUsedNum !== null &&
+                storageLimitNum !== null ? (
+                  <>
+                    {formatBytes(storageUsedNum)}{" "}
+                    <span className="text-xs text-text-muted font-normal">
+                      / {formatBytes(storageLimitNum)}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-text-muted">—</span>
+                )}
+              </p>
+              {hasStorage ? (
+                <Progress value={storageProgress} className="h-1.5" />
+              ) : null}
             </div>
 
             <div className="p-3.5 rounded-lg bg-surface-2 border border-border-subtle space-y-1.5">
@@ -568,9 +560,7 @@ export default function DatabaseDetailPage() {
                 </span>
               </div>
               <p className="text-base font-semibold text-text-primary">—</p>
-              <p className="text-[11px] text-text-muted">
-                Metrics not available yet
-              </p>
+              <p className="text-[11px] text-text-muted">Not instrumented yet</p>
             </div>
 
             <div className="p-3.5 rounded-lg bg-surface-2 border border-border-subtle space-y-1.5">
@@ -581,9 +571,7 @@ export default function DatabaseDetailPage() {
                 </span>
               </div>
               <p className="text-base font-semibold text-text-primary">—</p>
-              <p className="text-[11px] text-text-muted">
-                Metrics not available yet
-              </p>
+              <p className="text-[11px] text-text-muted">Not instrumented yet</p>
             </div>
           </CardContent>
         </Card>
