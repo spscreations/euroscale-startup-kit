@@ -50,7 +50,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pat
   }
 
   try {
-    const response = await fetch(`${API_BASE}/${servicePath}`, { method: "POST", headers, body: await req.arrayBuffer() });
+    const response = await fetch(`${API_BASE}/${servicePath}`, {
+      method: "POST",
+      headers,
+      body: await req.arrayBuffer(),
+    });
+    // SECURITY: do not forward upstream 5xx bodies (may contain internal details).
+    if (response.status >= 500) {
+      return NextResponse.json({ error: "Upstream error" }, { status: response.status });
+    }
     const responseBody = await response.arrayBuffer();
     const responseHeaders: Record<string, string> = {};
     const responseCt = response.headers.get("content-type");

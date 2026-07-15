@@ -72,6 +72,10 @@ async function proxy(req: NextRequest, segs: string[]) {
   const body = req.method !== "GET" && req.method !== "HEAD" ? await req.arrayBuffer() : undefined;
   try {
     const resp = await fetch(url, { method: req.method, headers, body });
+    // SECURITY: do not forward upstream 5xx bodies (may contain internal details).
+    if (resp.status >= 500) {
+      return NextResponse.json({ error: "Upstream error" }, { status: resp.status });
+    }
     const respBody = await resp.arrayBuffer();
     const respH: Record<string, string> = {};
     const rct = resp.headers.get("content-type");

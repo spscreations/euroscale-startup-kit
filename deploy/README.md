@@ -72,9 +72,76 @@ kubectl apply -f deploy/api-deployment.yaml
 
 ---
 
+## Mollie Secret (webhook signature verification)
+
+**Live status (re-audit 2026-07-15):** `euroscale-mollie` has **only** `api_key`.
+API logs: `WARNING: MOLLIE_WEBHOOK_SECRET not set — webhook signature verification disabled`.
+
+Payment status is still confirmed via Mollie API after webhook receipt, but signature
+verification is the first line of defense against forged webhook POSTs.
+
+### Required keys (do NOT commit real values)
+
+| Key | Purpose |
+|-----|---------|
+| `api_key` | Mollie API bearer token (`live_…` / `test_…`) |
+| `webhook_secret` | Signing secret from Mollie dashboard (webhook settings) |
+
+Template (placeholders only): `infra/secrets/mollie-secret.yaml`
+
+### Operator runbook (cluster only — never git)
+
+```bash
+# 1) Add webhook_secret WITHOUT printing it
+#    Obtain value from Mollie Dashboard → Developers → Webhooks / signing secret
+read -s MOLLIE_WEBHOOK_SECRET && echo
+kubectl create secret generic euroscale-mollie \
+  --namespace euroscale \
+  --from-literal=api_key="$(kubectl get secret euroscale-mollie -n euroscale -o jsonpath='{.data.api_key}' | base64 -d)" \
+  --from-literal=webhook_secret="$MOLLIE_WEBHOOK_SECRET" \
+  --dry-run=client -o yaml | kubectl apply -f -
+unset MOLLIE_WEBHOOK_SECRET
+
+# 2) Ensure Deployment mounts MOLLIE_WEBHOOK_SECRET (see api-deployment.yaml)
+#    Then restart API (does not change image tag):
+kubectl rollout restart deployment/euroscale-api -n euroscale
+kubectl rollout status deployment/euroscale-api -n euroscale --timeout=180s
+
+# 3) Confirm warning is gone:
+kubectl logs -n euroscale -l component=api --tail=50 | grep -i mollie
+```
+
+---
+
+## Network Policies
+
+- `allow-all-network-policy.yaml` — **system namespaces only** (kube-system, local-path-storage).
+- `euroscale-network-policy.yaml` — least-privilege for euroscale (Traefik, Vitess labels, HTTPS egress).
+
+**Live gap:** `euroscale` namespace still has a legacy `allow-all` NetworkPolicy.
+Apply least-privilege policies only after a staged validation — see comments in the YAML.
+
+---
+
+## Image tags
+
+Git manifests use version tags (e.g. `:v1.2`) with comments to pin digests.
+CI / production should prefer **immutable git-SHA tags** (live currently runs
+`ghcr.io/spscreations/euroscale-*:95e7e3e…`). Do **not** flip production to an
+untested `:latest` or unbuilt tag.
+
+---
+
 ## API Key Secret
 
 The API uses a shared secret for authentication. Create it with:
+
+```bash
+./deploy/create-api-key.sh
+# Full key is written to a mode-0600 file under /tmp (not printed to stdout).
+```
+
+Or:
 
 ```bash
 kubectl create secret generic euroscale-api-key \
@@ -86,10 +153,11 @@ Or save it to a file first:
 
 ```bash
 openssl rand -base64 32 > /tmp/api-key.txt
+chmod 600 /tmp/api-key.txt
 kubectl create secret generic euroscale-api-key \
   --namespace euroscale \
   --from-file=api_key=/tmp/api-key.txt
-rm /tmp/api-key.txt
+shred -u /tmp/api-key.txt
 ```
 
 Rotate the key by deleting and recreating the secret, then restarting the pods:

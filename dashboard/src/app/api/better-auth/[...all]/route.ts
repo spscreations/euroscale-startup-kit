@@ -5,7 +5,8 @@ export async function GET(req: Request) {
     const auth = getAuth()!;
     return await auth.handler(req);
   } catch (e) {
-    console.error("[auth:GET]", e instanceof Error ? e.stack : e);
+    // SECURITY: log message only — stacks can include request context.
+    console.error("[auth:GET]", e instanceof Error ? e.message : "unknown error");
     return new Response(JSON.stringify({ error: "Auth error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
@@ -16,14 +17,17 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const start = Date.now();
   try {
-    console.error("[auth:POST:start]", req.url, req.method);
+    // SECURITY: never log request/response bodies — they can contain passwords,
+    // session tokens, and other credentials.
     const auth = getAuth()!;
-    const resp = await auth.handler(req);
-    const body = await resp.clone().text();
-    console.error("[auth:POST:end]", resp.status, body.slice(0, 300));
-    return resp;
+    return await auth.handler(req);
   } catch (e) {
-    console.error("[auth:POST:error]", Date.now() - start, "ms", e instanceof Error ? e.stack : e);
+    console.error(
+      "[auth:POST:error]",
+      Date.now() - start,
+      "ms",
+      e instanceof Error ? e.message : "unknown error",
+    );
     return new Response(JSON.stringify({ error: "Auth error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

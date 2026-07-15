@@ -98,7 +98,12 @@ func (s *Store) DeleteCredentials(ctx context.Context, databaseID string) error 
 }
 
 // UpdateCredentials replaces an existing K8s Secret with new credentials.
+// UserID must be non-empty so ownership labels are always set (prevents
+// ownerless secrets that break ACL checks).
 func (s *Store) UpdateCredentials(ctx context.Context, db *models.Database, creds *models.DatabaseCredentials) error {
+	if db == nil || db.UserID == "" {
+		return fmt.Errorf("user_id is required to update database credentials")
+	}
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretNameFor(creds.DatabaseID),

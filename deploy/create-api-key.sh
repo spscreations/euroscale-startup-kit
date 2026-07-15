@@ -6,13 +6,15 @@
 # Usage:
 #   ./deploy/create-api-key.sh
 #
-# The key is printed to stdout *only* during creation so you can save it.
-# Subsequent runs rotate the key (replace) — run rollout restart afterward.
+# SECURITY: the full key is written once to a mode-0600 file under /tmp and is
+# NEVER echoed to stdout (avoids shell history / CI log leakage).
+# Subsequent runs rotate the key — run rollout restart afterward.
 # ──────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
 NAMESPACE="${NAMESPACE:-euroscale}"
 SECRET_NAME="${SECRET_NAME:-euroscale-api-key}"
+OUT_FILE="${OUT_FILE:-/tmp/euroscale-api-key.$$.txt}"
 
 # Generate a 256-bit base64 key (44 bytes base64-encoded).
 API_KEY="$(openssl rand -base64 32)"
@@ -31,12 +33,23 @@ else
   echo "INFO: created secret '$SECRET_NAME' in namespace '$NAMESPACE'"
 fi
 
-# Print the key once — save it somewhere safe (e.g. password manager).
+# Write key to a private file — do not print the full value.
+umask 077
+printf '%s\n' "$API_KEY" > "$OUT_FILE"
+chmod 600 "$OUT_FILE"
+
+# Fingerprint only (first 4 + last 4 chars) for operator confirmation.
+FP_PREFIX="${API_KEY:0:4}"
+FP_SUFFIX="${API_KEY: -4}"
 echo "────────────────────────────────────────────────────────────"
-echo "API Key: $API_KEY"
+echo "API key written to: $OUT_FILE (mode 0600)"
+echo "Fingerprint: ${FP_PREFIX}…${FP_SUFFIX}"
 echo "────────────────────────────────────────────────────────────"
-echo "WARNING: this is the only time the key is shown.  Lost it?"
-echo "  kubectl get secret -n $NAMESPACE $SECRET_NAME -o jsonpath='{.data.api_key}' | base64 -d"
+echo "Load into password manager, then shred the file:"
+echo "  shred -u '$OUT_FILE'   # or: rm -f '$OUT_FILE'"
+echo ""
+echo "Retrieve from cluster later (still sensitive):"
+echo "  kubectl get secret -n $NAMESPACE $SECRET_NAME -o jsonpath='{.data.api_key}' | base64 -d; echo"
 echo ""
 echo "After rotation, restart the deployment:"
 echo "  kubectl rollout restart deployment/euroscale-api -n $NAMESPACE"
