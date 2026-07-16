@@ -398,3 +398,4 @@ kubectl get deployment euroscale-api -n euroscale -o jsonpath='{.spec.template.s
 ```
 
 <!-- ci trigger 2026-07-16T23:11:09Z talos rebuild -->
+<!-- 2026-07-17T02:12:18+03:00 -->

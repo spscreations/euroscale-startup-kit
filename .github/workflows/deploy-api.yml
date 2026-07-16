@@ -48,8 +48,7 @@ jobs:
             type=raw,value=latest
             type=raw,value=v1.3
             type=raw,value=v1.2
-            type=raw,value=${{ github.event.inputs.image_tag }},enable=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.image_tag != '' }}
-          labels: |
+          labels:
             org.opencontainers.image.title=EuroScale API
             org.opencontainers.image.description=Serverless MySQL/Postgres database provisioning API
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
@@ -153,7 +152,7 @@ jobs:
             type=raw,value=latest
             type=raw,value=v1.3
             type=raw,value=v1.2
-          labels: |
+          labels:
             org.opencontainers.image.title=EuroScale Dashboard
             org.opencontainers.image.description=Customer dashboard for EuroScale database platform
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
