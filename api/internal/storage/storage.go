@@ -1,230 +1,185 @@
-// Package storage provides PVC resize logic for Vitess databases backed
-// by Hetzner Cloud Volumes (CSI driver). It interacts with the Kubernetes
-// API to patch PVC sizes and tracks usage changes.
+// Package storage provides storage management logic for Vitess databases.
+// Instead of managing a fake tracking PVC, storage operations now operate on
+// the actual Vitess vttablet PVCs by patching the VitessShard CRD (via the
+// dynamic Kubernetes client). The Vitess operator drives PVC resizing from
+// the CRD spec, making this the single source of truth.
 package storage
 
 import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 )
 
 // MaxVolumeSizeGB is the Hetzner Cloud maximum volume size in GB.
 const MaxVolumeSizeGB = 10_240 // 10 TiB
 
-// Resizer manages PVC resizing for database volumes.
-type Resizer struct {
-	clientset *kubernetes.Clientset
-	namespace string
+// VitessShardGVR is the GroupVersionResource for Planetscale VitessShard CRDs.
+var VitessShardGVR = schema.GroupVersionResource{
+	Group:    "planetscale.com",
+	Version:  "v2",
+	Resource: "vitessshards",
 }
 
-// PVCConfig holds the parameters for provisioning a new PVC for a database.
-type PVCConfig struct {
-	DatabaseID string
-	SizeGB     int64
+// Resizer manages storage resizing for Vitess databases backed by
+// Hetzner Cloud Volumes (CSI driver).
+type Resizer struct {
+	clientset    *kubernetes.Clientset
+	dynamicClient dynamic.Interface
+	namespace    string
 }
 
 // NewResizer creates a new Resizer.
-func NewResizer(clientset *kubernetes.Clientset, namespace string) *Resizer {
+func NewResizer(clientset *kubernetes.Clientset, dynamicClient dynamic.Interface, namespace string) *Resizer {
 	return &Resizer{
-		clientset: clientset,
-		namespace: namespace,
+		clientset:    clientset,
+		dynamicClient: dynamicClient,
+		namespace:    namespace,
 	}
 }
 
-// ResizePVC expands a database's PVC by the specified GB amount.
-// If no PVC exists for the database, a new one is provisioned at the requested size.
+// GetCurrentStorage returns the usable database storage in GB by inspecting
+// the actual vttablet PVCs that hold Vitess data.  Because all tablets in a
+// shard use the same volume size (replication mirrors), we return the size of
+// the first bound vttablet PVC found.
+//
+// The dbID parameter is used only for logging context; the method lists all
+// vttablet PVCs (labelled planetscale.com/component=vttablet) and returns
+// the capacity of the first bound one.
+func (r *Resizer) GetCurrentStorage(ctx context.Context, dbID string) (int64, error) {
+	pvcs, err := r.clientset.CoreV1().PersistentVolumeClaims(r.namespace).List(ctx, metav1.ListOptions{
+		LabelSelector: "planetscale.com/component=vttablet",
+	})
+	if err != nil {
+		return 0, fmt.Errorf("failed to list vttablet PVCs: %w", err)
+	}
+
+	for _, pvc := range pvcs.Items {
+		if pvc.Status.Phase == "Bound" {
+			gb, err := parseCapacityGB(pvc.Status.Capacity.Storage().String())
+			if err != nil {
+				log.Printf("WARN: failed to parse capacity of PVC %q: %v (skipping)", pvc.Name, err)
+				continue
+			}
+			return gb, nil
+		}
+	}
+
+	return 0, nil // No bound vttablet PVCs — no storage provisioned yet
+}
+
+// GetTotalStorageBytes returns the total provisioned storage across all
+// vttablet PVCs, in bytes.  Because all tablets use the same volume size,
+// this is equivalent to the size of one tablet's PVC.
+func (r *Resizer) GetTotalStorageBytes(ctx context.Context) (int64, error) {
+	gb, err := r.GetCurrentStorage(ctx, "")
+	if err != nil {
+		return 0, err
+	}
+	if gb <= 0 {
+		return 0, nil
+	}
+	return gb * 1_073_741_824, nil // GB → bytes
+}
+
+// ResizeStorage expands ALL vttablet PVCs for a database by the specified GB
+// amount.  It does this by patching the VitessShard CRD's
+// dataVolumeClaimTemplate, which causes the Vitess operator to resize the
+// underlying PVCs.
 //
 // Steps:
-//  1. Find the PVC by database ID label.
-//  2. If none exists, create a new PVC at the requested size.
-//  3. If one exists, read current capacity and compute new size.
-//  4. Validate against Hetzner's 10 TB limit.
-//  5. Patch the PVC with the new size.
+//  1. Read current storage from the first bound vttablet PVC.
+//  2. Compute the new desired size (current + additionalGB).
+//  3. Validate against the Hetzner 10 TiB limit.
+//  4. List all VitessShard CRDs in the namespace.
+//  5. For each shard, update every tablet pool's dataVolumeClaimTemplate to
+//     request the new size.
+//  6. Apply the update via the dynamic client.
 //
 // Returns the new total size in GB on success.
-func (r *Resizer) ResizePVC(ctx context.Context, dbID string, additionalGB int32) (int64, error) {
+func (r *Resizer) ResizeStorage(ctx context.Context, dbID string, additionalGB int32) (int64, error) {
 	if additionalGB <= 0 {
 		return 0, fmt.Errorf("additional_gb must be positive (got %d)", additionalGB)
 	}
 
-	// 1. Find the PVC by label.
-	pvc, err := r.findPVCByDatabaseID(ctx, dbID)
+	// 1. Read current storage.
+	currentGB, err := r.GetCurrentStorage(ctx, dbID)
 	if err != nil {
-		// If no PVC exists, auto-provision one at the requested size.
-		newGB := int64(additionalGB)
-		_, err := r.CreatePVC(ctx, PVCConfig{DatabaseID: dbID, SizeGB: newGB})
-		if err != nil {
-			return 0, fmt.Errorf("no PVC found for database %q and failed to create one: %w", dbID, err)
-		}
-		log.Printf("INFO: auto-provisioned PVC for database %q at %d Gi", dbID, newGB)
-		return newGB, nil
+		return 0, fmt.Errorf("failed to read current storage: %w", err)
 	}
 
-	// 2. Parse current capacity.
-	currentGB, err := parseCapacityGB(pvc.Status.Capacity.Storage().String())
-	if err != nil {
-		return 0, fmt.Errorf("failed to parse current PVC capacity for %q: %w", dbID, err)
-	}
-
-	// If PVC is Pending (not yet bound, capacity=0), K8s forbids patching the spec
-	// on unbound claims.  Delete the old Pending PVC and recreate with the
-	// requested size, preserving all metadata from the original.
-	if currentGB == 0 {
-		newGB := int64(additionalGB)
-
-		// Snapshot labels and annotations before deletion.
-		labels := pvc.Labels
-		if labels == nil {
-			labels = make(map[string]string)
-		}
-		annotations := pvc.Annotations
-		if annotations == nil {
-			annotations = make(map[string]string)
-		}
-
-		// Delete the old Pending PVC.
-		err = r.clientset.CoreV1().PersistentVolumeClaims(r.namespace).Delete(
-			ctx, pvc.Name, metav1.DeleteOptions{})
-		if err != nil {
-			// Race: PVC may already have been deleted by another actor.
-			// Log and continue — we will still attempt to create below.
-			log.Printf("WARN: delete of pending PVC %q returned: %v (will recreate anyway)", pvc.Name, err)
-		}
-
-		// Recreate with identical metadata and updated storage size.
-		newPVC := &corev1.PersistentVolumeClaim{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        pvc.Name,
-				Namespace:   r.namespace,
-				Labels:      labels,
-				Annotations: annotations,
-			},
-			Spec: corev1.PersistentVolumeClaimSpec{
-				AccessModes: pvc.Spec.AccessModes,
-				Resources: corev1.VolumeResourceRequirements{
-					Requests: corev1.ResourceList{
-						corev1.ResourceStorage: resource.MustParse(fmt.Sprintf("%dGi", newGB)),
-					},
-				},
-				StorageClassName: pvc.Spec.StorageClassName,
-			},
-		}
-
-		_, err = r.clientset.CoreV1().PersistentVolumeClaims(r.namespace).Create(
-			ctx, newPVC, metav1.CreateOptions{})
-		if err != nil {
-			return 0, fmt.Errorf("failed to recreate pending PVC %q at %d Gi: %w", pvc.Name, newGB, err)
-		}
-
-		log.Printf("INFO: recreated pending PVC %q at %d Gi (awaiting provisioner)", pvc.Name, newGB)
-		return newGB, nil
-	}
-
-	// 3. Compute new size.
+	// 2. Compute new size.
 	newGB := currentGB + int64(additionalGB)
 
-	// 4. Validate against limit.
+	// 3. Validate against limit.
 	if newGB > MaxVolumeSizeGB {
 		return 0, fmt.Errorf("requested size %d GB exceeds Hetzner max volume size of %d GB — consider resharding", newGB, MaxVolumeSizeGB)
 	}
 
-	// 5. Build and apply the patch.
-	patch := []byte(fmt.Sprintf(
-		`{"spec":{"resources":{"requests":{"storage":"%dGi"}}}}`,
-		newGB,
-	))
+	newSizeStr := fmt.Sprintf("%dGi", newGB)
 
-	_, err = r.clientset.CoreV1().PersistentVolumeClaims(r.namespace).Patch(
-		ctx,
-		pvc.Name,
-		types.MergePatchType,
-		patch,
-		metav1.PatchOptions{},
-	)
+	// 4. List all VitessShard CRDs.
+	shards, err := r.dynamicClient.Resource(VitessShardGVR).Namespace(r.namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return 0, fmt.Errorf("failed to patch PVC %q: %w", pvc.Name, err)
+		return 0, fmt.Errorf("failed to list VitessShards: %w", err)
 	}
 
-	log.Printf("INFO: resized PVC %q for database %q from %d Gi to %d Gi",
-		pvc.Name, dbID, currentGB, newGB)
-
-	return newGB, nil
-}
-
-// pvcNameFor returns the deterministic PVC name for a given database ID.
-func pvcNameFor(dbID string) string {
-	return fmt.Sprintf("db-%s-data", dbID)
-}
-
-// CreatePVC provisions a new PVC for a database.
-func (r *Resizer) CreatePVC(ctx context.Context, cfg PVCConfig) (*corev1.PersistentVolumeClaim, error) {
-	storageClassName := "hcloud-volumes" // Hetzner Cloud Volumes CSI — matches Vitess operator
-	if sc := os.Getenv("EUROSCALE_STORAGE_CLASS"); sc != "" {
-		storageClassName = sc
+	if len(shards.Items) == 0 {
+		return 0, fmt.Errorf("no VitessShard CRDs found in namespace %q — cannot resize", r.namespace)
 	}
 
-	sizeGB := cfg.SizeGB
-	if sizeGB <= 0 {
-		sizeGB = 1
-	}
+	// 5. Patch each shard's tablet pools.
+	for _, shard := range shards.Items {
+		tabletPools, found, err := unstructured.NestedSlice(shard.Object, "spec", "tabletPools")
+		if err != nil {
+			return 0, fmt.Errorf("failed to read tabletPools from VitessShard %q: %w", shard.GetName(), err)
+		}
+		if !found || len(tabletPools) == 0 {
+			log.Printf("WARN: VitessShard %q has no tabletPools — skipping", shard.GetName())
+			continue
+		}
 
-	pvc := &corev1.PersistentVolumeClaim{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      pvcNameFor(cfg.DatabaseID),
-			Namespace: r.namespace,
-			Labels: map[string]string{
-				"app":                        "euroscale",
-				"euroscale.app/database-id": cfg.DatabaseID,
-				"managed":                    "true",
-			},
-		},
-		Spec: corev1.PersistentVolumeClaimSpec{
-			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-			Resources: corev1.VolumeResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceStorage: resource.MustParse(fmt.Sprintf("%dGi", sizeGB)),
+		// Update the dataVolumeClaimTemplate in each pool.
+		for i := range tabletPools {
+			pool, ok := tabletPools[i].(map[string]interface{})
+			if !ok {
+				return 0, fmt.Errorf("tabletPool[%d] in VitessShard %q is not a map", i, shard.GetName())
+			}
+			if err := unstructured.SetNestedField(pool, map[string]interface{}{
+				"resources": map[string]interface{}{
+					"requests": map[string]interface{}{
+						"storage": newSizeStr,
+					},
 				},
-			},
-			StorageClassName: &storageClassName,
-		},
+			}, "dataVolumeClaimTemplate"); err != nil {
+				return 0, fmt.Errorf("failed to set dataVolumeClaimTemplate for pool %d in VitessShard %q: %w", i, shard.GetName(), err)
+			}
+			tabletPools[i] = pool
+		}
+
+		if err := unstructured.SetNestedSlice(shard.Object, tabletPools, "spec", "tabletPools"); err != nil {
+			return 0, fmt.Errorf("failed to update tabletPools in VitessShard %q: %w", shard.GetName(), err)
+		}
+
+		// Apply the update.
+		_, err = r.dynamicClient.Resource(VitessShardGVR).Namespace(r.namespace).Update(ctx, &shard, metav1.UpdateOptions{})
+		if err != nil {
+			return 0, fmt.Errorf("failed to update VitessShard %q: %w", shard.GetName(), err)
+		}
+
+		log.Printf("INFO: patched VitessShard %q tablet pools to %s", shard.GetName(), newSizeStr)
 	}
 
-	created, err := r.clientset.CoreV1().PersistentVolumeClaims(r.namespace).Create(ctx, pvc, metav1.CreateOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create PVC %q: %w", pvcNameFor(cfg.DatabaseID), err)
-	}
-
-	return created, nil
-}
-
-// findPVCByDatabaseID looks up a PVC labelled euroscale.app/database-id=<dbID>.
-func (r *Resizer) findPVCByDatabaseID(ctx context.Context, dbID string) (*corev1.PersistentVolumeClaim, error) {
-	list, err := r.clientset.CoreV1().PersistentVolumeClaims(r.namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("euroscale.app/database-id=%s", dbID),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list PVCs: %w", err)
-	}
-
-	if len(list.Items) == 0 {
-		return nil, fmt.Errorf("no PVC found with label euroscale.app/database-id=%s", dbID)
-	}
-
-	if len(list.Items) > 1 {
-		return nil, fmt.Errorf("expected 1 PVC for database %q, found %d", dbID, len(list.Items))
-	}
-
-	return &list.Items[0], nil
+	log.Printf("INFO: resized storage for database %q from %d Gi to %d Gi", dbID, currentGB, newGB)
+	return newGB, nil
 }
 
 // parseCapacityGB converts a Kubernetes quantity string (e.g. "10Gi", "1Ti") into

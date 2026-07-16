@@ -233,11 +233,8 @@ func (s *server) CreateDatabase(ctx context.Context, req *pb.CreateDatabaseReque
 		return nil, status.Error(codes.Internal, "failed to store credentials")
 	}
 
-	// Provision a 1 GiB PVC for the database (expanded later via resize).
-	if _, err := s.resizer.CreatePVC(ctx, storage.PVCConfig{DatabaseID: dbID, SizeGB: 1}); err != nil {
-		log.Printf("WARNING: failed to create PVC for %q: %v", dbID, err)
-		// Non-fatal — the database is still usable, just can't resize until PVC exists.
-	}
+	// New databases get storage managed by the Vitess operator via VitessShard CRD.
+	// No tracking PVC is created — actual storage is the vttablet PVCs.
 
 	// Increment the database count for tier tracking.
 	if err := s.tierStore.IncrementDatabaseCount(ctx, userID); err != nil {
@@ -245,9 +242,6 @@ func (s *server) CreateDatabase(ctx context.Context, req *pb.CreateDatabaseReque
 		// Non-fatal — the database was created, just logging is fine.
 	}
 
-	// New databases start with zero actual storage usage — provisioning
-	// the PVC (10 Gi) is separate from real data stored.  Usage tracking
-	// will reflect real bytes once metrics instrumentation is live.
 	log.Printf("INFO: created database %q (id=%s, user=%s, region=%s)", dbName, dbID, userID, region)
 
 	return &pb.CreateDatabaseResponse{
@@ -654,6 +648,14 @@ func (s *server) GetUsage(ctx context.Context, req *pb.GetUsageRequest) (*pb.Get
 		AutoscaleMaxCu:            tier.AutoscaleMaxCU,
 	}
 
+	// Source of truth for storage: actual vttablet PVC sizes from the
+	// Vitess operator (not the stale usage-tracking secret).
+	if realStorageBytes, err := s.resizer.GetTotalStorageBytes(ctx); err != nil {
+		log.Printf("WARN: failed to read real storage from vttablet PVCs: %v", err)
+	} else {
+		usage.StorageBytes = realStorageBytes
+	}
+
 	return &pb.GetUsageResponse{
 		UserId: userID,
 		Tier:   tier.Name,
@@ -710,7 +712,7 @@ func (s *server) ResizeStorage(ctx context.Context, req *pb.ResizeStorageRequest
 	}
 
 
-	newTotalGB, err := s.resizer.ResizePVC(ctx, req.DatabaseId, req.AdditionalGb)
+	newTotalGB, err := s.resizer.ResizeStorage(ctx, req.DatabaseId, req.AdditionalGb)
 	if err != nil {
 		log.Printf("ERROR: failed to resize PVC for database %q: %v", req.DatabaseId, err)
 		return &pb.ResizeStorageResponse{
@@ -1223,7 +1225,7 @@ func main() {
 	secretsStore := secrets.NewStore(clientset, namespace)
 	ipwlStore := ipwhitelist.NewStore(clientset, namespace)
 	tierStore := tiers.NewStore(clientset, namespace)
-	resizer := storage.NewResizer(clientset, namespace)
+	resizer := storage.NewResizer(clientset, dynamicClient, namespace)
 	log.Println("K8s clientset created successfully.")
 
 	// Ensure the user-tier ConfigMap exists.
