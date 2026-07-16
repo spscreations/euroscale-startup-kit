@@ -66,3 +66,4 @@ export default function UsageBar({ label, used, limit, unit }: UsageBarProps) {
     </div>
   );
 }
+ 
