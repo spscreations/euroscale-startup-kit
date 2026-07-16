@@ -76,16 +76,57 @@ func (r *Resizer) ResizePVC(ctx context.Context, dbID string, additionalGB int32
 		return 0, fmt.Errorf("failed to parse current PVC capacity for %q: %w", dbID, err)
 	}
 
-	// If PVC is Pending (not yet bound, capacity=0), provision at requested size.
+	// If PVC is Pending (not yet bound, capacity=0), K8s forbids patching the spec
+	// on unbound claims.  Delete the old Pending PVC and recreate with the
+	// requested size, preserving all metadata from the original.
 	if currentGB == 0 {
 		newGB := int64(additionalGB)
-		patch := []byte(fmt.Sprintf(`{"spec":{"resources":{"requests":{"storage":"%dGi"}}}}`, newGB))
-		_, err = r.clientset.CoreV1().PersistentVolumeClaims(r.namespace).Patch(
-			ctx, pvc.Name, types.MergePatchType, patch, metav1.PatchOptions{})
-		if err != nil {
-			return 0, fmt.Errorf("failed to update pending PVC %q: %w", pvc.Name, err)
+
+		// Snapshot labels and annotations before deletion.
+		labels := pvc.Labels
+		if labels == nil {
+			labels = make(map[string]string)
 		}
-		log.Printf("INFO: updated pending PVC %q from 0 Gi to %d Gi (awaiting provisioner)", pvc.Name, newGB)
+		annotations := pvc.Annotations
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+
+		// Delete the old Pending PVC.
+		err = r.clientset.CoreV1().PersistentVolumeClaims(r.namespace).Delete(
+			ctx, pvc.Name, metav1.DeleteOptions{})
+		if err != nil {
+			// Race: PVC may already have been deleted by another actor.
+			// Log and continue — we will still attempt to create below.
+			log.Printf("WARN: delete of pending PVC %q returned: %v (will recreate anyway)", pvc.Name, err)
+		}
+
+		// Recreate with identical metadata and updated storage size.
+		newPVC := &corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        pvc.Name,
+				Namespace:   r.namespace,
+				Labels:      labels,
+				Annotations: annotations,
+			},
+			Spec: corev1.PersistentVolumeClaimSpec{
+				AccessModes: pvc.Spec.AccessModes,
+				Resources: corev1.VolumeResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceStorage: resource.MustParse(fmt.Sprintf("%dGi", newGB)),
+					},
+				},
+				StorageClassName: pvc.Spec.StorageClassName,
+			},
+		}
+
+		_, err = r.clientset.CoreV1().PersistentVolumeClaims(r.namespace).Create(
+			ctx, newPVC, metav1.CreateOptions{})
+		if err != nil {
+			return 0, fmt.Errorf("failed to recreate pending PVC %q at %d Gi: %w", pvc.Name, newGB, err)
+		}
+
+		log.Printf("INFO: recreated pending PVC %q at %d Gi (awaiting provisioner)", pvc.Name, newGB)
 		return newGB, nil
 	}
 

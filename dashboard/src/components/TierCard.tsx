@@ -10,6 +10,7 @@ import {
   HardDrive,
   Cpu,
   Zap,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUsage } from "@/hooks/useUsage";
@@ -26,6 +27,14 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const TIER_LABELS: Record<string, string> = {
   free: "Free",
@@ -53,6 +62,7 @@ export default function TierCard() {
   const [storageGB, setStorageGB] = useState<number>(10);
   const [autoscaleEnabled, setAutoscaleEnabled] = useState(false);
   const [autoscaleCU, setAutoscaleCU] = useState(1);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // Mollie redirect detection — show dialog when user returns from payment
   useEffect(() => {
@@ -390,7 +400,7 @@ export default function TierCard() {
 
         {/* Apply button */}
         <Button
-          onClick={handleApply}
+          onClick={() => setShowConfirmDialog(true)}
           disabled={resizeMutation.isPending}
           className="w-full"
         >
@@ -403,6 +413,61 @@ export default function TierCard() {
             "Apply Changes"
           )}
         </Button>
+
+        {/* Confirm dialog */}
+        <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Info size={16} />
+                Apply add-on changes?
+              </DialogTitle>
+              <DialogDescription
+                render={
+                  <div className="space-y-3 pt-2">
+                    <p>
+                      These changes will be applied immediately and{" "}
+                      <strong>billed on your next invoice</strong> (post-paid).
+                    </p>
+                    {storageCost > 0 && (
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Additional storage ({storageGB} GB × €{storagePricePerGB.toFixed(2)}/GB)</span>
+                        <span className="tabular-nums">+€{storageCost.toFixed(2)}/mo</span>
+                      </div>
+                    )}
+                    {autoscaleEnabled && (
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Autoscale compute ({autoscaleCU} CU)</span>
+                        <span className="tabular-nums">≈€{autoscaleCost.toFixed(2)}/mo</span>
+                      </div>
+                    )}
+                    <div className="rounded-md bg-accent-subtle px-3 py-2 text-center">
+                      <span className="text-xs font-semibold text-accent-text">
+                        Total: +€{totalAddonCost.toFixed(2)}/mo on next invoice
+                      </span>
+                    </div>
+                  </div>
+                }
+              />
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowConfirmDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowConfirmDialog(false);
+                  handleApply();
+                }}
+              >
+                Confirm & Apply
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Card>
   );
