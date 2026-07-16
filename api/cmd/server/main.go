@@ -34,6 +34,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/spscreations/euroscale-startup-kit/api/internal/auth"
 	connectpkg "github.com/spscreations/euroscale-startup-kit/api/internal/connect"
@@ -90,7 +91,8 @@ type server struct {
 	secrets   *secrets.Store
 	ipwl      *ipwhitelist.Store
 	tierStore *tiers.Store
-	resizer   *storage.Resizer
+	resizer       *storage.Resizer
+	dynamicClient dynamic.Interface
 
 	host     string
 	sslCAPem string
@@ -301,6 +303,27 @@ func (s *server) DeleteDatabase(ctx context.Context, req *pb.DeleteDatabaseReque
 	if userID != "" {
 		if err := s.tierStore.DecrementDatabaseCount(ctx, userID); err != nil {
 			log.Printf("ERROR: failed to decrement database count for user %q: %v", userID, err)
+		}
+	}
+
+	// ── Clean up associated resources ──────────────────────────
+	// Autoscale settings.
+	autoscaleName := autoscaleSecretName(req.DatabaseId)
+	if err := s.clientset.CoreV1().Secrets("euroscale").Delete(ctx, autoscaleName, metav1.DeleteOptions{}); err != nil {
+		log.Printf("WARN: failed to delete autoscale secret %q: %v", autoscaleName, err)
+	}
+
+	// If this was the last database, clean up the Vitess keyspace.
+	allDBs, _ := s.secrets.ListAll(ctx)
+	if len(allDBs) == 0 {
+		log.Printf("INFO: no remaining databases — deleting Vitess keyspace")
+		shardGVR := schema.GroupVersionResource{Group: "planetscale.com", Version: "v2", Resource: "vitessshards"}
+		if err := s.dynamicClient.Resource(shardGVR).Namespace("euroscale").Delete(ctx, "euroscale-main-x-x-76e523c2", metav1.DeleteOptions{}); err != nil {
+			log.Printf("WARN: failed to delete VitessShard: %v (may need manual cleanup)", err)
+		}
+		keyspaceGVR := schema.GroupVersionResource{Group: "planetscale.com", Version: "v2", Resource: "vitesskeyspaces"}
+		if err := s.dynamicClient.Resource(keyspaceGVR).Namespace("euroscale").Delete(ctx, "euroscale-main-6f85067f", metav1.DeleteOptions{}); err != nil {
+			log.Printf("WARN: failed to delete VitessKeyspace: %v (may need manual cleanup)", err)
 		}
 	}
 
@@ -1639,6 +1662,7 @@ func main() {
 		mollieHTTPHandler: mollieHTTPHandler,
 		pitrHandler:       pitrHandler,
 		clientset:         clientset,
+		dynamicClient:     dynamicClient,
 	}
 
 	grpcServer := grpc.NewServer(
