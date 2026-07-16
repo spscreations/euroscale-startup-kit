@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/spscreations/euroscale-startup-kit/api/internal/storage"
+	"github.com/spscreations/euroscale-startup-kit/api/internal/tiers"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
@@ -119,7 +120,22 @@ func main() {
 			continue
 		}
 
+		tierStore := tiers.NewStore(clientset, namespace)
+
 		log.Printf("INFO: triggering autoscale resize for database %q (increment=%d GB)", dbID, incrementGB)
+
+		// ── Tier limit enforcement ────────────────────────────
+		userID := secret.Labels["user_id"]
+		if userID != "" {
+			tier := tierStore.GetTierForUser(ctx, userID)
+			currentGB, _ := resizer.GetCurrentStorage(ctx, dbID)
+			requestedTotal := currentGB + int64(incrementGB)
+			if tier.MaxStorageGB != tiers.UnlimitedDBs && requestedTotal > tier.MaxStorageGB {
+				log.Printf("SKIP: tier limit for user %q on %s plan: %d GB max (current=%d, requested=%d)",
+					userID, tier.Name, tier.MaxStorageGB, currentGB, requestedTotal)
+				continue
+			}
+		}
 
 		// Perform the resize.
 		newTotalGB, err := resizer.ResizeStorage(ctx, dbID, incrementGB)

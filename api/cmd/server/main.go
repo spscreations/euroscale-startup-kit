@@ -717,6 +717,22 @@ func (s *server) ResizeStorage(ctx context.Context, req *pb.ResizeStorageRequest
 		return nil, err
 	}
 
+	// ── Tier limit enforcement ────────────────────────────────────
+	userID := auth.GetUserID(ctx)
+	if userID != "" {
+		tier := s.tierStore.GetTierForUser(ctx, userID)
+		currentGB, _ := s.resizer.GetCurrentStorage(ctx, req.DatabaseId)
+		requestedTotal := currentGB + int64(req.AdditionalGb)
+		if tier.MaxStorageGB != tiers.UnlimitedDBs && requestedTotal > tier.MaxStorageGB {
+			return &pb.ResizeStorageResponse{
+				Success: false,
+				Message: fmt.Sprintf(
+					"storage limit reached: your %s plan allows %d GB (current: %d GB, requested: %d GB). Upgrade at euroscale.app/billing",
+					tier.Name, tier.MaxStorageGB, currentGB, requestedTotal,
+				),
+			}, nil
+		}
+	}
 
 	newTotalGB, err := s.resizer.ResizeStorage(ctx, req.DatabaseId, req.AdditionalGb)
 	if err != nil {
