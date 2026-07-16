@@ -396,3 +396,5 @@ kubectl logs -n euroscale -l component=api --tail=50
 ```bash
 kubectl get deployment euroscale-api -n euroscale -o jsonpath='{.spec.template.spec.containers[0].image}'
 ```
+
+<!-- ci trigger 2026-07-16T23:11:09Z talos rebuild -->
