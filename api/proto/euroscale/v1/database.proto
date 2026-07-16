@@ -40,6 +40,12 @@ service DatabaseService {
 
   // ResizeStorage expands a database's persistent volume by the specified GB.
   rpc ResizeStorage(ResizeStorageRequest) returns (ResizeStorageResponse);
+
+  // SetAutoscale enables/disables automatic storage scaling for a database.
+  rpc SetAutoscale(SetAutoscaleRequest) returns (SetAutoscaleResponse);
+
+  // GetMetrics returns CPU and disk metrics for a database (last 24h).
+  rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse);
 }
 
 // ── CreateDatabase ──────────────────────────────────────────────────────────
@@ -358,4 +364,54 @@ message ResizeStorageResponse {
 
   // Human-readable message (e.g. reason for failure).
   string message = 3;
+}
+
+// ── SetAutoscale ────────────────────────────────────────────────────────────
+
+message SetAutoscaleRequest {
+  // ID of the database to configure.
+  string database_id = 1;
+
+  // Enable or disable autoscale.
+  bool enabled = 2;
+
+  // Threshold percentage of PVC usage that triggers a resize (default 80).
+  int32 threshold_percent = 3;
+
+  // Percentage increment to add when threshold is hit (default 20).
+  int32 increment_percent = 4;
+}
+
+message SetAutoscaleResponse {
+  // Whether autoscale is currently enabled.
+  bool enabled = 1;
+
+  // Current threshold percentage.
+  int32 threshold_percent = 2;
+
+  // Current increment percentage.
+  int32 increment_percent = 3;
+}
+
+// ── GetMetrics ──────────────────────────────────────────────────────────────
+
+message GetMetricsRequest {
+  // ID of the database to query metrics for.
+  string database_id = 1;
+}
+
+message GetMetricsResponse {
+  // List of data points collected over the last 24 hours.
+  repeated MetricPoint points = 1;
+}
+
+message MetricPoint {
+  // Unix timestamp of the measurement.
+  int64 timestamp = 1;
+
+  // CPU usage as a percentage (0-100). 0 if unavailable.
+  double cpu_percent = 2;
+
+  // Disk usage in GB.
+  double disk_gb = 3;
 }

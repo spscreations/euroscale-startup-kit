@@ -32,6 +32,9 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/spscreations/euroscale-startup-kit/api/internal/auth"
 	connectpkg "github.com/spscreations/euroscale-startup-kit/api/internal/connect"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/ipwhitelist"
@@ -102,6 +105,9 @@ type server struct {
 
 	// pitrHandler manages Point-In-Time Recovery backups and restores.
 	pitrHandler *pitr.Handler
+
+	// clientset is the K8s clientset for direct Secret/ConfigMap operations.
+	clientset *kubernetes.Clientset
 }
 
 // ── Authorization helpers ─────────────────────────────────────────────────
@@ -731,6 +737,255 @@ func (s *server) ResizeStorage(ctx context.Context, req *pb.ResizeStorageRequest
 	}, nil
 }
 
+// ── Autoscale settings ──────────────────────────────────────────────────────
+
+// autoscaleSettings is the JSON shape for autoscale configuration stored
+// in K8s Secrets named "autoscale-{databaseID}".
+type autoscaleSettings struct {
+	Enabled          bool `json:"enabled"`
+	ThresholdPercent int32 `json:"threshold_percent"`
+	IncrementPercent int32 `json:"increment_percent"`
+}
+
+const (
+	defaultAutoscaleThreshold = 80
+	defaultAutoscaleIncrement = 20
+)
+
+// autoscaleSecretName returns the deterministic autoscale Secret name.
+func autoscaleSecretName(databaseID string) string {
+	return fmt.Sprintf("autoscale-%s", databaseID)
+}
+
+// saveAutoscaleSettings stores autoscale configuration as a K8s Secret.
+func (s *server) saveAutoscaleSettings(ctx context.Context, databaseID string, cfg *autoscaleSettings) error {
+	cfgJSON, err := json.Marshal(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal autoscale settings: %w", err)
+	}
+
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      autoscaleSecretName(databaseID),
+			Namespace: "euroscale",
+			Labels: map[string]string{
+				"app":      "euroscale",
+				"type":     "autoscale",
+				"database": databaseID,
+			},
+		},
+		Type: corev1.SecretTypeOpaque,
+		Data: map[string][]byte{
+			"autoscale.json": cfgJSON,
+		},
+	}
+
+	// Try to update first; if not found, create.
+	_, err = s.clientset.CoreV1().Secrets("euroscale").Update(ctx, secret, metav1.UpdateOptions{})
+	if err != nil {
+		// If update fails (e.g., not found), try creating.
+		_, err = s.clientset.CoreV1().Secrets("euroscale").Create(ctx, secret, metav1.CreateOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to create/update autoscale secret: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// getAutoscaleSettings reads autoscale configuration from a K8s Secret.
+func (s *server) getAutoscaleSettings(ctx context.Context, databaseID string) (*autoscaleSettings, error) {
+	secret, err := s.clientset.CoreV1().Secrets("euroscale").Get(ctx, autoscaleSecretName(databaseID), metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("autoscale settings not found for %q", databaseID)
+	}
+
+	cfgJSON, ok := secret.Data["autoscale.json"]
+	if !ok {
+		return nil, fmt.Errorf("autoscale settings malformed for %q", databaseID)
+	}
+
+	var cfg autoscaleSettings
+	if err := json.Unmarshal(cfgJSON, &cfg); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal autoscale settings for %q: %w", databaseID, err)
+	}
+
+	return &cfg, nil
+}
+
+// listAutoscaleSecrets lists all K8s Secrets with the autoscale type label.
+func (s *server) listAutoscaleSecrets(ctx context.Context) ([]string, error) {
+	secrets, err := s.clientset.CoreV1().Secrets("euroscale").List(ctx, metav1.ListOptions{
+		LabelSelector: "app=euroscale,type=autoscale",
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list autoscale secrets: %w", err)
+	}
+
+	var dbIDs []string
+	for _, secret := range secrets.Items {
+		if dbID := secret.Labels["database"]; dbID != "" {
+			dbIDs = append(dbIDs, dbID)
+		}
+	}
+	return dbIDs, nil
+}
+
+// handleAutoscale handles GET and POST for /api/v1/databases/{id}/autoscale
+func (s *server) handleAutoscale(w http.ResponseWriter, r *http.Request) {
+	userID, err := s.authenticateHTTPRequest(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"message": err.Error()})
+		return
+	}
+
+	// Extract database ID from path: /api/v1/databases/{id}/autoscale
+	pathParts := strings.Split(strings.TrimSuffix(r.URL.Path, "/"), "/")
+	if len(pathParts) < 5 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"message": "invalid path"})
+		return
+	}
+	databaseID := pathParts[4]
+
+	// Verify ownership.
+	if !s.userOwnsDatabase(r.Context(), userID, databaseID) {
+		writeJSON(w, http.StatusForbidden, map[string]string{"message": "access denied"})
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		cfg, err := s.getAutoscaleSettings(r.Context(), databaseID)
+		if err != nil {
+			// If not configured, return defaults.
+			writeJSON(w, http.StatusOK, autoscaleSettings{
+				Enabled:          false,
+				ThresholdPercent: defaultAutoscaleThreshold,
+				IncrementPercent: defaultAutoscaleIncrement,
+			})
+			return
+		}
+		writeJSON(w, http.StatusOK, cfg)
+
+	case http.MethodPost:
+		r.Body = http.MaxBytesReader(w, r.Body, 4<<10) // 4KB limit
+
+		var req autoscaleSettings
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"message": "invalid request body"})
+			return
+		}
+
+		// Apply defaults.
+		if req.ThresholdPercent <= 0 {
+			req.ThresholdPercent = defaultAutoscaleThreshold
+		}
+		if req.IncrementPercent <= 0 {
+			req.IncrementPercent = defaultAutoscaleIncrement
+		}
+
+		if err := s.saveAutoscaleSettings(r.Context(), databaseID, &req); err != nil {
+			log.Printf("ERROR: failed to save autoscale settings for %q: %v", databaseID, err)
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"message": "failed to save autoscale settings"})
+			return
+		}
+
+		log.Printf("INFO: saved autoscale settings for database %q (enabled=%v, threshold=%d%%, increment=%d%%)",
+			databaseID, req.Enabled, req.ThresholdPercent, req.IncrementPercent)
+
+		writeJSON(w, http.StatusOK, req)
+
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// userOwnsDatabase checks whether a user owns the given database.
+func (s *server) userOwnsDatabase(ctx context.Context, userID, databaseID string) bool {
+	ownerID := s.secrets.GetUserID(ctx, databaseID)
+	return ownerID != "" && ownerID == userID
+}
+
+// ── Metrics ─────────────────────────────────────────────────────────────────
+
+// metricPoint represents a single data point for CPU and disk usage.
+type metricPoint struct {
+	Timestamp int64   `json:"ts"`
+	CPUPercent float64 `json:"cpu_pct"`
+	DiskGB    float64 `json:"disk_gb"`
+}
+
+// metricsConfigMapName returns the deterministic ConfigMap name for metrics data.
+func metricsConfigMapName(databaseID string) string {
+	return fmt.Sprintf("metrics-%s", databaseID)
+}
+
+const maxMetricPoints = 288 // 24h * 12/hr
+
+// handleMetrics handles GET for /api/v1/databases/{id}/metrics
+func (s *server) handleMetrics(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID, err := s.authenticateHTTPRequest(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"message": err.Error()})
+		return
+	}
+
+	// Extract database ID from path: /api/v1/databases/{id}/metrics
+	pathParts := strings.Split(strings.TrimSuffix(r.URL.Path, "/"), "/")
+	if len(pathParts) < 5 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"message": "invalid path"})
+		return
+	}
+	databaseID := pathParts[4]
+
+	// Verify ownership.
+	if !s.userOwnsDatabase(r.Context(), userID, databaseID) {
+		writeJSON(w, http.StatusForbidden, map[string]string{"message": "access denied"})
+		return
+	}
+
+	// Read metrics from ConfigMap.
+	points, err := s.readMetrics(r.Context(), databaseID)
+	if err != nil {
+		log.Printf("WARN: failed to read metrics for %q: %v", databaseID, err)
+		// Return empty points on error.
+		writeJSON(w, http.StatusOK, map[string]interface{}{"points": []metricPoint{}})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{"points": points})
+}
+
+// readMetrics reads the metrics data from the ConfigMap for a database.
+func (s *server) readMetrics(ctx context.Context, databaseID string) ([]metricPoint, error) {
+	cm, err := s.clientset.CoreV1().ConfigMaps("euroscale").Get(ctx, metricsConfigMapName(databaseID), metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("metrics ConfigMap not found for %q", databaseID)
+	}
+
+	dataJSON, ok := cm.BinaryData["metrics.json"]
+	if !ok {
+		// Check regular data field too.
+		if dataStr, ok2 := cm.Data["metrics.json"]; ok2 {
+			dataJSON = []byte(dataStr)
+		} else {
+			return []metricPoint{}, nil
+		}
+	}
+
+	var points []metricPoint
+	if err := json.Unmarshal(dataJSON, &points); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal metrics for %q: %w", databaseID, err)
+	}
+
+	return points, nil
+}
+
 // ── helpers ─────────────────────────────────────────────────────────────────
 
 // extractDBName pulls the database name from a connection string like:
@@ -1033,13 +1288,19 @@ func extractClientIP(r *http.Request) string {
 // ipWhitelistInterceptor returns a Connect unary interceptor that enforces
 // per-user IP whitelists. It extracts the client IP and user ID from headers,
 // then checks whether the IP is allowed for that user.
-// An empty whitelist means all IPs are allowed.
+// If no whitelist is configured for the user, the check is skipped (allow all).
+// If a whitelist exists, only listed IPs are allowed.
 func ipWhitelistInterceptor(store *ipwhitelist.Store) connect.UnaryInterceptorFunc {
 	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 			userID := req.Header().Get("X-User-ID")
 			if userID == "" {
 				// If no user ID header, skip IP check (auth endpoint calls).
+				return next(ctx, req)
+			}
+
+			// Only enforce if the user has explicitly configured a whitelist.
+			if !store.HasWhitelist(ctx, userID) {
 				return next(ctx, req)
 			}
 
@@ -1297,6 +1558,7 @@ func main() {
 		userStore:        userStore,
 		mollieHTTPHandler: mollieHTTPHandler,
 		pitrHandler:       pitrHandler,
+		clientset:         clientset,
 	}
 
 	grpcServer := grpc.NewServer(
@@ -1370,6 +1632,24 @@ func main() {
 	// POST /api/v1/incremental-backup-trigger — trigger an incremental backup
 	httpMux.HandleFunc("/api/v1/incremental-backup-trigger", withHTTPAuth(jwtSecret, srv.pitrHandler.HandleTriggerIncrementalBackup))
 	log.Println("PITR endpoints registered: /api/v1/backups, /api/v1/backups-trigger, /api/v1/incremental-backup-trigger, /api/v1/restore, /api/v1/restores")
+
+	// Autoscale and metrics endpoints (require JWT auth).
+	// POST/GET /api/v1/databases/{id}/autoscale
+	httpMux.HandleFunc("/api/v1/databases/", func(w http.ResponseWriter, r *http.Request) {
+		// Route to the correct handler based on the path suffix.
+		path := r.URL.Path
+		if strings.HasSuffix(path, "/autoscale") || strings.Contains(path, "/autoscale") {
+			srv.handleAutoscale(w, r)
+			return
+		}
+		if strings.HasSuffix(path, "/metrics") || strings.Contains(path, "/metrics") {
+			srv.handleMetrics(w, r)
+			return
+		}
+		// Fallback: return 404 for unknown sub-paths.
+		writeJSON(w, http.StatusNotFound, map[string]string{"message": "not found"})
+	})
+	log.Println("Autoscale and metrics endpoints registered: /api/v1/databases/{id}/autoscale, /api/v1/databases/{id}/metrics")
 
 	// Build and register Connect/gRPC-web handler on the same port.
 	// This makes the DatabaseService available to browsers via HTTP/1.1

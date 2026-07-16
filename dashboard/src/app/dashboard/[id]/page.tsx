@@ -28,6 +28,7 @@ import { useDeleteDatabase } from "@/hooks/useDeleteDatabase";
 import { useRotateCredentials } from "@/hooks/useRotateCredentials";
 import { useUsage } from "@/hooks/useUsage";
 import IPWhitelist from "@/components/IPWhitelist";
+import UsageCharts from "@/components/UsageCharts";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -591,6 +592,9 @@ export default function DatabaseDetailPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Usage Charts (line charts) */}
+        <UsageCharts databaseId={db.databaseId} />
 
         {/* Backups */}
         <Card className="overflow-hidden">

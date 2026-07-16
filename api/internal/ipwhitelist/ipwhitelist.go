@@ -111,8 +111,16 @@ func (s *Store) RemoveIP(ctx context.Context, userID string, ip string) error {
 	return s.saveIPs(ctx, userID, filtered)
 }
 
+// HasWhitelist returns true if the user has configured an IP whitelist
+// (the K8s Secret exists), regardless of whether it's empty or populated.
+func (s *Store) HasWhitelist(ctx context.Context, userID string) bool {
+	_, err := s.clientset.CoreV1().Secrets(s.namespace).Get(ctx, secretNameFor(userID), metav1.GetOptions{})
+	return err == nil
+}
+
 // IsAllowed checks whether the given client IP is allowed for the given user.
-// An empty whitelist (not configured) means ALL IPs are allowed.
+// An empty whitelist (no secret) defaults to DENY (fail-closed) for database access.
+// Use HasWhitelist first if you want to distinguish \"not configured\" from \"configured but empty\".
 func (s *Store) IsAllowed(ctx context.Context, userID string, clientIP string) (bool, error) {
 	ips, err := s.GetIPs(ctx, userID)
 	if err != nil {

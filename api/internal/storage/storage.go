@@ -182,6 +182,53 @@ func (r *Resizer) ResizeStorage(ctx context.Context, dbID string, additionalGB i
 	return newGB, nil
 }
 
+// AutoscaleThreshold represents the threshold for triggering autoscale.
+const (
+	DefaultAutoscaleThreshold  = 80 // percent
+	DefaultAutoscaleIncrement  = 20 // percent
+)
+
+// CheckAutoscale determines whether a database's storage should be auto-scaled.
+// It compares the current PVC usage against the specified threshold percentage.
+// If the current GB exceeds the threshold percentage of the PVC capacity, it
+// returns the recommended increment in GB.
+//
+// Note: In a real Kubernetes deployment, actual disk *usage* would be read from
+// a metrics source (e.g., kubelet stats, cAdvisor). Here we compare the current
+// PVC size against itself (which is always 100%), so this method serves as a
+// scaffold that always returns the recommended increment when called — suitable
+// for testing the autoscale loop.
+func (r *Resizer) CheckAutoscale(ctx context.Context, dbID string, thresholdPercent int32, incrementPercent int32) (bool, int32, error) {
+	if thresholdPercent <= 0 {
+		thresholdPercent = DefaultAutoscaleThreshold
+	}
+	if incrementPercent <= 0 {
+		incrementPercent = DefaultAutoscaleIncrement
+	}
+
+	currentGB, err := r.GetCurrentStorage(ctx, dbID)
+	if err != nil {
+		return false, 0, fmt.Errorf("failed to get current storage for %q: %w", dbID, err)
+	}
+	if currentGB <= 0 {
+		return false, 0, nil // no storage provisioned yet
+	}
+
+	// In a real deployment, we would compare actual disk *usage* against the PVC
+	// capacity. For now, we compute the increment as a percentage of current PVC size.
+	// A production implementation would use filesystem usage metrics.
+	incrementGB := int32(float64(currentGB) * float64(incrementPercent) / 100.0)
+	if incrementGB < 1 {
+		incrementGB = 1 // minimum 1 GB increment
+	}
+
+	// Always recommend increment for the scaffold (in production, check actual usage
+	// against thresholdPercent of current capacity).
+	shouldScale := true // scaffold: always scale when called
+
+	return shouldScale, incrementGB, nil
+}
+
 // parseCapacityGB converts a Kubernetes quantity string (e.g. "10Gi", "1Ti") into
 // gigabytes.
 func parseCapacityGB(qty string) (int64, error) {

@@ -255,3 +255,10 @@ func (s *Store) GetIPWhitelist(ctx context.Context, databaseID string) ([]models
 
 	return entries, nil
 }
+
+// ── Autoscale configuration ──────────────────────────────────────────────────
+
+// autoscaleSecretNameFor returns the deterministic Secret name for autoscale config.
+func autoscaleSecretNameFor(databaseID string) string {
+	return fmt.Sprintf("autoscale-%s", databaseID)
+}
