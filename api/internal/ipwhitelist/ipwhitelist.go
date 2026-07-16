@@ -31,8 +31,9 @@ func NewStore(clientset *kubernetes.Clientset, namespace string) *Store {
 }
 
 // secretNameFor returns the deterministic Secret name for a user's whitelist.
+// The userID is lowercased because K8s Secret names must be valid RFC 1123 subdomains (lowercase).
 func secretNameFor(userID string) string {
-	return fmt.Sprintf("ipwl-%s", userID)
+	return fmt.Sprintf("ipwl-%s", strings.ToLower(userID))
 }
 
 // GetIPs returns the whitelisted IPs/CIDRs for a user.
