@@ -1,5 +1,7 @@
 # EuroScale Deployment
 
+<!-- ci: path-filter trigger 2026-07-17 — amd64-only GHCR for Talos/Hetzner -->
+
 ## CI/CD Pipeline
 
 A GitHub Actions workflow (`.github/workflows/deploy-api.yml`) handles automated builds and deployments.

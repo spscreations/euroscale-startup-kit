@@ -49,7 +49,7 @@ jobs:
             type=raw,value=v1.3
             type=raw,value=v1.2
             type=raw,value=${{ inputs.image_tag }},enable=${{ inputs.image_tag != '' }}
-          labels:
+          labels: |
             org.opencontainers.image.title=EuroScale API
             org.opencontainers.image.description=Serverless MySQL/Postgres database provisioning API
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
@@ -77,7 +77,16 @@ jobs:
           provenance: true                                  # SLSA provenance
           sbom: true                                        # Software Bill of Materials
 
-      # ── Deploy to K3s (requires KUBECONFIG secret) ─────────────
+      - name: Make package public (cluster pull without pull secret)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PKG=euroscale-api
+          gh api --method PATCH "/user/packages/container/${PKG}" -f visibility=public \
+            || gh api --method PATCH "/orgs/spscreations/packages/container/${PKG}" -f visibility=public \
+            || echo "visibility change failed (may already be public or lack permission)"
+
+      # ── Deploy to cluster (Talos) (requires KUBECONFIG secret) ─
       # NOTE: Set KUBECONFIG as a base64-encoded secret in GitHub.
       # Deploy steps use continue-on-error so CI passes even without
       # cluster access (e.g., in PRs from forks).
@@ -93,7 +102,7 @@ jobs:
           echo "KUBECONFIG=/tmp/kubeconfig" >> $GITHUB_ENV
         continue-on-error: true
 
-      - name: Deploy API to K3s
+      - name: Deploy API to cluster (Talos)
         # Uses the full git SHA tag (matches docker/metadata-action type=sha,format=long)
         continue-on-error: true
         run: |
@@ -112,7 +121,7 @@ jobs:
           echo "| Image | \`${{ env.REGISTRY }}/spscreations/euroscale-api@${{ steps.build.outputs.digest }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| Tags | \`${{ steps.meta.outputs.tags }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| Digest | \`${{ steps.build.outputs.digest }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Platforms | \`linux/amd64,linux/arm64\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Platforms | \`linux/amd64\` |" >> $GITHUB_STEP_SUMMARY
 
   # ── Dashboard Image ────────────────────────────────────────────
   build-and-push-dashboard:
@@ -144,7 +153,7 @@ jobs:
             type=raw,value=latest
             type=raw,value=v1.3
             type=raw,value=v1.2
-          labels:
+          labels: |
             org.opencontainers.image.title=EuroScale Dashboard
             org.opencontainers.image.description=Customer dashboard for EuroScale database platform
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
@@ -170,7 +179,16 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # ── Deploy to K3s (requires KUBECONFIG secret) ─────────────
+      - name: Make package public (cluster pull without pull secret)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PKG=euroscale-dashboard
+          gh api --method PATCH "/user/packages/container/${PKG}" -f visibility=public \
+            || gh api --method PATCH "/orgs/spscreations/packages/container/${PKG}" -f visibility=public \
+            || echo "visibility change failed (may already be public or lack permission)"
+
+      # ── Deploy to cluster (Talos) (requires KUBECONFIG secret) ─
       - name: Set up kubectl
         uses: azure/setup-kubectl@v4
         with:
@@ -183,7 +201,7 @@ jobs:
           echo "KUBECONFIG=/tmp/kubeconfig" >> $GITHUB_ENV
         continue-on-error: true
 
-      - name: Deploy Dashboard to K3s
+      - name: Deploy Dashboard to cluster (Talos)
         continue-on-error: true
         run: |
           SHA_TAG="${{ github.sha }}"
@@ -235,6 +253,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Make package public (cluster pull without pull secret)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PKG=euroscale-mysql-proxy
+          gh api --method PATCH "/user/packages/container/${PKG}" -f visibility=public \
+            || gh api --method PATCH "/orgs/spscreations/packages/container/${PKG}" -f visibility=public \
+            || echo "visibility change failed (may already be public or lack permission)"
+
       - name: Set up kubectl
         uses: azure/setup-kubectl@v4
         with:
@@ -247,14 +274,14 @@ jobs:
           echo "KUBECONFIG=/tmp/kubeconfig" >> $GITHUB_ENV
         continue-on-error: true
 
-      - name: Deploy MySQL Proxy to K3s
+      - name: Deploy MySQL Proxy to cluster (Talos)
         continue-on-error: true
         run: |
           SHA_TAG="${{ github.sha }}"
-          kubectl set image deployment/euroscale-mysql-proxy \
+          kubectl set image deployment/mysql-proxy \
             mysql-proxy=${{ env.REGISTRY }}/spscreations/euroscale-mysql-proxy:${SHA_TAG} \
             --namespace ${{ env.NAMESPACE }}
-          kubectl rollout status deployment/euroscale-mysql-proxy \
+          kubectl rollout status deployment/mysql-proxy \
             --namespace ${{ env.NAMESPACE }} --timeout=180s
 
   # ── Autoscale Checker ──────────────────────────────────────────
@@ -284,6 +311,14 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           platforms: linux/amd64
+      - name: Make package public (cluster pull without pull secret)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PKG=euroscale-autoscale-checker
+          gh api --method PATCH "/user/packages/container/${PKG}" -f visibility=public \
+            || gh api --method PATCH "/orgs/spscreations/packages/container/${PKG}" -f visibility=public \
+            || echo "visibility change failed (may already be public or lack permission)"
 
   # ── Metrics Collector ──────────────────────────────────────────
   build-and-push-metrics:
@@ -312,3 +347,11 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           platforms: linux/amd64
+      - name: Make package public (cluster pull without pull secret)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PKG=euroscale-metrics-collector
+          gh api --method PATCH "/user/packages/container/${PKG}" -f visibility=public \
+            || gh api --method PATCH "/orgs/spscreations/packages/container/${PKG}" -f visibility=public \
+            || echo "visibility change failed (may already be public or lack permission)"

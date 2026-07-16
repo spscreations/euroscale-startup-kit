@@ -8,3 +8,7 @@ credentials/
 api/mysql-proxy
 api/autoscale-checker
 api/metrics-collector
+
+# Talos cluster configs (secrets)
+infra/talos/kubeconfig
+infra/talos/talosconfig
