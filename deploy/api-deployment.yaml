@@ -64,6 +64,8 @@ spec:
                   name: euroscale-config
                   key: namespace
                   optional: true
+            # MINIO_ENDPOINT removed — backups use Hetzner S3 only.
+            # Optional residual for legacy code paths that still read this env:
             - name: MINIO_ENDPOINT
               valueFrom:
                 configMapKeyRef:

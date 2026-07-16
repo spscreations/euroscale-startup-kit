@@ -15,7 +15,9 @@ data:
   vtgate_addr: "euroscale-vtgate.euroscale:3306"
   # K8s namespace the API should manage Secrets in.
   namespace: "euroscale"
-  # MinIO endpoint for backup integration (optional).
-  minio_endpoint: "http://euroscale-backups:9000"
+  # Backups use Hetzner Object Storage (S3), not MinIO.
+  # Endpoint/bucket are configured on VitessCluster + vttablet flags
+  # (see infra/vitess/vitess-cluster.yaml). Optional residual for legacy clients:
+  # s3_endpoint: "https://nbg1.your-objectstorage.com"
   # Public API host (used in connection strings served to clients).
   api_host: "db.euroscale.app"

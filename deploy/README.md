@@ -258,66 +258,63 @@ kubectl rollout status deployment/euroscale-api --namespace euroscale --timeout=
 
 ---
 
-## MinIO Backup Storage
+## Hetzner Object Storage (Vitess backups)
 
-Vitess backups require S3-compatible object storage. MinIO runs as a single-node
-deployment in the cluster.
+Vitess backups use **Hetzner Object Storage** (S3-compatible). In-cluster MinIO
+is **not** used and `deploy/minio.yaml` has been removed.
 
-### Deploy
+| Setting | Value |
+|---------|--------|
+| Endpoint | `https://nbg1.your-objectstorage.com` |
+| Region | `nbg1` |
+| Bucket | `euroscale-etcd-backups` |
+| Force path style | `true` |
+| Auth secret | `vitess-backup-creds` (key: `credentials`) |
+| Engine | `builtin` |
+| Location name | `hetzner` |
+
+### How backups are scheduled
+
+Operator `VitessBackupSchedule` CRs are **not** used. Kubernetes CronJobs run
+backups instead:
 
 ```bash
-export KUBECONFIG=infra/k3s/kubeconfig
-kubectl apply -f deploy/minio.yaml
-kubectl rollout status deployment/minio -n euroscale --timeout=120s
+kubectl apply -f deploy/backup-cronjob.yaml
+kubectl apply -f deploy/pitr-incremental-cronjob.yaml
+# S3 endpoint env injection for backup Job pods:
+kubectl apply -f deploy/webhook-s3-injector.yaml
 ```
 
-The deployment creates:
-- **PVC** `minio-data` (10Gi, local-path) for backup data
-- **Secret** `minio-root-credentials` with root user `admin` and an auto-generated password
-- **Service** `euroscale-backups:9000` — the endpoint used by VitessBackupStorage
-- **Service** `minio:9000` + `minio:9001` (console) — for direct access
-- **Bucket** `euroscale-backups` — created automatically on startup
+VitessCluster + tablet flags live in `infra/vitess/vitess-cluster.yaml`.
+Reference notes: `infra/vitess/backup-config.yaml`.
+
+**Important:** put `backup_*` / `s3_backup_*` flags only on **vttablet**
+`tabletPools` extraFlags — never on vtgate `gateway` extraFlags. Never set
+`incremental_backup` (crashes Vitess v24.0.1).
+
+### Credentials (cluster only — never commit)
+
+Create/update `vitess-backup-creds` with Hetzner Object Storage access keys in
+AWS credentials-file format under key `credentials`. Do not store real keys in git.
+
+```bash
+# Example shape only — substitute real Hetzner keys from the console
+kubectl create secret generic vitess-backup-creds \
+  --namespace euroscale \
+  --from-literal=credentials="[default]
+aws_access_key_id = <HETZNER_ACCESS_KEY>
+aws_secret_access_key = <HETZNER_SECRET_KEY>" \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
 
 ### Verify
 
 ```bash
-# Minio health
-kubectl run minio-test --rm -it --restart=Never --image=curlimages/curl -n euroscale -- \
-  curl -s http://euroscale-backups:9000/minio/health/live
-
-# List bucket contents
-kubectl exec deploy/minio -n euroscale -- mc ls local/euroscale-backups/
-
-# Check backup schedule status
 kubectl get vitessbackupstorage -n euroscale
+kubectl get vitessbackups -n euroscale
+kubectl get cronjob -n euroscale | grep backup
+# Operator schedules should be absent (empty):
 kubectl get vitessbackupschedule -n euroscale
-```
-
-### Rotate credentials
-
-```bash
-# Generate new password
-NEW_PASS=$(openssl rand -base64 24)
-
-# Update Minio root credentials
-kubectl create secret generic minio-root-credentials \
-  --namespace euroscale \
-  --from-literal=root-user=admin \
-  --from-literal=root-password="$NEW_PASS" \
-  --dry-run=client -o yaml | kubectl apply -f -
-
-# Update Vitess backup creds (must match Minio root)
-kubectl create secret generic vitess-backup-creds \
-  --namespace euroscale \
-  --from-literal=access-key=admin \
-  --from-literal=secret-key="$NEW_PASS" \
-  --from-literal=credentials="[default]
-aws_access_key_id = admin
-aws_secret_access_key = $NEW_PASS" \
-  --dry-run=client -o yaml | kubectl apply -f -
-
-# Restart Minio
-kubectl rollout restart deployment/minio -n euroscale
 ```
 
 ---

@@ -16,46 +16,24 @@ spec:
     mysqld:
       mysql80Compatible: vitess/lite:v24.0.1
 
-  # ── Backups (S3-compatible MinIO with PITR) ──────────────────
+  # ── Backups (Hetzner Object Storage / S3) ─────────────────────
+  # Schedules intentionally omitted: operator VitessBackupSchedule CRs are
+  # deleted. K8s CronJobs own the schedule:
+  #   deploy/backup-cronjob.yaml
+  #   deploy/pitr-incremental-cronjob.yaml
+  # Do NOT put backup_* flags on vtgate gateway extraFlags (vttablet only).
   backup:
+    engine: builtin
     locations:
-      - name: minio
+      - name: hetzner
         s3:
-          region: euroscale
-          bucket: euroscale-backups
-          endpoint: euroscale-backups:9000
+          endpoint: https://nbg1.your-objectstorage.com
+          region: nbg1
+          bucket: euroscale-etcd-backups
           forcePathStyle: true
           authSecret:
             name: vitess-backup-creds
             key: credentials
-    engine: builtin
-    schedules:
-      # Daily full backup at 2:00 AM UTC
-      - name: full-backup
-        schedule: "0 2 * * *"
-        strategies:
-          - name: full-keyspace-main
-            scope: Keyspace
-            keyspace: main
-        successfulJobsHistoryLimit: 7
-        failedJobsHistoryLimit: 3
-        resources:
-          requests:
-            cpu: 50m
-            memory: 32Mi
-      # Incremental backup every 15 minutes (PITR)
-      - name: incremental-backup
-        schedule: "*/15 * * * *"
-        strategies:
-          - name: incr-keyspace-main
-            scope: Keyspace
-            keyspace: main
-        successfulJobsHistoryLimit: 96
-        failedJobsHistoryLimit: 10
-        resources:
-          requests:
-            cpu: 50m
-            memory: 32Mi
 
   # ── Global Lockserver (etcd, auto-deployed) ──────────────────
   globalLockserver:
@@ -167,8 +145,15 @@ spec:
                       requests:
                         storage: 10Gi
                   vttablet:
+                    # S3 backup flags live on vttablet only (never on vtgate).
+                    # Do NOT set incremental_backup — crashes Vitess v24.0.1.
                     extraFlags:
-                      incremental_backup: "true"
+                      backup_engine_implementation: builtin
+                      backup_storage_implementation: s3
+                      s3_backup_storage_bucket: euroscale-etcd-backups
+                      s3_backup_aws_endpoint: https://nbg1.your-objectstorage.com
+                      s3_backup_aws_region: nbg1
+                      s3_backup_force_path_style: "true"
                     resources:
                       requests:
                         cpu: 100m
@@ -197,8 +182,15 @@ spec:
                       requests:
                         storage: 10Gi
                   vttablet:
+                    # S3 backup flags live on vttablet only (never on vtgate).
+                    # Do NOT set incremental_backup — crashes Vitess v24.0.1.
                     extraFlags:
-                      incremental_backup: "true"
+                      backup_engine_implementation: builtin
+                      backup_storage_implementation: s3
+                      s3_backup_storage_bucket: euroscale-etcd-backups
+                      s3_backup_aws_endpoint: https://nbg1.your-objectstorage.com
+                      s3_backup_aws_region: nbg1
+                      s3_backup_force_path_style: "true"
                     resources:
                       requests:
                         cpu: 100m
