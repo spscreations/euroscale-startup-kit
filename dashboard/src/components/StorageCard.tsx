@@ -128,7 +128,10 @@ export default function StorageCard({
               {storageUsedGB.toFixed(1)} GB / {storageLimitGB.toFixed(0)} GB
             </span>
           </div>
-          <Progress value={storageProgress} className="h-1.5" />
+          <Progress
+            value={storageProgress}
+            className="h-2 [&_[data-slot=progress-indicator]]:bg-accent-text"
+          />
         </div>
 
         {/* Additional Storage */}
@@ -150,6 +153,7 @@ export default function StorageCard({
             min={0}
             max={1000}
             step={1}
+            className="[&_[data-slot=slider-track]]:bg-border [&_[data-slot=slider-track]]:h-2 [&_[data-slot=slider-range]]:bg-accent-text"
           />
           <div className="flex justify-between text-[10px] text-muted-foreground">
             <span>0 GB</span>
@@ -265,6 +269,7 @@ export default function StorageCard({
             min={0}
             max={maxAutoscaleCU > 0 ? maxAutoscaleCU : 4}
             step={1}
+            className="[&_[data-slot=slider-track]]:bg-border [&_[data-slot=slider-track]]:h-2 [&_[data-slot=slider-range]]:bg-accent-text"
           />
           <div className="flex justify-between text-[10px] text-muted-foreground">
             <span>0 CU</span>
