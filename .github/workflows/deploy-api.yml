@@ -48,7 +48,7 @@ jobs:
             type=raw,value=latest
             type=raw,value=v1.3
             type=raw,value=v1.2
-            type=raw,value=${{ inputs.image_tag }},enable=${{ inputs.image_tag != '' }}
+            type=raw,value=${{ github.event.inputs.image_tag }},enable=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.image_tag != '' }}
           labels: |
             org.opencontainers.image.title=EuroScale API
             org.opencontainers.image.description=Serverless MySQL/Postgres database provisioning API
@@ -298,7 +298,9 @@ jobs:
         id: meta
         with:
           images: ${{ env.REGISTRY }}/spscreations/euroscale-autoscale-checker
-          tags: type=sha,prefix=,format=long
+          tags: |
+            type=sha,prefix=,format=long
+            type=raw,value=latest
       - uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
@@ -334,7 +336,9 @@ jobs:
         id: meta
         with:
           images: ${{ env.REGISTRY }}/spscreations/euroscale-metrics-collector
-          tags: type=sha,prefix=,format=long
+          tags: |
+            type=sha,prefix=,format=long
+            type=raw,value=latest
       - uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
