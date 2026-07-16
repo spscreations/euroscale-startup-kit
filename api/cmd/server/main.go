@@ -829,6 +829,70 @@ func (s *server) getAutoscaleSettings(ctx context.Context, databaseID string) (*
 	return &cfg, nil
 }
 
+// ── SetAutoscale & GetMetrics gRPC handlers ─────────────────────────────────
+
+// SetAutoscale enables/disables automatic storage scaling for a database.
+func (s *server) SetAutoscale(ctx context.Context, req *pb.SetAutoscaleRequest) (*pb.SetAutoscaleResponse, error) {
+	if req.DatabaseId == "" {
+		return nil, status.Error(codes.InvalidArgument, "database_id is required")
+	}
+	if err := s.verifyDatabaseOwnership(ctx, req.DatabaseId); err != nil {
+		return nil, err
+	}
+
+	cfg := &autoscaleSettings{
+		Enabled:          req.Enabled,
+		ThresholdPercent: req.ThresholdPercent,
+		IncrementPercent: req.IncrementPercent,
+	}
+	if cfg.ThresholdPercent <= 0 {
+		cfg.ThresholdPercent = defaultAutoscaleThreshold
+	}
+	if cfg.IncrementPercent <= 0 {
+		cfg.IncrementPercent = defaultAutoscaleIncrement
+	}
+
+	if err := s.saveAutoscaleSettings(ctx, req.DatabaseId, cfg); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to save autoscale settings: %v", err)
+	}
+
+	log.Printf("INFO: autoscale %s for database %q (threshold=%d%%, increment=%d%%)",
+		map[bool]string{true: "enabled", false: "disabled"}[cfg.Enabled],
+		req.DatabaseId, cfg.ThresholdPercent, cfg.IncrementPercent)
+
+	return &pb.SetAutoscaleResponse{
+		Enabled:          cfg.Enabled,
+		ThresholdPercent: cfg.ThresholdPercent,
+		IncrementPercent: cfg.IncrementPercent,
+	}, nil
+}
+
+// GetMetrics returns CPU and disk usage metrics for a database (last 24h).
+func (s *server) GetMetrics(ctx context.Context, req *pb.GetMetricsRequest) (*pb.GetMetricsResponse, error) {
+	if req.DatabaseId == "" {
+		return nil, status.Error(codes.InvalidArgument, "database_id is required")
+	}
+	if err := s.verifyDatabaseOwnership(ctx, req.DatabaseId); err != nil {
+		return nil, err
+	}
+
+	points, err := s.readMetrics(ctx, req.DatabaseId)
+	if err != nil {
+		log.Printf("WARN: metrics read error for %q: %v", req.DatabaseId, err)
+		return &pb.GetMetricsResponse{Points: nil}, nil
+	}
+
+	pbPoints := make([]*pb.MetricPoint, 0, len(points))
+	for _, p := range points {
+		pbPoints = append(pbPoints, &pb.MetricPoint{
+			Timestamp:  p.Timestamp,
+			CpuPercent: p.CPUPercent,
+			DiskGb:     p.DiskGB,
+		})
+	}
+	return &pb.GetMetricsResponse{Points: pbPoints}, nil
+}
+
 // listAutoscaleSecrets lists all K8s Secrets with the autoscale type label.
 func (s *server) listAutoscaleSecrets(ctx context.Context) ([]string, error) {
 	secrets, err := s.clientset.CoreV1().Secrets("euroscale").List(ctx, metav1.ListOptions{

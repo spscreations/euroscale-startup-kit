@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.2
 // - protoc             v5.29.3
-// source: euroscale/v1/database.proto
+// source: proto/euroscale/v1/database.proto
 
 package euroscalev1
 
@@ -30,6 +30,8 @@ const (
 	DatabaseService_GetUsage_FullMethodName               = "/euroscale.v1.DatabaseService/GetUsage"
 	DatabaseService_SetUserTier_FullMethodName            = "/euroscale.v1.DatabaseService/SetUserTier"
 	DatabaseService_ResizeStorage_FullMethodName          = "/euroscale.v1.DatabaseService/ResizeStorage"
+	DatabaseService_SetAutoscale_FullMethodName           = "/euroscale.v1.DatabaseService/SetAutoscale"
+	DatabaseService_GetMetrics_FullMethodName             = "/euroscale.v1.DatabaseService/GetMetrics"
 )
 
 // DatabaseServiceClient is the client API for DatabaseService service.
@@ -62,6 +64,10 @@ type DatabaseServiceClient interface {
 	SetUserTier(ctx context.Context, in *SetUserTierRequest, opts ...grpc.CallOption) (*SetUserTierResponse, error)
 	// ResizeStorage expands a database's persistent volume by the specified GB.
 	ResizeStorage(ctx context.Context, in *ResizeStorageRequest, opts ...grpc.CallOption) (*ResizeStorageResponse, error)
+	// SetAutoscale enables/disables automatic storage scaling for a database.
+	SetAutoscale(ctx context.Context, in *SetAutoscaleRequest, opts ...grpc.CallOption) (*SetAutoscaleResponse, error)
+	// GetMetrics returns CPU and disk metrics for a database (last 24h).
+	GetMetrics(ctx context.Context, in *GetMetricsRequest, opts ...grpc.CallOption) (*GetMetricsResponse, error)
 }
 
 type databaseServiceClient struct {
@@ -182,6 +188,26 @@ func (c *databaseServiceClient) ResizeStorage(ctx context.Context, in *ResizeSto
 	return out, nil
 }
 
+func (c *databaseServiceClient) SetAutoscale(ctx context.Context, in *SetAutoscaleRequest, opts ...grpc.CallOption) (*SetAutoscaleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetAutoscaleResponse)
+	err := c.cc.Invoke(ctx, DatabaseService_SetAutoscale_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *databaseServiceClient) GetMetrics(ctx context.Context, in *GetMetricsRequest, opts ...grpc.CallOption) (*GetMetricsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetMetricsResponse)
+	err := c.cc.Invoke(ctx, DatabaseService_GetMetrics_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DatabaseServiceServer is the server API for DatabaseService service.
 // All implementations must embed UnimplementedDatabaseServiceServer
 // for forward compatibility.
@@ -212,6 +238,10 @@ type DatabaseServiceServer interface {
 	SetUserTier(context.Context, *SetUserTierRequest) (*SetUserTierResponse, error)
 	// ResizeStorage expands a database's persistent volume by the specified GB.
 	ResizeStorage(context.Context, *ResizeStorageRequest) (*ResizeStorageResponse, error)
+	// SetAutoscale enables/disables automatic storage scaling for a database.
+	SetAutoscale(context.Context, *SetAutoscaleRequest) (*SetAutoscaleResponse, error)
+	// GetMetrics returns CPU and disk metrics for a database (last 24h).
+	GetMetrics(context.Context, *GetMetricsRequest) (*GetMetricsResponse, error)
 	mustEmbedUnimplementedDatabaseServiceServer()
 }
 
@@ -254,6 +284,12 @@ func (UnimplementedDatabaseServiceServer) SetUserTier(context.Context, *SetUserT
 }
 func (UnimplementedDatabaseServiceServer) ResizeStorage(context.Context, *ResizeStorageRequest) (*ResizeStorageResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ResizeStorage not implemented")
+}
+func (UnimplementedDatabaseServiceServer) SetAutoscale(context.Context, *SetAutoscaleRequest) (*SetAutoscaleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetAutoscale not implemented")
+}
+func (UnimplementedDatabaseServiceServer) GetMetrics(context.Context, *GetMetricsRequest) (*GetMetricsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetMetrics not implemented")
 }
 func (UnimplementedDatabaseServiceServer) mustEmbedUnimplementedDatabaseServiceServer() {}
 func (UnimplementedDatabaseServiceServer) testEmbeddedByValue()                         {}
@@ -474,6 +510,42 @@ func _DatabaseService_ResizeStorage_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DatabaseService_SetAutoscale_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetAutoscaleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DatabaseServiceServer).SetAutoscale(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DatabaseService_SetAutoscale_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DatabaseServiceServer).SetAutoscale(ctx, req.(*SetAutoscaleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DatabaseService_GetMetrics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMetricsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DatabaseServiceServer).GetMetrics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DatabaseService_GetMetrics_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DatabaseServiceServer).GetMetrics(ctx, req.(*GetMetricsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DatabaseService_ServiceDesc is the grpc.ServiceDesc for DatabaseService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -525,7 +597,15 @@ var DatabaseService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "ResizeStorage",
 			Handler:    _DatabaseService_ResizeStorage_Handler,
 		},
+		{
+			MethodName: "SetAutoscale",
+			Handler:    _DatabaseService_SetAutoscale_Handler,
+		},
+		{
+			MethodName: "GetMetrics",
+			Handler:    _DatabaseService_GetMetrics_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "euroscale/v1/database.proto",
+	Metadata: "proto/euroscale/v1/database.proto",
 }

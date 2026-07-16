@@ -34,6 +34,8 @@ type DatabaseServiceServer interface {
 	GetUsage(ctx context.Context, req *pb.GetUsageRequest) (*pb.GetUsageResponse, error)
 	SetUserTier(ctx context.Context, req *pb.SetUserTierRequest) (*pb.SetUserTierResponse, error)
 	ResizeStorage(ctx context.Context, req *pb.ResizeStorageRequest) (*pb.ResizeStorageResponse, error)
+	SetAutoscale(ctx context.Context, req *pb.SetAutoscaleRequest) (*pb.SetAutoscaleResponse, error)
+	GetMetrics(ctx context.Context, req *pb.GetMetricsRequest) (*pb.GetMetricsResponse, error)
 }
 
 // MetadataServiceServer is the interface the metadata service satisfies.
@@ -66,6 +68,8 @@ const (
 
 	// Storage paths.
 	PathResizeStorage = "/euroscale.v1.DatabaseService/ResizeStorage"
+	PathSetAutoscale  = "/euroscale.v1.DatabaseService/SetAutoscale"
+	PathGetMetrics    = "/euroscale.v1.DatabaseService/GetMetrics"
 
 	// MetadataService paths.
 	PathListSchemaDatabases = "/euroscale.v1.MetadataService/ListSchemaDatabases"
@@ -224,6 +228,32 @@ func NewHandler(srv DatabaseServiceServer, jwtSecret string, extraInterceptors .
 		PathResizeStorage,
 		func(ctx context.Context, req *connect.Request[pb.ResizeStorageRequest]) (*connect.Response[pb.ResizeStorageResponse], error) {
 			resp, err := srv.ResizeStorage(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		connect.WithInterceptors(allInterceptors...),
+	))
+
+	// SetAutoscale
+	mux.Handle(PathSetAutoscale, connect.NewUnaryHandler(
+		PathSetAutoscale,
+		func(ctx context.Context, req *connect.Request[pb.SetAutoscaleRequest]) (*connect.Response[pb.SetAutoscaleResponse], error) {
+			resp, err := srv.SetAutoscale(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		connect.WithInterceptors(allInterceptors...),
+	))
+
+	// GetMetrics
+	mux.Handle(PathGetMetrics, connect.NewUnaryHandler(
+		PathGetMetrics,
+		func(ctx context.Context, req *connect.Request[pb.GetMetricsRequest]) (*connect.Response[pb.GetMetricsResponse], error) {
+			resp, err := srv.GetMetrics(ctx, req.Msg)
 			if err != nil {
 				return nil, err
 			}

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v5.29.3
-// source: euroscale/v1/database.proto
+// source: proto/euroscale/v1/database.proto
 
 package euroscalev1
 
@@ -37,7 +37,7 @@ type CreateDatabaseRequest struct {
 
 func (x *CreateDatabaseRequest) Reset() {
 	*x = CreateDatabaseRequest{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[0]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -49,7 +49,7 @@ func (x *CreateDatabaseRequest) String() string {
 func (*CreateDatabaseRequest) ProtoMessage() {}
 
 func (x *CreateDatabaseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[0]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -62,7 +62,7 @@ func (x *CreateDatabaseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateDatabaseRequest.ProtoReflect.Descriptor instead.
 func (*CreateDatabaseRequest) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{0}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *CreateDatabaseRequest) GetName() string {
@@ -124,7 +124,7 @@ type CreateDatabaseResponse struct {
 
 func (x *CreateDatabaseResponse) Reset() {
 	*x = CreateDatabaseResponse{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[1]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -136,7 +136,7 @@ func (x *CreateDatabaseResponse) String() string {
 func (*CreateDatabaseResponse) ProtoMessage() {}
 
 func (x *CreateDatabaseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[1]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -149,7 +149,7 @@ func (x *CreateDatabaseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateDatabaseResponse.ProtoReflect.Descriptor instead.
 func (*CreateDatabaseResponse) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{1}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *CreateDatabaseResponse) GetDatabaseId() string {
@@ -239,7 +239,7 @@ type DeleteDatabaseRequest struct {
 
 func (x *DeleteDatabaseRequest) Reset() {
 	*x = DeleteDatabaseRequest{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[2]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -251,7 +251,7 @@ func (x *DeleteDatabaseRequest) String() string {
 func (*DeleteDatabaseRequest) ProtoMessage() {}
 
 func (x *DeleteDatabaseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[2]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -264,7 +264,7 @@ func (x *DeleteDatabaseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteDatabaseRequest.ProtoReflect.Descriptor instead.
 func (*DeleteDatabaseRequest) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{2}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *DeleteDatabaseRequest) GetDatabaseId() string {
@@ -286,7 +286,7 @@ type DeleteDatabaseResponse struct {
 
 func (x *DeleteDatabaseResponse) Reset() {
 	*x = DeleteDatabaseResponse{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[3]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -298,7 +298,7 @@ func (x *DeleteDatabaseResponse) String() string {
 func (*DeleteDatabaseResponse) ProtoMessage() {}
 
 func (x *DeleteDatabaseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[3]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -311,7 +311,7 @@ func (x *DeleteDatabaseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteDatabaseResponse.ProtoReflect.Descriptor instead.
 func (*DeleteDatabaseResponse) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{3}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *DeleteDatabaseResponse) GetSuccess() bool {
@@ -342,7 +342,7 @@ type ListDatabasesRequest struct {
 
 func (x *ListDatabasesRequest) Reset() {
 	*x = ListDatabasesRequest{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[4]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -354,7 +354,7 @@ func (x *ListDatabasesRequest) String() string {
 func (*ListDatabasesRequest) ProtoMessage() {}
 
 func (x *ListDatabasesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[4]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -367,7 +367,7 @@ func (x *ListDatabasesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDatabasesRequest.ProtoReflect.Descriptor instead.
 func (*ListDatabasesRequest) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{4}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ListDatabasesRequest) GetUserId() string {
@@ -405,7 +405,7 @@ type ListDatabasesResponse struct {
 
 func (x *ListDatabasesResponse) Reset() {
 	*x = ListDatabasesResponse{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[5]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -417,7 +417,7 @@ func (x *ListDatabasesResponse) String() string {
 func (*ListDatabasesResponse) ProtoMessage() {}
 
 func (x *ListDatabasesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[5]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -430,7 +430,7 @@ func (x *ListDatabasesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDatabasesResponse.ProtoReflect.Descriptor instead.
 func (*ListDatabasesResponse) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{5}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ListDatabasesResponse) GetDatabases() []*Database {
@@ -464,7 +464,7 @@ type GetDatabaseRequest struct {
 
 func (x *GetDatabaseRequest) Reset() {
 	*x = GetDatabaseRequest{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[6]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -476,7 +476,7 @@ func (x *GetDatabaseRequest) String() string {
 func (*GetDatabaseRequest) ProtoMessage() {}
 
 func (x *GetDatabaseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[6]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -489,7 +489,7 @@ func (x *GetDatabaseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDatabaseRequest.ProtoReflect.Descriptor instead.
 func (*GetDatabaseRequest) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{6}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetDatabaseRequest) GetDatabaseId() string {
@@ -509,7 +509,7 @@ type GetDatabaseResponse struct {
 
 func (x *GetDatabaseResponse) Reset() {
 	*x = GetDatabaseResponse{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[7]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -521,7 +521,7 @@ func (x *GetDatabaseResponse) String() string {
 func (*GetDatabaseResponse) ProtoMessage() {}
 
 func (x *GetDatabaseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[7]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -534,7 +534,7 @@ func (x *GetDatabaseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDatabaseResponse.ProtoReflect.Descriptor instead.
 func (*GetDatabaseResponse) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{7}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetDatabaseResponse) GetDatabase() *Database {
@@ -554,7 +554,7 @@ type RotateCredentialsRequest struct {
 
 func (x *RotateCredentialsRequest) Reset() {
 	*x = RotateCredentialsRequest{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[8]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -566,7 +566,7 @@ func (x *RotateCredentialsRequest) String() string {
 func (*RotateCredentialsRequest) ProtoMessage() {}
 
 func (x *RotateCredentialsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[8]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -579,7 +579,7 @@ func (x *RotateCredentialsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RotateCredentialsRequest.ProtoReflect.Descriptor instead.
 func (*RotateCredentialsRequest) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{8}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *RotateCredentialsRequest) GetDatabaseId() string {
@@ -611,7 +611,7 @@ type RotateCredentialsResponse struct {
 
 func (x *RotateCredentialsResponse) Reset() {
 	*x = RotateCredentialsResponse{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[9]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -623,7 +623,7 @@ func (x *RotateCredentialsResponse) String() string {
 func (*RotateCredentialsResponse) ProtoMessage() {}
 
 func (x *RotateCredentialsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[9]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -636,7 +636,7 @@ func (x *RotateCredentialsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RotateCredentialsResponse.ProtoReflect.Descriptor instead.
 func (*RotateCredentialsResponse) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{9}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *RotateCredentialsResponse) GetDatabaseId() string {
@@ -719,7 +719,7 @@ type Database struct {
 
 func (x *Database) Reset() {
 	*x = Database{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[10]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -731,7 +731,7 @@ func (x *Database) String() string {
 func (*Database) ProtoMessage() {}
 
 func (x *Database) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[10]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -744,7 +744,7 @@ func (x *Database) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Database.ProtoReflect.Descriptor instead.
 func (*Database) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{10}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *Database) GetDatabaseId() string {
@@ -832,7 +832,7 @@ type IPWhitelistEntry struct {
 
 func (x *IPWhitelistEntry) Reset() {
 	*x = IPWhitelistEntry{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[11]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -844,7 +844,7 @@ func (x *IPWhitelistEntry) String() string {
 func (*IPWhitelistEntry) ProtoMessage() {}
 
 func (x *IPWhitelistEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[11]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -857,7 +857,7 @@ func (x *IPWhitelistEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IPWhitelistEntry.ProtoReflect.Descriptor instead.
 func (*IPWhitelistEntry) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{11}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *IPWhitelistEntry) GetCidr() string {
@@ -891,7 +891,7 @@ type GetIPWhitelistRequest struct {
 
 func (x *GetIPWhitelistRequest) Reset() {
 	*x = GetIPWhitelistRequest{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[12]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -903,7 +903,7 @@ func (x *GetIPWhitelistRequest) String() string {
 func (*GetIPWhitelistRequest) ProtoMessage() {}
 
 func (x *GetIPWhitelistRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[12]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -916,7 +916,7 @@ func (x *GetIPWhitelistRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetIPWhitelistRequest.ProtoReflect.Descriptor instead.
 func (*GetIPWhitelistRequest) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{12}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GetIPWhitelistRequest) GetDatabaseId() string {
@@ -936,7 +936,7 @@ type GetIPWhitelistResponse struct {
 
 func (x *GetIPWhitelistResponse) Reset() {
 	*x = GetIPWhitelistResponse{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[13]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -948,7 +948,7 @@ func (x *GetIPWhitelistResponse) String() string {
 func (*GetIPWhitelistResponse) ProtoMessage() {}
 
 func (x *GetIPWhitelistResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[13]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -961,7 +961,7 @@ func (x *GetIPWhitelistResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetIPWhitelistResponse.ProtoReflect.Descriptor instead.
 func (*GetIPWhitelistResponse) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{13}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *GetIPWhitelistResponse) GetEntries() []*IPWhitelistEntry {
@@ -985,7 +985,7 @@ type AddIPWhitelistEntryRequest struct {
 
 func (x *AddIPWhitelistEntryRequest) Reset() {
 	*x = AddIPWhitelistEntryRequest{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[14]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -997,7 +997,7 @@ func (x *AddIPWhitelistEntryRequest) String() string {
 func (*AddIPWhitelistEntryRequest) ProtoMessage() {}
 
 func (x *AddIPWhitelistEntryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[14]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1010,7 +1010,7 @@ func (x *AddIPWhitelistEntryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddIPWhitelistEntryRequest.ProtoReflect.Descriptor instead.
 func (*AddIPWhitelistEntryRequest) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{14}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *AddIPWhitelistEntryRequest) GetDatabaseId() string {
@@ -1044,7 +1044,7 @@ type AddIPWhitelistEntryResponse struct {
 
 func (x *AddIPWhitelistEntryResponse) Reset() {
 	*x = AddIPWhitelistEntryResponse{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[15]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1056,7 +1056,7 @@ func (x *AddIPWhitelistEntryResponse) String() string {
 func (*AddIPWhitelistEntryResponse) ProtoMessage() {}
 
 func (x *AddIPWhitelistEntryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[15]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1069,7 +1069,7 @@ func (x *AddIPWhitelistEntryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddIPWhitelistEntryResponse.ProtoReflect.Descriptor instead.
 func (*AddIPWhitelistEntryResponse) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{15}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *AddIPWhitelistEntryResponse) GetEntry() *IPWhitelistEntry {
@@ -1091,7 +1091,7 @@ type RemoveIPWhitelistEntryRequest struct {
 
 func (x *RemoveIPWhitelistEntryRequest) Reset() {
 	*x = RemoveIPWhitelistEntryRequest{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[16]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1103,7 +1103,7 @@ func (x *RemoveIPWhitelistEntryRequest) String() string {
 func (*RemoveIPWhitelistEntryRequest) ProtoMessage() {}
 
 func (x *RemoveIPWhitelistEntryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[16]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1116,7 +1116,7 @@ func (x *RemoveIPWhitelistEntryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveIPWhitelistEntryRequest.ProtoReflect.Descriptor instead.
 func (*RemoveIPWhitelistEntryRequest) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{16}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *RemoveIPWhitelistEntryRequest) GetDatabaseId() string {
@@ -1145,7 +1145,7 @@ type RemoveIPWhitelistEntryResponse struct {
 
 func (x *RemoveIPWhitelistEntryResponse) Reset() {
 	*x = RemoveIPWhitelistEntryResponse{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[17]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1157,7 +1157,7 @@ func (x *RemoveIPWhitelistEntryResponse) String() string {
 func (*RemoveIPWhitelistEntryResponse) ProtoMessage() {}
 
 func (x *RemoveIPWhitelistEntryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[17]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1170,7 +1170,7 @@ func (x *RemoveIPWhitelistEntryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveIPWhitelistEntryResponse.ProtoReflect.Descriptor instead.
 func (*RemoveIPWhitelistEntryResponse) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{17}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *RemoveIPWhitelistEntryResponse) GetSuccess() bool {
@@ -1197,7 +1197,7 @@ type GetUsageRequest struct {
 
 func (x *GetUsageRequest) Reset() {
 	*x = GetUsageRequest{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[18]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1209,7 +1209,7 @@ func (x *GetUsageRequest) String() string {
 func (*GetUsageRequest) ProtoMessage() {}
 
 func (x *GetUsageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[18]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1222,7 +1222,7 @@ func (x *GetUsageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUsageRequest.ProtoReflect.Descriptor instead.
 func (*GetUsageRequest) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{18}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *GetUsageRequest) GetUserId() string {
@@ -1254,7 +1254,7 @@ type TierLimits struct {
 
 func (x *TierLimits) Reset() {
 	*x = TierLimits{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[19]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1266,7 +1266,7 @@ func (x *TierLimits) String() string {
 func (*TierLimits) ProtoMessage() {}
 
 func (x *TierLimits) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[19]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1279,7 +1279,7 @@ func (x *TierLimits) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TierLimits.ProtoReflect.Descriptor instead.
 func (*TierLimits) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{19}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *TierLimits) GetMaxDatabases() int32 {
@@ -1347,7 +1347,7 @@ type Usage struct {
 
 func (x *Usage) Reset() {
 	*x = Usage{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[20]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1359,7 +1359,7 @@ func (x *Usage) String() string {
 func (*Usage) ProtoMessage() {}
 
 func (x *Usage) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[20]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1372,7 +1372,7 @@ func (x *Usage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Usage.ProtoReflect.Descriptor instead.
 func (*Usage) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{20}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *Usage) GetDatabaseCount() int32 {
@@ -1419,7 +1419,7 @@ type GetUsageResponse struct {
 
 func (x *GetUsageResponse) Reset() {
 	*x = GetUsageResponse{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[21]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1431,7 +1431,7 @@ func (x *GetUsageResponse) String() string {
 func (*GetUsageResponse) ProtoMessage() {}
 
 func (x *GetUsageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[21]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1444,7 +1444,7 @@ func (x *GetUsageResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUsageResponse.ProtoReflect.Descriptor instead.
 func (*GetUsageResponse) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{21}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *GetUsageResponse) GetUserId() string {
@@ -1487,7 +1487,7 @@ type SetUserTierRequest struct {
 
 func (x *SetUserTierRequest) Reset() {
 	*x = SetUserTierRequest{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[22]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1499,7 +1499,7 @@ func (x *SetUserTierRequest) String() string {
 func (*SetUserTierRequest) ProtoMessage() {}
 
 func (x *SetUserTierRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[22]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1512,7 +1512,7 @@ func (x *SetUserTierRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetUserTierRequest.ProtoReflect.Descriptor instead.
 func (*SetUserTierRequest) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{22}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *SetUserTierRequest) GetUserId() string {
@@ -1539,7 +1539,7 @@ type SetUserTierResponse struct {
 
 func (x *SetUserTierResponse) Reset() {
 	*x = SetUserTierResponse{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[23]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1551,7 +1551,7 @@ func (x *SetUserTierResponse) String() string {
 func (*SetUserTierResponse) ProtoMessage() {}
 
 func (x *SetUserTierResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[23]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1564,7 +1564,7 @@ func (x *SetUserTierResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetUserTierResponse.ProtoReflect.Descriptor instead.
 func (*SetUserTierResponse) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{23}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *SetUserTierResponse) GetSuccess() bool {
@@ -1586,7 +1586,7 @@ type ResizeStorageRequest struct {
 
 func (x *ResizeStorageRequest) Reset() {
 	*x = ResizeStorageRequest{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[24]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1598,7 +1598,7 @@ func (x *ResizeStorageRequest) String() string {
 func (*ResizeStorageRequest) ProtoMessage() {}
 
 func (x *ResizeStorageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[24]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1611,7 +1611,7 @@ func (x *ResizeStorageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResizeStorageRequest.ProtoReflect.Descriptor instead.
 func (*ResizeStorageRequest) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{24}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ResizeStorageRequest) GetDatabaseId() string {
@@ -1642,7 +1642,7 @@ type ResizeStorageResponse struct {
 
 func (x *ResizeStorageResponse) Reset() {
 	*x = ResizeStorageResponse{}
-	mi := &file_euroscale_v1_database_proto_msgTypes[25]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1654,7 +1654,7 @@ func (x *ResizeStorageResponse) String() string {
 func (*ResizeStorageResponse) ProtoMessage() {}
 
 func (x *ResizeStorageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_euroscale_v1_database_proto_msgTypes[25]
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1667,7 +1667,7 @@ func (x *ResizeStorageResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResizeStorageResponse.ProtoReflect.Descriptor instead.
 func (*ResizeStorageResponse) Descriptor() ([]byte, []int) {
-	return file_euroscale_v1_database_proto_rawDescGZIP(), []int{25}
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ResizeStorageResponse) GetSuccess() bool {
@@ -1691,11 +1691,299 @@ func (x *ResizeStorageResponse) GetMessage() string {
 	return ""
 }
 
-var File_euroscale_v1_database_proto protoreflect.FileDescriptor
+type SetAutoscaleRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID of the database to configure.
+	DatabaseId string `protobuf:"bytes,1,opt,name=database_id,json=databaseId,proto3" json:"database_id,omitempty"`
+	// Enable or disable autoscale.
+	Enabled bool `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	// Threshold percentage of PVC usage that triggers a resize (default 80).
+	ThresholdPercent int32 `protobuf:"varint,3,opt,name=threshold_percent,json=thresholdPercent,proto3" json:"threshold_percent,omitempty"`
+	// Percentage increment to add when threshold is hit (default 20).
+	IncrementPercent int32 `protobuf:"varint,4,opt,name=increment_percent,json=incrementPercent,proto3" json:"increment_percent,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
 
-const file_euroscale_v1_database_proto_rawDesc = "" +
+func (x *SetAutoscaleRequest) Reset() {
+	*x = SetAutoscaleRequest{}
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetAutoscaleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetAutoscaleRequest) ProtoMessage() {}
+
+func (x *SetAutoscaleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetAutoscaleRequest.ProtoReflect.Descriptor instead.
+func (*SetAutoscaleRequest) Descriptor() ([]byte, []int) {
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *SetAutoscaleRequest) GetDatabaseId() string {
+	if x != nil {
+		return x.DatabaseId
+	}
+	return ""
+}
+
+func (x *SetAutoscaleRequest) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *SetAutoscaleRequest) GetThresholdPercent() int32 {
+	if x != nil {
+		return x.ThresholdPercent
+	}
+	return 0
+}
+
+func (x *SetAutoscaleRequest) GetIncrementPercent() int32 {
+	if x != nil {
+		return x.IncrementPercent
+	}
+	return 0
+}
+
+type SetAutoscaleResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Whether autoscale is currently enabled.
+	Enabled bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	// Current threshold percentage.
+	ThresholdPercent int32 `protobuf:"varint,2,opt,name=threshold_percent,json=thresholdPercent,proto3" json:"threshold_percent,omitempty"`
+	// Current increment percentage.
+	IncrementPercent int32 `protobuf:"varint,3,opt,name=increment_percent,json=incrementPercent,proto3" json:"increment_percent,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *SetAutoscaleResponse) Reset() {
+	*x = SetAutoscaleResponse{}
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetAutoscaleResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetAutoscaleResponse) ProtoMessage() {}
+
+func (x *SetAutoscaleResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetAutoscaleResponse.ProtoReflect.Descriptor instead.
+func (*SetAutoscaleResponse) Descriptor() ([]byte, []int) {
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *SetAutoscaleResponse) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *SetAutoscaleResponse) GetThresholdPercent() int32 {
+	if x != nil {
+		return x.ThresholdPercent
+	}
+	return 0
+}
+
+func (x *SetAutoscaleResponse) GetIncrementPercent() int32 {
+	if x != nil {
+		return x.IncrementPercent
+	}
+	return 0
+}
+
+type GetMetricsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID of the database to query metrics for.
+	DatabaseId    string `protobuf:"bytes,1,opt,name=database_id,json=databaseId,proto3" json:"database_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMetricsRequest) Reset() {
+	*x = GetMetricsRequest{}
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMetricsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMetricsRequest) ProtoMessage() {}
+
+func (x *GetMetricsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMetricsRequest.ProtoReflect.Descriptor instead.
+func (*GetMetricsRequest) Descriptor() ([]byte, []int) {
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *GetMetricsRequest) GetDatabaseId() string {
+	if x != nil {
+		return x.DatabaseId
+	}
+	return ""
+}
+
+type GetMetricsResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// List of data points collected over the last 24 hours.
+	Points        []*MetricPoint `protobuf:"bytes,1,rep,name=points,proto3" json:"points,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMetricsResponse) Reset() {
+	*x = GetMetricsResponse{}
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMetricsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMetricsResponse) ProtoMessage() {}
+
+func (x *GetMetricsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMetricsResponse.ProtoReflect.Descriptor instead.
+func (*GetMetricsResponse) Descriptor() ([]byte, []int) {
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *GetMetricsResponse) GetPoints() []*MetricPoint {
+	if x != nil {
+		return x.Points
+	}
+	return nil
+}
+
+type MetricPoint struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Unix timestamp of the measurement.
+	Timestamp int64 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	// CPU usage as a percentage (0-100). 0 if unavailable.
+	CpuPercent float64 `protobuf:"fixed64,2,opt,name=cpu_percent,json=cpuPercent,proto3" json:"cpu_percent,omitempty"`
+	// Disk usage in GB.
+	DiskGb        float64 `protobuf:"fixed64,3,opt,name=disk_gb,json=diskGb,proto3" json:"disk_gb,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MetricPoint) Reset() {
+	*x = MetricPoint{}
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MetricPoint) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MetricPoint) ProtoMessage() {}
+
+func (x *MetricPoint) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MetricPoint.ProtoReflect.Descriptor instead.
+func (*MetricPoint) Descriptor() ([]byte, []int) {
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *MetricPoint) GetTimestamp() int64 {
+	if x != nil {
+		return x.Timestamp
+	}
+	return 0
+}
+
+func (x *MetricPoint) GetCpuPercent() float64 {
+	if x != nil {
+		return x.CpuPercent
+	}
+	return 0
+}
+
+func (x *MetricPoint) GetDiskGb() float64 {
+	if x != nil {
+		return x.DiskGb
+	}
+	return 0
+}
+
+var File_proto_euroscale_v1_database_proto protoreflect.FileDescriptor
+
+const file_proto_euroscale_v1_database_proto_rawDesc = "" +
 	"\n" +
-	"\x1beuroscale/v1/database.proto\x12\feuroscale.v1\"t\n" +
+	"!proto/euroscale/v1/database.proto\x12\feuroscale.v1\"t\n" +
 	"\x15CreateDatabaseRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
 	"\x06engine\x18\x02 \x01(\tR\x06engine\x12\x16\n" +
@@ -1823,7 +2111,27 @@ const file_euroscale_v1_database_proto_rawDesc = "" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12 \n" +
 	"\fnew_total_gb\x18\x02 \x01(\x03R\n" +
 	"newTotalGb\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage2\x96\b\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\"\xaa\x01\n" +
+	"\x13SetAutoscaleRequest\x12\x1f\n" +
+	"\vdatabase_id\x18\x01 \x01(\tR\n" +
+	"databaseId\x12\x18\n" +
+	"\aenabled\x18\x02 \x01(\bR\aenabled\x12+\n" +
+	"\x11threshold_percent\x18\x03 \x01(\x05R\x10thresholdPercent\x12+\n" +
+	"\x11increment_percent\x18\x04 \x01(\x05R\x10incrementPercent\"\x8a\x01\n" +
+	"\x14SetAutoscaleResponse\x12\x18\n" +
+	"\aenabled\x18\x01 \x01(\bR\aenabled\x12+\n" +
+	"\x11threshold_percent\x18\x02 \x01(\x05R\x10thresholdPercent\x12+\n" +
+	"\x11increment_percent\x18\x03 \x01(\x05R\x10incrementPercent\"4\n" +
+	"\x11GetMetricsRequest\x12\x1f\n" +
+	"\vdatabase_id\x18\x01 \x01(\tR\n" +
+	"databaseId\"G\n" +
+	"\x12GetMetricsResponse\x121\n" +
+	"\x06points\x18\x01 \x03(\v2\x19.euroscale.v1.MetricPointR\x06points\"e\n" +
+	"\vMetricPoint\x12\x1c\n" +
+	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\x12\x1f\n" +
+	"\vcpu_percent\x18\x02 \x01(\x01R\n" +
+	"cpuPercent\x12\x17\n" +
+	"\adisk_gb\x18\x03 \x01(\x01R\x06diskGb2\xbe\t\n" +
 	"\x0fDatabaseService\x12[\n" +
 	"\x0eCreateDatabase\x12#.euroscale.v1.CreateDatabaseRequest\x1a$.euroscale.v1.CreateDatabaseResponse\x12[\n" +
 	"\x0eDeleteDatabase\x12#.euroscale.v1.DeleteDatabaseRequest\x1a$.euroscale.v1.DeleteDatabaseResponse\x12X\n" +
@@ -1835,22 +2143,25 @@ const file_euroscale_v1_database_proto_rawDesc = "" +
 	"\x16RemoveIPWhitelistEntry\x12+.euroscale.v1.RemoveIPWhitelistEntryRequest\x1a,.euroscale.v1.RemoveIPWhitelistEntryResponse\x12I\n" +
 	"\bGetUsage\x12\x1d.euroscale.v1.GetUsageRequest\x1a\x1e.euroscale.v1.GetUsageResponse\x12R\n" +
 	"\vSetUserTier\x12 .euroscale.v1.SetUserTierRequest\x1a!.euroscale.v1.SetUserTierResponse\x12X\n" +
-	"\rResizeStorage\x12\".euroscale.v1.ResizeStorageRequest\x1a#.euroscale.v1.ResizeStorageResponseBPZNgithub.com/spscreations/euroscale-startup-kit/api/gen/euroscale/v1;euroscalev1b\x06proto3"
+	"\rResizeStorage\x12\".euroscale.v1.ResizeStorageRequest\x1a#.euroscale.v1.ResizeStorageResponse\x12U\n" +
+	"\fSetAutoscale\x12!.euroscale.v1.SetAutoscaleRequest\x1a\".euroscale.v1.SetAutoscaleResponse\x12O\n" +
+	"\n" +
+	"GetMetrics\x12\x1f.euroscale.v1.GetMetricsRequest\x1a .euroscale.v1.GetMetricsResponseBPZNgithub.com/spscreations/euroscale-startup-kit/api/gen/euroscale/v1;euroscalev1b\x06proto3"
 
 var (
-	file_euroscale_v1_database_proto_rawDescOnce sync.Once
-	file_euroscale_v1_database_proto_rawDescData []byte
+	file_proto_euroscale_v1_database_proto_rawDescOnce sync.Once
+	file_proto_euroscale_v1_database_proto_rawDescData []byte
 )
 
-func file_euroscale_v1_database_proto_rawDescGZIP() []byte {
-	file_euroscale_v1_database_proto_rawDescOnce.Do(func() {
-		file_euroscale_v1_database_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_euroscale_v1_database_proto_rawDesc), len(file_euroscale_v1_database_proto_rawDesc)))
+func file_proto_euroscale_v1_database_proto_rawDescGZIP() []byte {
+	file_proto_euroscale_v1_database_proto_rawDescOnce.Do(func() {
+		file_proto_euroscale_v1_database_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_euroscale_v1_database_proto_rawDesc), len(file_proto_euroscale_v1_database_proto_rawDesc)))
 	})
-	return file_euroscale_v1_database_proto_rawDescData
+	return file_proto_euroscale_v1_database_proto_rawDescData
 }
 
-var file_euroscale_v1_database_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
-var file_euroscale_v1_database_proto_goTypes = []any{
+var file_proto_euroscale_v1_database_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
+var file_proto_euroscale_v1_database_proto_goTypes = []any{
 	(*CreateDatabaseRequest)(nil),          // 0: euroscale.v1.CreateDatabaseRequest
 	(*CreateDatabaseResponse)(nil),         // 1: euroscale.v1.CreateDatabaseResponse
 	(*DeleteDatabaseRequest)(nil),          // 2: euroscale.v1.DeleteDatabaseRequest
@@ -1877,63 +2188,73 @@ var file_euroscale_v1_database_proto_goTypes = []any{
 	(*SetUserTierResponse)(nil),            // 23: euroscale.v1.SetUserTierResponse
 	(*ResizeStorageRequest)(nil),           // 24: euroscale.v1.ResizeStorageRequest
 	(*ResizeStorageResponse)(nil),          // 25: euroscale.v1.ResizeStorageResponse
+	(*SetAutoscaleRequest)(nil),            // 26: euroscale.v1.SetAutoscaleRequest
+	(*SetAutoscaleResponse)(nil),           // 27: euroscale.v1.SetAutoscaleResponse
+	(*GetMetricsRequest)(nil),              // 28: euroscale.v1.GetMetricsRequest
+	(*GetMetricsResponse)(nil),             // 29: euroscale.v1.GetMetricsResponse
+	(*MetricPoint)(nil),                    // 30: euroscale.v1.MetricPoint
 }
-var file_euroscale_v1_database_proto_depIdxs = []int32{
+var file_proto_euroscale_v1_database_proto_depIdxs = []int32{
 	10, // 0: euroscale.v1.ListDatabasesResponse.databases:type_name -> euroscale.v1.Database
 	10, // 1: euroscale.v1.GetDatabaseResponse.database:type_name -> euroscale.v1.Database
 	11, // 2: euroscale.v1.GetIPWhitelistResponse.entries:type_name -> euroscale.v1.IPWhitelistEntry
 	11, // 3: euroscale.v1.AddIPWhitelistEntryResponse.entry:type_name -> euroscale.v1.IPWhitelistEntry
 	19, // 4: euroscale.v1.GetUsageResponse.limits:type_name -> euroscale.v1.TierLimits
 	20, // 5: euroscale.v1.GetUsageResponse.usage:type_name -> euroscale.v1.Usage
-	0,  // 6: euroscale.v1.DatabaseService.CreateDatabase:input_type -> euroscale.v1.CreateDatabaseRequest
-	2,  // 7: euroscale.v1.DatabaseService.DeleteDatabase:input_type -> euroscale.v1.DeleteDatabaseRequest
-	4,  // 8: euroscale.v1.DatabaseService.ListDatabases:input_type -> euroscale.v1.ListDatabasesRequest
-	6,  // 9: euroscale.v1.DatabaseService.GetDatabase:input_type -> euroscale.v1.GetDatabaseRequest
-	8,  // 10: euroscale.v1.DatabaseService.RotateCredentials:input_type -> euroscale.v1.RotateCredentialsRequest
-	12, // 11: euroscale.v1.DatabaseService.GetIPWhitelist:input_type -> euroscale.v1.GetIPWhitelistRequest
-	14, // 12: euroscale.v1.DatabaseService.AddIPWhitelistEntry:input_type -> euroscale.v1.AddIPWhitelistEntryRequest
-	16, // 13: euroscale.v1.DatabaseService.RemoveIPWhitelistEntry:input_type -> euroscale.v1.RemoveIPWhitelistEntryRequest
-	18, // 14: euroscale.v1.DatabaseService.GetUsage:input_type -> euroscale.v1.GetUsageRequest
-	22, // 15: euroscale.v1.DatabaseService.SetUserTier:input_type -> euroscale.v1.SetUserTierRequest
-	24, // 16: euroscale.v1.DatabaseService.ResizeStorage:input_type -> euroscale.v1.ResizeStorageRequest
-	1,  // 17: euroscale.v1.DatabaseService.CreateDatabase:output_type -> euroscale.v1.CreateDatabaseResponse
-	3,  // 18: euroscale.v1.DatabaseService.DeleteDatabase:output_type -> euroscale.v1.DeleteDatabaseResponse
-	5,  // 19: euroscale.v1.DatabaseService.ListDatabases:output_type -> euroscale.v1.ListDatabasesResponse
-	7,  // 20: euroscale.v1.DatabaseService.GetDatabase:output_type -> euroscale.v1.GetDatabaseResponse
-	9,  // 21: euroscale.v1.DatabaseService.RotateCredentials:output_type -> euroscale.v1.RotateCredentialsResponse
-	13, // 22: euroscale.v1.DatabaseService.GetIPWhitelist:output_type -> euroscale.v1.GetIPWhitelistResponse
-	15, // 23: euroscale.v1.DatabaseService.AddIPWhitelistEntry:output_type -> euroscale.v1.AddIPWhitelistEntryResponse
-	17, // 24: euroscale.v1.DatabaseService.RemoveIPWhitelistEntry:output_type -> euroscale.v1.RemoveIPWhitelistEntryResponse
-	21, // 25: euroscale.v1.DatabaseService.GetUsage:output_type -> euroscale.v1.GetUsageResponse
-	23, // 26: euroscale.v1.DatabaseService.SetUserTier:output_type -> euroscale.v1.SetUserTierResponse
-	25, // 27: euroscale.v1.DatabaseService.ResizeStorage:output_type -> euroscale.v1.ResizeStorageResponse
-	17, // [17:28] is the sub-list for method output_type
-	6,  // [6:17] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	30, // 6: euroscale.v1.GetMetricsResponse.points:type_name -> euroscale.v1.MetricPoint
+	0,  // 7: euroscale.v1.DatabaseService.CreateDatabase:input_type -> euroscale.v1.CreateDatabaseRequest
+	2,  // 8: euroscale.v1.DatabaseService.DeleteDatabase:input_type -> euroscale.v1.DeleteDatabaseRequest
+	4,  // 9: euroscale.v1.DatabaseService.ListDatabases:input_type -> euroscale.v1.ListDatabasesRequest
+	6,  // 10: euroscale.v1.DatabaseService.GetDatabase:input_type -> euroscale.v1.GetDatabaseRequest
+	8,  // 11: euroscale.v1.DatabaseService.RotateCredentials:input_type -> euroscale.v1.RotateCredentialsRequest
+	12, // 12: euroscale.v1.DatabaseService.GetIPWhitelist:input_type -> euroscale.v1.GetIPWhitelistRequest
+	14, // 13: euroscale.v1.DatabaseService.AddIPWhitelistEntry:input_type -> euroscale.v1.AddIPWhitelistEntryRequest
+	16, // 14: euroscale.v1.DatabaseService.RemoveIPWhitelistEntry:input_type -> euroscale.v1.RemoveIPWhitelistEntryRequest
+	18, // 15: euroscale.v1.DatabaseService.GetUsage:input_type -> euroscale.v1.GetUsageRequest
+	22, // 16: euroscale.v1.DatabaseService.SetUserTier:input_type -> euroscale.v1.SetUserTierRequest
+	24, // 17: euroscale.v1.DatabaseService.ResizeStorage:input_type -> euroscale.v1.ResizeStorageRequest
+	26, // 18: euroscale.v1.DatabaseService.SetAutoscale:input_type -> euroscale.v1.SetAutoscaleRequest
+	28, // 19: euroscale.v1.DatabaseService.GetMetrics:input_type -> euroscale.v1.GetMetricsRequest
+	1,  // 20: euroscale.v1.DatabaseService.CreateDatabase:output_type -> euroscale.v1.CreateDatabaseResponse
+	3,  // 21: euroscale.v1.DatabaseService.DeleteDatabase:output_type -> euroscale.v1.DeleteDatabaseResponse
+	5,  // 22: euroscale.v1.DatabaseService.ListDatabases:output_type -> euroscale.v1.ListDatabasesResponse
+	7,  // 23: euroscale.v1.DatabaseService.GetDatabase:output_type -> euroscale.v1.GetDatabaseResponse
+	9,  // 24: euroscale.v1.DatabaseService.RotateCredentials:output_type -> euroscale.v1.RotateCredentialsResponse
+	13, // 25: euroscale.v1.DatabaseService.GetIPWhitelist:output_type -> euroscale.v1.GetIPWhitelistResponse
+	15, // 26: euroscale.v1.DatabaseService.AddIPWhitelistEntry:output_type -> euroscale.v1.AddIPWhitelistEntryResponse
+	17, // 27: euroscale.v1.DatabaseService.RemoveIPWhitelistEntry:output_type -> euroscale.v1.RemoveIPWhitelistEntryResponse
+	21, // 28: euroscale.v1.DatabaseService.GetUsage:output_type -> euroscale.v1.GetUsageResponse
+	23, // 29: euroscale.v1.DatabaseService.SetUserTier:output_type -> euroscale.v1.SetUserTierResponse
+	25, // 30: euroscale.v1.DatabaseService.ResizeStorage:output_type -> euroscale.v1.ResizeStorageResponse
+	27, // 31: euroscale.v1.DatabaseService.SetAutoscale:output_type -> euroscale.v1.SetAutoscaleResponse
+	29, // 32: euroscale.v1.DatabaseService.GetMetrics:output_type -> euroscale.v1.GetMetricsResponse
+	20, // [20:33] is the sub-list for method output_type
+	7,  // [7:20] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
-func init() { file_euroscale_v1_database_proto_init() }
-func file_euroscale_v1_database_proto_init() {
-	if File_euroscale_v1_database_proto != nil {
+func init() { file_proto_euroscale_v1_database_proto_init() }
+func file_proto_euroscale_v1_database_proto_init() {
+	if File_proto_euroscale_v1_database_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_euroscale_v1_database_proto_rawDesc), len(file_euroscale_v1_database_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_euroscale_v1_database_proto_rawDesc), len(file_proto_euroscale_v1_database_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   26,
+			NumMessages:   31,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_euroscale_v1_database_proto_goTypes,
-		DependencyIndexes: file_euroscale_v1_database_proto_depIdxs,
-		MessageInfos:      file_euroscale_v1_database_proto_msgTypes,
+		GoTypes:           file_proto_euroscale_v1_database_proto_goTypes,
+		DependencyIndexes: file_proto_euroscale_v1_database_proto_depIdxs,
+		MessageInfos:      file_proto_euroscale_v1_database_proto_msgTypes,
 	}.Build()
-	File_euroscale_v1_database_proto = out.File
-	file_euroscale_v1_database_proto_goTypes = nil
-	file_euroscale_v1_database_proto_depIdxs = nil
+	File_proto_euroscale_v1_database_proto = out.File
+	file_proto_euroscale_v1_database_proto_goTypes = nil
+	file_proto_euroscale_v1_database_proto_depIdxs = nil
 }
