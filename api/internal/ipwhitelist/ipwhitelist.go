@@ -119,9 +119,10 @@ func (s *Store) IsAllowed(ctx context.Context, userID string, clientIP string) (
 		return false, err
 	}
 
-	// If no whitelist is configured, allow all IPs.
+	// If no whitelist is configured, deny all IPs (fail-closed).
+	// Users must explicitly add at least one IP/CIDR to allow connections.
 	if len(ips) == 0 {
-		return true, nil
+		return false, nil
 	}
 
 	client := net.ParseIP(clientIP)
