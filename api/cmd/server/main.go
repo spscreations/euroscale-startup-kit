@@ -35,6 +35,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/spscreations/euroscale-startup-kit/api/internal/auth"
 	connectpkg "github.com/spscreations/euroscale-startup-kit/api/internal/connect"
@@ -316,14 +317,22 @@ func (s *server) DeleteDatabase(ctx context.Context, req *pb.DeleteDatabaseReque
 	// If this was the last database, clean up the Vitess keyspace.
 	allDBs, _ := s.secrets.ListAll(ctx)
 	if len(allDBs) == 0 {
-		log.Printf("INFO: no remaining databases — deleting Vitess keyspace")
-		shardGVR := schema.GroupVersionResource{Group: "planetscale.com", Version: "v2", Resource: "vitessshards"}
-		if err := s.dynamicClient.Resource(shardGVR).Namespace("euroscale").Delete(ctx, "euroscale-main-x-x-76e523c2", metav1.DeleteOptions{}); err != nil {
-			log.Printf("WARN: failed to delete VitessShard: %v (may need manual cleanup)", err)
+		log.Printf("INFO: no remaining databases — cleaning up Vitess resources")
+		// Patch VitessCluster to remove keyspaces (stops operator recreation).
+		clusterGVR := schema.GroupVersionResource{Group: "planetscale.com", Version: "v2", Resource: "vitessclusters"}
+		if _, err := s.dynamicClient.Resource(clusterGVR).Namespace("euroscale").Patch(ctx, "euroscale",
+			types.MergePatchType, []byte(`{"spec":{"keyspaces":null}}`), metav1.PatchOptions{}); err != nil {
+			log.Printf("WARN: failed to patch VitessCluster keyspaces: %v", err)
 		}
+		// Delete the Shard (triggers PVC+Pod cleanup).
+		shardGVR := schema.GroupVersionResource{Group: "planetscale.com", Version: "v2", Resource: "vitessshards"}
+		if err := s.dynamicClient.Resource(shardGVR).Namespace("euroscale").DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
+			log.Printf("WARN: failed to delete VitessShards: %v (may need manual cleanup)", err)
+		}
+		// Delete the Keyspace.
 		keyspaceGVR := schema.GroupVersionResource{Group: "planetscale.com", Version: "v2", Resource: "vitesskeyspaces"}
-		if err := s.dynamicClient.Resource(keyspaceGVR).Namespace("euroscale").Delete(ctx, "euroscale-main-6f85067f", metav1.DeleteOptions{}); err != nil {
-			log.Printf("WARN: failed to delete VitessKeyspace: %v (may need manual cleanup)", err)
+		if err := s.dynamicClient.Resource(keyspaceGVR).Namespace("euroscale").DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
+			log.Printf("WARN: failed to delete VitessKeyspaces: %v (may need manual cleanup)", err)
 		}
 	}
 
