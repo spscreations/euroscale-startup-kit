@@ -6,3 +6,5 @@ credentials/
 *.tfstate*
 .terraform.lock.hcl
 api/mysql-proxy
+api/autoscale-checker
+api/metrics-collector
