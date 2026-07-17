@@ -46,6 +46,9 @@ service DatabaseService {
 
   // GetMetrics returns CPU and disk metrics for a database (last 24h).
   rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse);
+
+  // GetSSLCertificates returns the SSL client certificates for a database.
+  rpc GetSSLCertificates(GetSSLCertificatesRequest) returns (GetSSLCertificatesResponse);
 }
 
 // ── CreateDatabase ──────────────────────────────────────────────────────────
@@ -414,4 +417,22 @@ message MetricPoint {
 
   // Disk usage in GB.
   double disk_gb = 3;
+}
+
+// ── GetSSLCertificates ──────────────────────────────────────────────────────
+
+message GetSSLCertificatesRequest {
+  // ID of the database to retrieve SSL certificates for.
+  string database_id = 1;
+}
+
+message GetSSLCertificatesResponse {
+  // PEM-encoded CA certificate.
+  string ca_cert = 1;
+
+  // PEM-encoded client certificate.
+  string client_cert = 2;
+
+  // PEM-encoded client private key.
+  string client_key = 3;
 }

@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { AddIPWhitelistEntryRequest, AddIPWhitelistEntryResponse, CreateDatabaseRequest, CreateDatabaseResponse, DeleteDatabaseRequest, DeleteDatabaseResponse, GetDatabaseRequest, GetDatabaseResponse, GetIPWhitelistRequest, GetIPWhitelistResponse, GetUsageRequest, GetUsageResponse, ListDatabasesRequest, ListDatabasesResponse, RemoveIPWhitelistEntryRequest, RemoveIPWhitelistEntryResponse, ResizeStorageRequest, ResizeStorageResponse, RotateCredentialsRequest, RotateCredentialsResponse, SetUserTierRequest, SetUserTierResponse } from "./database_pb.js";
+import { AddIPWhitelistEntryRequest, AddIPWhitelistEntryResponse, CreateDatabaseRequest, CreateDatabaseResponse, DeleteDatabaseRequest, DeleteDatabaseResponse, GetDatabaseRequest, GetDatabaseResponse, GetIPWhitelistRequest, GetIPWhitelistResponse, GetMetricsRequest, GetMetricsResponse, GetSSLCertificatesRequest, GetSSLCertificatesResponse, GetUsageRequest, GetUsageResponse, ListDatabasesRequest, ListDatabasesResponse, RemoveIPWhitelistEntryRequest, RemoveIPWhitelistEntryResponse, ResizeStorageRequest, ResizeStorageResponse, RotateCredentialsRequest, RotateCredentialsResponse, SetAutoscaleRequest, SetAutoscaleResponse, SetUserTierRequest, SetUserTierResponse } from "./database_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -135,6 +135,39 @@ export const DatabaseService = {
       name: "ResizeStorage",
       I: ResizeStorageRequest,
       O: ResizeStorageResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * SetAutoscale enables/disables automatic storage scaling for a database.
+     *
+     * @generated from rpc euroscale.v1.DatabaseService.SetAutoscale
+     */
+    setAutoscale: {
+      name: "SetAutoscale",
+      I: SetAutoscaleRequest,
+      O: SetAutoscaleResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * GetMetrics returns CPU and disk metrics for a database (last 24h).
+     *
+     * @generated from rpc euroscale.v1.DatabaseService.GetMetrics
+     */
+    getMetrics: {
+      name: "GetMetrics",
+      I: GetMetricsRequest,
+      O: GetMetricsResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * GetSSLCertificates returns the SSL client certificates for a database.
+     *
+     * @generated from rpc euroscale.v1.DatabaseService.GetSSLCertificates
+     */
+    getSSLCertificates: {
+      name: "GetSSLCertificates",
+      I: GetSSLCertificatesRequest,
+      O: GetSSLCertificatesResponse,
       kind: MethodKind.Unary,
     },
   }

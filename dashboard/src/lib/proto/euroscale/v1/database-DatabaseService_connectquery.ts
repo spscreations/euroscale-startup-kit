@@ -96,3 +96,10 @@ export const setAutoscale = DatabaseService.method.setAutoscale;
  * @generated from rpc euroscale.v1.DatabaseService.GetMetrics
  */
 export const getMetrics = DatabaseService.method.getMetrics;
+
+/**
+ * GetSSLCertificates returns the SSL client certificates for a database.
+ *
+ * @generated from rpc euroscale.v1.DatabaseService.GetSSLCertificates
+ */
+export const getSSLCertificates = DatabaseService.method.getSSLCertificates;

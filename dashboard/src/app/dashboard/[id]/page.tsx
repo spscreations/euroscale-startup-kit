@@ -21,12 +21,14 @@ import {
   Shield,
   ShieldAlert,
   WifiOff,
+  Download,
 } from "lucide-react";
 import { cn, copyToClipboard, formatDate, formatBytes } from "@/lib/utils";
 import { useDatabase } from "@/hooks/useDatabase";
 import { useDeleteDatabase } from "@/hooks/useDeleteDatabase";
 import { useRotateCredentials } from "@/hooks/useRotateCredentials";
 import { useUsage } from "@/hooks/useUsage";
+import { useSSLCertificates } from "@/hooks/useSSLCertificates";
 import IPWhitelist from "@/components/IPWhitelist";
 import UsageCharts from "@/components/UsageCharts";
 import ConnectionSamples from "@/components/ConnectionSamples";
@@ -325,6 +327,9 @@ export default function DatabaseDetailPage() {
       ? Math.round((storageUsedNum / storageLimitNum) * 100)
       : 0;
 
+  // ── SSL Certificates ─────────────────────────────────────────────────────────
+  const { data: sslData, isLoading: sslLoading } = useSSLCertificates(id);
+
   // ── Actions ─────────────────────────────────────────────────────────────────
   async function handleDelete() {
     try {
@@ -614,6 +619,60 @@ export default function DatabaseDetailPage() {
           databaseId={db.databaseId}
           databaseName={db.name}
         />
+
+        {/* SSL Certificates */}
+        {sslData && !sslLoading && (
+          <Card className="overflow-hidden">
+            <CardHeader className="border-b border-border-subtle px-5 py-3.5">
+              <div className="flex items-center gap-2">
+                <Shield size={16} className="text-accent-text" />
+                <CardTitle className="text-sm font-semibold">
+                  SSL Certificates (mTLS)
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2 p-5">
+              {[
+                { label: "CA Certificate", data: sslData.caCert, filename: "ca-cert.pem" },
+                { label: "Client Certificate", data: sslData.clientCert, filename: "client-cert.pem" },
+                { label: "Client Key", data: sslData.clientKey, filename: "client-key.pem" },
+              ].map(({ label, data, filename }) => (
+                <div
+                  key={label}
+                  className="flex items-center justify-between py-1.5"
+                >
+                  <span className="text-xs font-medium text-text-muted">
+                    {label}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-accent-text hover:text-accent-text"
+                    onClick={() => {
+                      const blob = new Blob([data ?? ""], {
+                        type: "application/x-pem-file",
+                      });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = filename;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                  >
+                    <Download size={12} className="mr-1.5" />
+                    Download
+                  </Button>
+                </div>
+              ))}
+              <p className="text-[10px] text-text-disabled pt-1.5">
+                For DBeaver: set SSL → Require + Verify CA, then attach all
+                three files. See{" "}
+                <strong>How to Connect</strong> section above for code samples.
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Backups */}
         <Card className="overflow-hidden">

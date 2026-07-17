@@ -1979,6 +1979,114 @@ func (x *MetricPoint) GetDiskGb() float64 {
 	return 0
 }
 
+type GetSSLCertificatesRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID of the database to retrieve SSL certificates for.
+	DatabaseId    string `protobuf:"bytes,1,opt,name=database_id,json=databaseId,proto3" json:"database_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSSLCertificatesRequest) Reset() {
+	*x = GetSSLCertificatesRequest{}
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSSLCertificatesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSSLCertificatesRequest) ProtoMessage() {}
+
+func (x *GetSSLCertificatesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSSLCertificatesRequest.ProtoReflect.Descriptor instead.
+func (*GetSSLCertificatesRequest) Descriptor() ([]byte, []int) {
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *GetSSLCertificatesRequest) GetDatabaseId() string {
+	if x != nil {
+		return x.DatabaseId
+	}
+	return ""
+}
+
+type GetSSLCertificatesResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// PEM-encoded CA certificate.
+	CaCert string `protobuf:"bytes,1,opt,name=ca_cert,json=caCert,proto3" json:"ca_cert,omitempty"`
+	// PEM-encoded client certificate.
+	ClientCert string `protobuf:"bytes,2,opt,name=client_cert,json=clientCert,proto3" json:"client_cert,omitempty"`
+	// PEM-encoded client private key.
+	ClientKey     string `protobuf:"bytes,3,opt,name=client_key,json=clientKey,proto3" json:"client_key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSSLCertificatesResponse) Reset() {
+	*x = GetSSLCertificatesResponse{}
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSSLCertificatesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSSLCertificatesResponse) ProtoMessage() {}
+
+func (x *GetSSLCertificatesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSSLCertificatesResponse.ProtoReflect.Descriptor instead.
+func (*GetSSLCertificatesResponse) Descriptor() ([]byte, []int) {
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *GetSSLCertificatesResponse) GetCaCert() string {
+	if x != nil {
+		return x.CaCert
+	}
+	return ""
+}
+
+func (x *GetSSLCertificatesResponse) GetClientCert() string {
+	if x != nil {
+		return x.ClientCert
+	}
+	return ""
+}
+
+func (x *GetSSLCertificatesResponse) GetClientKey() string {
+	if x != nil {
+		return x.ClientKey
+	}
+	return ""
+}
+
 var File_proto_euroscale_v1_database_proto protoreflect.FileDescriptor
 
 const file_proto_euroscale_v1_database_proto_rawDesc = "" +
@@ -2131,7 +2239,17 @@ const file_proto_euroscale_v1_database_proto_rawDesc = "" +
 	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\x12\x1f\n" +
 	"\vcpu_percent\x18\x02 \x01(\x01R\n" +
 	"cpuPercent\x12\x17\n" +
-	"\adisk_gb\x18\x03 \x01(\x01R\x06diskGb2\xbe\t\n" +
+	"\adisk_gb\x18\x03 \x01(\x01R\x06diskGb\"<\n" +
+	"\x19GetSSLCertificatesRequest\x12\x1f\n" +
+	"\vdatabase_id\x18\x01 \x01(\tR\n" +
+	"databaseId\"u\n" +
+	"\x1aGetSSLCertificatesResponse\x12\x17\n" +
+	"\aca_cert\x18\x01 \x01(\tR\x06caCert\x12\x1f\n" +
+	"\vclient_cert\x18\x02 \x01(\tR\n" +
+	"clientCert\x12\x1d\n" +
+	"\n" +
+	"client_key\x18\x03 \x01(\tR\tclientKey2\xa7\n" +
+	"\n" +
 	"\x0fDatabaseService\x12[\n" +
 	"\x0eCreateDatabase\x12#.euroscale.v1.CreateDatabaseRequest\x1a$.euroscale.v1.CreateDatabaseResponse\x12[\n" +
 	"\x0eDeleteDatabase\x12#.euroscale.v1.DeleteDatabaseRequest\x1a$.euroscale.v1.DeleteDatabaseResponse\x12X\n" +
@@ -2146,7 +2264,8 @@ const file_proto_euroscale_v1_database_proto_rawDesc = "" +
 	"\rResizeStorage\x12\".euroscale.v1.ResizeStorageRequest\x1a#.euroscale.v1.ResizeStorageResponse\x12U\n" +
 	"\fSetAutoscale\x12!.euroscale.v1.SetAutoscaleRequest\x1a\".euroscale.v1.SetAutoscaleResponse\x12O\n" +
 	"\n" +
-	"GetMetrics\x12\x1f.euroscale.v1.GetMetricsRequest\x1a .euroscale.v1.GetMetricsResponseBPZNgithub.com/spscreations/euroscale-startup-kit/api/gen/euroscale/v1;euroscalev1b\x06proto3"
+	"GetMetrics\x12\x1f.euroscale.v1.GetMetricsRequest\x1a .euroscale.v1.GetMetricsResponse\x12g\n" +
+	"\x12GetSSLCertificates\x12'.euroscale.v1.GetSSLCertificatesRequest\x1a(.euroscale.v1.GetSSLCertificatesResponseBPZNgithub.com/spscreations/euroscale-startup-kit/api/gen/euroscale/v1;euroscalev1b\x06proto3"
 
 var (
 	file_proto_euroscale_v1_database_proto_rawDescOnce sync.Once
@@ -2160,7 +2279,7 @@ func file_proto_euroscale_v1_database_proto_rawDescGZIP() []byte {
 	return file_proto_euroscale_v1_database_proto_rawDescData
 }
 
-var file_proto_euroscale_v1_database_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
+var file_proto_euroscale_v1_database_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
 var file_proto_euroscale_v1_database_proto_goTypes = []any{
 	(*CreateDatabaseRequest)(nil),          // 0: euroscale.v1.CreateDatabaseRequest
 	(*CreateDatabaseResponse)(nil),         // 1: euroscale.v1.CreateDatabaseResponse
@@ -2193,6 +2312,8 @@ var file_proto_euroscale_v1_database_proto_goTypes = []any{
 	(*GetMetricsRequest)(nil),              // 28: euroscale.v1.GetMetricsRequest
 	(*GetMetricsResponse)(nil),             // 29: euroscale.v1.GetMetricsResponse
 	(*MetricPoint)(nil),                    // 30: euroscale.v1.MetricPoint
+	(*GetSSLCertificatesRequest)(nil),      // 31: euroscale.v1.GetSSLCertificatesRequest
+	(*GetSSLCertificatesResponse)(nil),     // 32: euroscale.v1.GetSSLCertificatesResponse
 }
 var file_proto_euroscale_v1_database_proto_depIdxs = []int32{
 	10, // 0: euroscale.v1.ListDatabasesResponse.databases:type_name -> euroscale.v1.Database
@@ -2215,21 +2336,23 @@ var file_proto_euroscale_v1_database_proto_depIdxs = []int32{
 	24, // 17: euroscale.v1.DatabaseService.ResizeStorage:input_type -> euroscale.v1.ResizeStorageRequest
 	26, // 18: euroscale.v1.DatabaseService.SetAutoscale:input_type -> euroscale.v1.SetAutoscaleRequest
 	28, // 19: euroscale.v1.DatabaseService.GetMetrics:input_type -> euroscale.v1.GetMetricsRequest
-	1,  // 20: euroscale.v1.DatabaseService.CreateDatabase:output_type -> euroscale.v1.CreateDatabaseResponse
-	3,  // 21: euroscale.v1.DatabaseService.DeleteDatabase:output_type -> euroscale.v1.DeleteDatabaseResponse
-	5,  // 22: euroscale.v1.DatabaseService.ListDatabases:output_type -> euroscale.v1.ListDatabasesResponse
-	7,  // 23: euroscale.v1.DatabaseService.GetDatabase:output_type -> euroscale.v1.GetDatabaseResponse
-	9,  // 24: euroscale.v1.DatabaseService.RotateCredentials:output_type -> euroscale.v1.RotateCredentialsResponse
-	13, // 25: euroscale.v1.DatabaseService.GetIPWhitelist:output_type -> euroscale.v1.GetIPWhitelistResponse
-	15, // 26: euroscale.v1.DatabaseService.AddIPWhitelistEntry:output_type -> euroscale.v1.AddIPWhitelistEntryResponse
-	17, // 27: euroscale.v1.DatabaseService.RemoveIPWhitelistEntry:output_type -> euroscale.v1.RemoveIPWhitelistEntryResponse
-	21, // 28: euroscale.v1.DatabaseService.GetUsage:output_type -> euroscale.v1.GetUsageResponse
-	23, // 29: euroscale.v1.DatabaseService.SetUserTier:output_type -> euroscale.v1.SetUserTierResponse
-	25, // 30: euroscale.v1.DatabaseService.ResizeStorage:output_type -> euroscale.v1.ResizeStorageResponse
-	27, // 31: euroscale.v1.DatabaseService.SetAutoscale:output_type -> euroscale.v1.SetAutoscaleResponse
-	29, // 32: euroscale.v1.DatabaseService.GetMetrics:output_type -> euroscale.v1.GetMetricsResponse
-	20, // [20:33] is the sub-list for method output_type
-	7,  // [7:20] is the sub-list for method input_type
+	31, // 20: euroscale.v1.DatabaseService.GetSSLCertificates:input_type -> euroscale.v1.GetSSLCertificatesRequest
+	1,  // 21: euroscale.v1.DatabaseService.CreateDatabase:output_type -> euroscale.v1.CreateDatabaseResponse
+	3,  // 22: euroscale.v1.DatabaseService.DeleteDatabase:output_type -> euroscale.v1.DeleteDatabaseResponse
+	5,  // 23: euroscale.v1.DatabaseService.ListDatabases:output_type -> euroscale.v1.ListDatabasesResponse
+	7,  // 24: euroscale.v1.DatabaseService.GetDatabase:output_type -> euroscale.v1.GetDatabaseResponse
+	9,  // 25: euroscale.v1.DatabaseService.RotateCredentials:output_type -> euroscale.v1.RotateCredentialsResponse
+	13, // 26: euroscale.v1.DatabaseService.GetIPWhitelist:output_type -> euroscale.v1.GetIPWhitelistResponse
+	15, // 27: euroscale.v1.DatabaseService.AddIPWhitelistEntry:output_type -> euroscale.v1.AddIPWhitelistEntryResponse
+	17, // 28: euroscale.v1.DatabaseService.RemoveIPWhitelistEntry:output_type -> euroscale.v1.RemoveIPWhitelistEntryResponse
+	21, // 29: euroscale.v1.DatabaseService.GetUsage:output_type -> euroscale.v1.GetUsageResponse
+	23, // 30: euroscale.v1.DatabaseService.SetUserTier:output_type -> euroscale.v1.SetUserTierResponse
+	25, // 31: euroscale.v1.DatabaseService.ResizeStorage:output_type -> euroscale.v1.ResizeStorageResponse
+	27, // 32: euroscale.v1.DatabaseService.SetAutoscale:output_type -> euroscale.v1.SetAutoscaleResponse
+	29, // 33: euroscale.v1.DatabaseService.GetMetrics:output_type -> euroscale.v1.GetMetricsResponse
+	32, // 34: euroscale.v1.DatabaseService.GetSSLCertificates:output_type -> euroscale.v1.GetSSLCertificatesResponse
+	21, // [21:35] is the sub-list for method output_type
+	7,  // [7:21] is the sub-list for method input_type
 	7,  // [7:7] is the sub-list for extension type_name
 	7,  // [7:7] is the sub-list for extension extendee
 	0,  // [0:7] is the sub-list for field type_name
@@ -2246,7 +2369,7 @@ func file_proto_euroscale_v1_database_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_euroscale_v1_database_proto_rawDesc), len(file_proto_euroscale_v1_database_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   31,
+			NumMessages:   33,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

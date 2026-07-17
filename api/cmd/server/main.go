@@ -924,6 +924,29 @@ func (s *server) GetMetrics(ctx context.Context, req *pb.GetMetricsRequest) (*pb
 	return &pb.GetMetricsResponse{Points: pbPoints}, nil
 }
 
+// GetSSLCertificates returns the SSL client certificates for a database.
+func (s *server) GetSSLCertificates(ctx context.Context, req *pb.GetSSLCertificatesRequest) (*pb.GetSSLCertificatesResponse, error) {
+	if req.DatabaseId == "" {
+		return nil, status.Error(codes.InvalidArgument, "database_id is required")
+	}
+	if err := s.verifyDatabaseOwnership(ctx, req.DatabaseId); err != nil {
+		return nil, err
+	}
+
+	// Read from K8s secret
+	sslSecret, err := s.clientset.CoreV1().Secrets("euroscale").Get(ctx, fmt.Sprintf("db-%s-ssl-client", req.DatabaseId), metav1.GetOptions{})
+	if err != nil {
+		log.Printf("ERROR: SSL cert secret not found for %q: %v", req.DatabaseId, err)
+		return nil, status.Error(codes.NotFound, "SSL certificates not found for this database")
+	}
+
+	return &pb.GetSSLCertificatesResponse{
+		CaCert:     string(sslSecret.Data["ca-cert.pem"]),
+		ClientCert: string(sslSecret.Data["client-cert.pem"]),
+		ClientKey:  string(sslSecret.Data["client-key.pem"]),
+	}, nil
+}
+
 // listAutoscaleSecrets lists all K8s Secrets with the autoscale type label.
 func (s *server) listAutoscaleSecrets(ctx context.Context) ([]string, error) {
 	secrets, err := s.clientset.CoreV1().Secrets("euroscale").List(ctx, metav1.ListOptions{

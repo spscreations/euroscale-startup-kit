@@ -32,6 +32,7 @@ const (
 	DatabaseService_ResizeStorage_FullMethodName          = "/euroscale.v1.DatabaseService/ResizeStorage"
 	DatabaseService_SetAutoscale_FullMethodName           = "/euroscale.v1.DatabaseService/SetAutoscale"
 	DatabaseService_GetMetrics_FullMethodName             = "/euroscale.v1.DatabaseService/GetMetrics"
+	DatabaseService_GetSSLCertificates_FullMethodName     = "/euroscale.v1.DatabaseService/GetSSLCertificates"
 )
 
 // DatabaseServiceClient is the client API for DatabaseService service.
@@ -68,6 +69,8 @@ type DatabaseServiceClient interface {
 	SetAutoscale(ctx context.Context, in *SetAutoscaleRequest, opts ...grpc.CallOption) (*SetAutoscaleResponse, error)
 	// GetMetrics returns CPU and disk metrics for a database (last 24h).
 	GetMetrics(ctx context.Context, in *GetMetricsRequest, opts ...grpc.CallOption) (*GetMetricsResponse, error)
+	// GetSSLCertificates returns the SSL client certificates for a database.
+	GetSSLCertificates(ctx context.Context, in *GetSSLCertificatesRequest, opts ...grpc.CallOption) (*GetSSLCertificatesResponse, error)
 }
 
 type databaseServiceClient struct {
@@ -208,6 +211,16 @@ func (c *databaseServiceClient) GetMetrics(ctx context.Context, in *GetMetricsRe
 	return out, nil
 }
 
+func (c *databaseServiceClient) GetSSLCertificates(ctx context.Context, in *GetSSLCertificatesRequest, opts ...grpc.CallOption) (*GetSSLCertificatesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSSLCertificatesResponse)
+	err := c.cc.Invoke(ctx, DatabaseService_GetSSLCertificates_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DatabaseServiceServer is the server API for DatabaseService service.
 // All implementations must embed UnimplementedDatabaseServiceServer
 // for forward compatibility.
@@ -242,6 +255,8 @@ type DatabaseServiceServer interface {
 	SetAutoscale(context.Context, *SetAutoscaleRequest) (*SetAutoscaleResponse, error)
 	// GetMetrics returns CPU and disk metrics for a database (last 24h).
 	GetMetrics(context.Context, *GetMetricsRequest) (*GetMetricsResponse, error)
+	// GetSSLCertificates returns the SSL client certificates for a database.
+	GetSSLCertificates(context.Context, *GetSSLCertificatesRequest) (*GetSSLCertificatesResponse, error)
 	mustEmbedUnimplementedDatabaseServiceServer()
 }
 
@@ -290,6 +305,9 @@ func (UnimplementedDatabaseServiceServer) SetAutoscale(context.Context, *SetAuto
 }
 func (UnimplementedDatabaseServiceServer) GetMetrics(context.Context, *GetMetricsRequest) (*GetMetricsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetMetrics not implemented")
+}
+func (UnimplementedDatabaseServiceServer) GetSSLCertificates(context.Context, *GetSSLCertificatesRequest) (*GetSSLCertificatesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSSLCertificates not implemented")
 }
 func (UnimplementedDatabaseServiceServer) mustEmbedUnimplementedDatabaseServiceServer() {}
 func (UnimplementedDatabaseServiceServer) testEmbeddedByValue()                         {}
@@ -546,6 +564,24 @@ func _DatabaseService_GetMetrics_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DatabaseService_GetSSLCertificates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSSLCertificatesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DatabaseServiceServer).GetSSLCertificates(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DatabaseService_GetSSLCertificates_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DatabaseServiceServer).GetSSLCertificates(ctx, req.(*GetSSLCertificatesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DatabaseService_ServiceDesc is the grpc.ServiceDesc for DatabaseService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -604,6 +640,10 @@ var DatabaseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetMetrics",
 			Handler:    _DatabaseService_GetMetrics_Handler,
+		},
+		{
+			MethodName: "GetSSLCertificates",
+			Handler:    _DatabaseService_GetSSLCertificates_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -36,6 +36,7 @@ type DatabaseServiceServer interface {
 	ResizeStorage(ctx context.Context, req *pb.ResizeStorageRequest) (*pb.ResizeStorageResponse, error)
 	SetAutoscale(ctx context.Context, req *pb.SetAutoscaleRequest) (*pb.SetAutoscaleResponse, error)
 	GetMetrics(ctx context.Context, req *pb.GetMetricsRequest) (*pb.GetMetricsResponse, error)
+	GetSSLCertificates(ctx context.Context, req *pb.GetSSLCertificatesRequest) (*pb.GetSSLCertificatesResponse, error)
 }
 
 // MetadataServiceServer is the interface the metadata service satisfies.
@@ -70,6 +71,7 @@ const (
 	PathResizeStorage = "/euroscale.v1.DatabaseService/ResizeStorage"
 	PathSetAutoscale  = "/euroscale.v1.DatabaseService/SetAutoscale"
 	PathGetMetrics    = "/euroscale.v1.DatabaseService/GetMetrics"
+	PathGetSSLCertificates = "/euroscale.v1.DatabaseService/GetSSLCertificates"
 
 	// MetadataService paths.
 	PathListSchemaDatabases = "/euroscale.v1.MetadataService/ListSchemaDatabases"
@@ -254,6 +256,19 @@ func NewHandler(srv DatabaseServiceServer, jwtSecret string, extraInterceptors .
 		PathGetMetrics,
 		func(ctx context.Context, req *connect.Request[pb.GetMetricsRequest]) (*connect.Response[pb.GetMetricsResponse], error) {
 			resp, err := srv.GetMetrics(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		connect.WithInterceptors(allInterceptors...),
+	))
+
+	// GetSSLCertificates
+	mux.Handle(PathGetSSLCertificates, connect.NewUnaryHandler(
+		PathGetSSLCertificates,
+		func(ctx context.Context, req *connect.Request[pb.GetSSLCertificatesRequest]) (*connect.Response[pb.GetSSLCertificatesResponse], error) {
+			resp, err := srv.GetSSLCertificates(ctx, req.Msg)
 			if err != nil {
 				return nil, err
 			}
