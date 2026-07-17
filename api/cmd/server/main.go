@@ -1594,15 +1594,6 @@ func main() {
 		_ = healthSrv.Shutdown(ctx)
 	}()
 
-	// ── Connect to Vitess ──────────────────────────────────────────────────
-	log.Printf("Connecting to vtgate at %s...", vtgateAddr)
-	vtgateMgr, err := vitess.NewManager(vtgateAddr, vtctldAddr)
-	if err != nil {
-		log.Fatalf("Failed to initialize vitess manager: %v", err)
-	}
-	defer vtgateMgr.Close()
-	log.Println("Vitess manager initialized successfully.")
-
 	// ── Create K8s clientset ──────────────────────────────────────────────
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -1623,7 +1614,17 @@ func main() {
 	ipwlStore := ipwhitelist.NewStore(clientset, namespace)
 	tierStore := tiers.NewStore(clientset, namespace)
 	resizer := storage.NewResizer(clientset, dynamicClient, namespace)
+
 	log.Println("K8s clientset created successfully.")
+
+	// ── Connect to Vitess ──────────────────────────────────────────────────
+	log.Printf("Connecting to vtgate at %s...", vtgateAddr)
+	vtgateMgr, err := vitess.NewManager(vtgateAddr, vtctldAddr, dynamicClient, namespace)
+	if err != nil {
+		log.Fatalf("Failed to initialize vitess manager: %v", err)
+	}
+	defer vtgateMgr.Close()
+	log.Println("Vitess manager initialized successfully.")
 
 	// Ensure the user-tier ConfigMap exists.
 	if err := tierStore.EnsureConfigMap(context.Background()); err != nil {

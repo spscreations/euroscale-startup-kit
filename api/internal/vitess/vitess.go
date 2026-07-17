@@ -1,5 +1,5 @@
 // Package vitess provides a manager for interacting with a Vitess cluster
-// to provision and deprovision keyspaces (databases).
+// to provision and deprovision keyspaces (databases) via VitessKeyspace CRDs.
 package vitess
 
 import (
@@ -7,30 +7,36 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
-	"os/exec"
 	"strings"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 )
 
-// Manager handles database provisioning operations via vtctlclient.
+// Manager handles database provisioning operations via VitessKeyspace CRDs.
 type Manager struct {
-	vtgateAddr string
-	vtctldAddr string
+	vtgateAddr    string
+	vtctldAddr    string
+	dynamicClient dynamic.Interface
+	namespace     string
 }
 
 // NewManager creates a new Manager configured to talk to the given
 // vtgate and vtctld addresses.
 //
 // vtgateAddr should be in "host:port" format (e.g. "euroscale-vtgate:3306").
-//
-//	Used for future health checks and direct MySQL operations.
+// Used for future health checks and direct MySQL operations.
 //
 // vtctldAddr should be in "host:port" format (e.g. "euroscale-vtctld:15999").
-//
-//	Used for keyspace lifecycle (Create/Drop) via vtctlclient.
-func NewManager(vtgateAddr, vtctldAddr string) (*Manager, error) {
+// Used for backup/restore operations.
+func NewManager(vtgateAddr, vtctldAddr string, dynamicClient dynamic.Interface, namespace string) (*Manager, error) {
 	return &Manager{
-		vtgateAddr: vtgateAddr,
-		vtctldAddr: vtctldAddr,
+		vtgateAddr:    vtgateAddr,
+		vtctldAddr:    vtctldAddr,
+		dynamicClient: dynamicClient,
+		namespace:     namespace,
 	}, nil
 }
 
@@ -46,91 +52,127 @@ func (m *Manager) VtctldAddr() string {
 	return m.vtctldAddr
 }
 
-// ListBackups returns the output of `vtctlclient ListBackups` for a keyspace.
-// Returns the raw vtctlclient output as a string, which callers can parse.
-func (m *Manager) ListBackups(ctx context.Context, keyspace string) (string, error) {
-	if err := validateDatabaseName(keyspace); err != nil {
-		return "", err
-	}
-
-	cmd := exec.CommandContext(ctx, "vtctlclient",
-		"--server", m.vtctldAddr,
-		"ListBackups", keyspace,
-	)
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("failed to list backups for keyspace %q: %w", keyspace, err)
-	}
-
-	return string(output), nil
-}
-
-// RestoreFromBackup triggers a restore of the given tablet alias from the
-// most recent backup via vtctlclient.
-func (m *Manager) RestoreFromBackup(ctx context.Context, tabletAlias string) (string, error) {
-	cmd := exec.CommandContext(ctx, "vtctlclient",
-		"--server", m.vtctldAddr,
-		"RestoreFromBackup", tabletAlias,
-	)
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("failed to restore from backup for tablet %q: %w", tabletAlias, err)
-	}
-
-	return string(output), nil
-}
-
-// CreateDatabase creates a new keyspace in Vitess via vtctlclient.
-//
-// Under the hood this calls:
-//
-//	vtctlclient -server <vtctldAddr> CreateKeyspace <name>
-//
-// Database names are sanitized to prevent command injection — only
-// alphanumeric characters and underscores are allowed.
+// CreateDatabase creates a new keyspace in Vitess by creating a VitessKeyspace CRD.
+// It clones the existing "main" keyspace as a template, changes the name to the
+// new keyspace, and sets replicas to 1 per cell pool to keep resource usage low.
 func (m *Manager) CreateDatabase(ctx context.Context, name string) error {
 	if err := validateDatabaseName(name); err != nil {
 		return err
 	}
 
-	cmd := exec.CommandContext(ctx, "vtctlclient",
-		"--server", m.vtctldAddr,
-		"CreateKeyspace", name,
-	)
+	keyspaceGVR := schema.GroupVersionResource{
+		Group:    "planetscale.com",
+		Version:  "v2",
+		Resource: "vitesskeyspaces",
+	}
 
-	_, err := cmd.CombinedOutput()
+	// Get the main keyspace to use as a template.
+	mainKeyspaces, err := m.dynamicClient.Resource(keyspaceGVR).Namespace(m.namespace).List(ctx, metav1.ListOptions{
+		LabelSelector: "planetscale.com/keyspace=main",
+	})
 	if err != nil {
-		return fmt.Errorf("failed to create keyspace %q: %w", name, err)
+		return fmt.Errorf("failed to list main keyspace templates: %w", err)
+	}
+	if len(mainKeyspaces.Items) == 0 {
+		return fmt.Errorf("no main keyspace found to use as template — Vitess cluster may not be initialized")
+	}
+
+	template := mainKeyspaces.Items[0].DeepCopy()
+
+	// Clean metadata for the new keyspace.
+	unstructured.RemoveNestedField(template.Object, "metadata", "creationTimestamp")
+	unstructured.RemoveNestedField(template.Object, "metadata", "generation")
+	unstructured.RemoveNestedField(template.Object, "metadata", "resourceVersion")
+	unstructured.RemoveNestedField(template.Object, "metadata", "uid")
+	unstructured.RemoveNestedField(template.Object, "metadata", "ownerReferences")
+	unstructured.RemoveNestedField(template.Object, "metadata", "managedFields")
+
+	// Set the new keyspace identity.
+	template.SetName(fmt.Sprintf("euroscale-%s-6f85067f", name))
+	labels := template.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	labels["planetscale.com/keyspace"] = name
+	template.SetLabels(labels)
+
+	// Set spec name to the database name.
+	if err := unstructured.SetNestedField(template.Object, name, "spec", "name"); err != nil {
+		return fmt.Errorf("failed to set keyspace name: %w", err)
+	}
+
+	// Reduce replicas to 1 per pool for non-main keyspaces.
+	partitionings, found, err := unstructured.NestedSlice(template.Object, "spec", "partitionings")
+	if err != nil || !found {
+		return fmt.Errorf("failed to get partitionings from template: %w", err)
+	}
+	for _, p := range partitionings {
+		part, ok := p.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		equal, ok := part["equal"].(map[string]interface{})
+		if !ok {
+			continue
+		}
+		shardTmpl, ok := equal["shardTemplate"].(map[string]interface{})
+		if !ok {
+			continue
+		}
+		pools, ok := shardTmpl["tabletPools"].([]interface{})
+		if !ok {
+			continue
+		}
+		for _, tp := range pools {
+			pool, ok := tp.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			pool["replicas"] = int64(1)
+		}
+	}
+	if err := unstructured.SetNestedSlice(template.Object, partitionings, "spec", "partitionings"); err != nil {
+		return fmt.Errorf("failed to update partitionings: %w", err)
+	}
+
+	_, err = m.dynamicClient.Resource(keyspaceGVR).Namespace(m.namespace).Create(ctx, template, metav1.CreateOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to create VitessKeyspace CRD for %q: %w", name, err)
 	}
 
 	return nil
 }
 
-// DeleteDatabase drops a keyspace from Vitess via vtctlclient.
-//
-// Under the hood this calls:
-//
-//	vtctlclient -server <vtctldAddr> DeleteKeyspace --force <name>
+// DeleteDatabase deletes a VitessKeyspace CRD, which triggers the Vitess operator
+// to remove all associated shards, tablets, and topology entries.
 func (m *Manager) DeleteDatabase(ctx context.Context, name string) error {
 	if err := validateDatabaseName(name); err != nil {
 		return err
 	}
 
-	cmd := exec.CommandContext(ctx, "vtctlclient",
-		"--server", m.vtctldAddr,
-		"DeleteKeyspace", name,
-	)
+	keyspaceGVR := schema.GroupVersionResource{
+		Group:    "planetscale.com",
+		Version:  "v2",
+		Resource: "vitesskeyspaces",
+	}
 
-	output, err := cmd.CombinedOutput()
+	// Find the keyspace CRD by label.
+	list, err := m.dynamicClient.Resource(keyspaceGVR).Namespace(m.namespace).List(ctx, metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("planetscale.com/keyspace=%s", name),
+	})
 	if err != nil {
-		// If the keyspace lock doesn't exist (partial state), the
-		// keyspace is effectively already gone — treat as success.
-		if strings.Contains(string(output), "failed to lock") {
-			return nil
+		return fmt.Errorf("failed to list keyspaces for deletion of %q: %w", name, err)
+	}
+
+	if len(list.Items) == 0 {
+		// Keyspace doesn't exist — already gone, treat as success.
+		return nil
+	}
+
+	for _, ks := range list.Items {
+		if err := m.dynamicClient.Resource(keyspaceGVR).Namespace(m.namespace).Delete(ctx, ks.GetName(), metav1.DeleteOptions{}); err != nil {
+			return fmt.Errorf("failed to delete VitessKeyspace CRD %q: %w", ks.GetName(), err)
 		}
-		return fmt.Errorf("failed to delete keyspace %q: %w", name, err)
 	}
 
 	return nil
@@ -157,8 +199,6 @@ func GenerateCredentials() (username string, password string, err error) {
 // ── helpers ─────────────────────────────────────────────────────────────────
 
 // validateDatabaseName ensures the name contains only safe characters.
-// This protects against command injection since names are passed as arguments
-// to vtctlclient.
 func validateDatabaseName(name string) error {
 	if name == "" {
 		return fmt.Errorf("database name must not be empty")
