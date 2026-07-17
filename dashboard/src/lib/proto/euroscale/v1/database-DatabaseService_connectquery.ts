@@ -82,3 +82,17 @@ export const setUserTier = DatabaseService.method.setUserTier;
  * @generated from rpc euroscale.v1.DatabaseService.ResizeStorage
  */
 export const resizeStorage = DatabaseService.method.resizeStorage;
+
+/**
+ * SetAutoscale enables/disables automatic storage scaling for a database.
+ *
+ * @generated from rpc euroscale.v1.DatabaseService.SetAutoscale
+ */
+export const setAutoscale = DatabaseService.method.setAutoscale;
+
+/**
+ * GetMetrics returns CPU and disk metrics for a database (last 24h).
+ *
+ * @generated from rpc euroscale.v1.DatabaseService.GetMetrics
+ */
+export const getMetrics = DatabaseService.method.getMetrics;

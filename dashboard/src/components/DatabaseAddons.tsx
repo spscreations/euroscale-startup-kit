@@ -4,6 +4,7 @@ import { Zap } from "lucide-react";
 import { toast } from "sonner";
 import { useUsage } from "@/hooks/useUsage";
 import { useResizeStorage } from "@/hooks/useResizeStorage";
+import { useSetAutoscale } from "@/hooks/useSetAutoscale";
 import StorageCard from "@/components/StorageCard";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
@@ -27,6 +28,7 @@ export default function DatabaseAddons({
 }: DatabaseAddonsProps) {
   const { data: usageData, refetch } = useUsage();
   const resizeMutation = useResizeStorage();
+  const autoscaleMutation = useSetAutoscale();
 
   const limits = usageData?.limits;
   const usage = usageData?.usage;
@@ -94,15 +96,28 @@ export default function DatabaseAddons({
             );
           }}
           onApplyAutoscale={(
-            _enabled: boolean,
+            enabled: boolean,
             threshold: number,
             increment: number,
           ) => {
-            toast.success(
-              `Storage autoscale for ${databaseName}: ${threshold}% threshold, ${increment}% increment (billing integration pending)`,
+            if (!databaseId) {
+              toast.error("No database selected");
+              return;
+            }
+            autoscaleMutation.mutate(
+              { databaseId, enabled, thresholdPercent: threshold, incrementPercent: increment },
+              {
+                onSuccess: () => {
+                  toast.success(`Autoscale ${enabled ? "enabled" : "disabled"} for ${databaseName}`);
+                  void refetch();
+                },
+                onError: (err) => {
+                  toast.error(`Autoscale failed: ${err.message}`);
+                },
+              },
             );
           }}
-          isApplying={resizeMutation.isPending}
+          isApplying={resizeMutation.isPending || autoscaleMutation.isPending}
         />
       </CardContent>
     </Card>

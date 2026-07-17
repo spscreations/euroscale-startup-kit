@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file euroscale/v1/database.proto.
  */
 export const file_euroscale_v1_database: GenFile = /*@__PURE__*/
-  fileDesc("ChtldXJvc2NhbGUvdjEvZGF0YWJhc2UucHJvdG8SDGV1cm9zY2FsZS52MSJWChVDcmVhdGVEYXRhYmFzZVJlcXVlc3QSDAoEbmFtZRgBIAEoCRIOCgZlbmdpbmUYAiABKAkSDgoGcmVnaW9uGAMgASgJEg8KB3VzZXJfaWQYBCABKAki4AEKFkNyZWF0ZURhdGFiYXNlUmVzcG9uc2USEwoLZGF0YWJhc2VfaWQYASABKAkSGQoRY29ubmVjdGlvbl9zdHJpbmcYAiABKAkSDAoEaG9zdBgDIAEoCRIMCgRwb3J0GAQgASgFEhAKCHVzZXJuYW1lGAUgASgJEhAKCHBhc3N3b3JkGAYgASgJEhIKCnNzbF9jYV9wZW0YByABKAkSDgoGZW5naW5lGAggASgJEg4KBnJlZ2lvbhgJIAEoCRIOCgZzdGF0dXMYCiABKAkSEgoKY3JlYXRlZF9hdBgLIAEoCSIsChVEZWxldGVEYXRhYmFzZVJlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkiOgoWRGVsZXRlRGF0YWJhc2VSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB21lc3NhZ2UYAiABKAkiTgoUTGlzdERhdGFiYXNlc1JlcXVlc3QSDwoHdXNlcl9pZBgBIAEoCRIRCglwYWdlX3NpemUYAiABKAUSEgoKcGFnZV90b2tlbhgDIAEoCSJqChVMaXN0RGF0YWJhc2VzUmVzcG9uc2USKQoJZGF0YWJhc2VzGAEgAygLMhYuZXVyb3NjYWxlLnYxLkRhdGFiYXNlEhcKD25leHRfcGFnZV90b2tlbhgCIAEoCRINCgV0b3RhbBgDIAEoBSIpChJHZXREYXRhYmFzZVJlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkiPwoTR2V0RGF0YWJhc2VSZXNwb25zZRIoCghkYXRhYmFzZRgBIAEoCzIWLmV1cm9zY2FsZS52MS5EYXRhYmFzZSIvChhSb3RhdGVDcmVkZW50aWFsc1JlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkinwEKGVJvdGF0ZUNyZWRlbnRpYWxzUmVzcG9uc2USEwoLZGF0YWJhc2VfaWQYASABKAkSGQoRY29ubmVjdGlvbl9zdHJpbmcYAiABKAkSEAoIdXNlcm5hbWUYAyABKAkSEAoIcGFzc3dvcmQYBCABKAkSEgoKc3NsX2NhX3BlbRgFIAEoCRIMCgRob3N0GAYgASgJEgwKBHBvcnQYByABKAUiswEKCERhdGFiYXNlEhMKC2RhdGFiYXNlX2lkGAEgASgJEgwKBG5hbWUYAiABKAkSDgoGZW5naW5lGAMgASgJEg4KBnJlZ2lvbhgEIAEoCRIMCgRob3N0GAUgASgJEgwKBHBvcnQYBiABKAUSEAoIdXNlcm5hbWUYByABKAkSDgoGc3RhdHVzGAggASgJEhIKCmNyZWF0ZWRfYXQYCSABKAkSEgoKc3NsX2NhX3BlbRgKIAEoCSJJChBJUFdoaXRlbGlzdEVudHJ5EgwKBGNpZHIYASABKAkSEwoLZGVzY3JpcHRpb24YAiABKAkSEgoKY3JlYXRlZF9hdBgDIAEoCSIsChVHZXRJUFdoaXRlbGlzdFJlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkiSQoWR2V0SVBXaGl0ZWxpc3RSZXNwb25zZRIvCgdlbnRyaWVzGAEgAygLMh4uZXVyb3NjYWxlLnYxLklQV2hpdGVsaXN0RW50cnkiVAoaQWRkSVBXaGl0ZWxpc3RFbnRyeVJlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkSDAoEY2lkchgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCSJMChtBZGRJUFdoaXRlbGlzdEVudHJ5UmVzcG9uc2USLQoFZW50cnkYASABKAsyHi5ldXJvc2NhbGUudjEuSVBXaGl0ZWxpc3RFbnRyeSJCCh1SZW1vdmVJUFdoaXRlbGlzdEVudHJ5UmVxdWVzdBITCgtkYXRhYmFzZV9pZBgBIAEoCRIMCgRjaWRyGAIgASgJIkIKHlJlbW92ZUlQV2hpdGVsaXN0RW50cnlSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB21lc3NhZ2UYAiABKAkiIgoPR2V0VXNhZ2VSZXF1ZXN0Eg8KB3VzZXJfaWQYASABKAki1gEKClRpZXJMaW1pdHMSFQoNbWF4X2RhdGFiYXNlcxgBIAEoBRIZChFtYXhfc3RvcmFnZV9ieXRlcxgCIAEoAxIcChRyZWFkX3VuaXRzX3Blcl9tb250aBgDIAEoAxIdChV3cml0ZV91bml0c19wZXJfbW9udGgYBCABKAMSIwobYWRkaXRpb25hbF9zdG9yYWdlX2diX3ByaWNlGAUgASgBEhoKEmF1dG9zY2FsZV9jdV9wcmljZRgGIAEoARIYChBhdXRvc2NhbGVfbWF4X2N1GAcgASgFImkKBVVzYWdlEhYKDmRhdGFiYXNlX2NvdW50GAEgASgFEhUKDXN0b3JhZ2VfYnl0ZXMYAiABKAMSFwoPcmVhZF91bml0c191c2VkGAMgASgDEhgKEHdyaXRlX3VuaXRzX3VzZWQYBCABKAMifwoQR2V0VXNhZ2VSZXNwb25zZRIPCgd1c2VyX2lkGAEgASgJEgwKBHRpZXIYAiABKAkSKAoGbGltaXRzGAMgASgLMhguZXVyb3NjYWxlLnYxLlRpZXJMaW1pdHMSIgoFdXNhZ2UYBCABKAsyEy5ldXJvc2NhbGUudjEuVXNhZ2UiMwoSU2V0VXNlclRpZXJSZXF1ZXN0Eg8KB3VzZXJfaWQYASABKAkSDAoEdGllchgCIAEoCSImChNTZXRVc2VyVGllclJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiQgoUUmVzaXplU3RvcmFnZVJlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkSFQoNYWRkaXRpb25hbF9nYhgCIAEoBSJPChVSZXNpemVTdG9yYWdlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIUCgxuZXdfdG90YWxfZ2IYAiABKAMSDwoHbWVzc2FnZRgDIAEoCTKWCAoPRGF0YWJhc2VTZXJ2aWNlElsKDkNyZWF0ZURhdGFiYXNlEiMuZXVyb3NjYWxlLnYxLkNyZWF0ZURhdGFiYXNlUmVxdWVzdBokLmV1cm9zY2FsZS52MS5DcmVhdGVEYXRhYmFzZVJlc3BvbnNlElsKDkRlbGV0ZURhdGFiYXNlEiMuZXVyb3NjYWxlLnYxLkRlbGV0ZURhdGFiYXNlUmVxdWVzdBokLmV1cm9zY2FsZS52MS5EZWxldGVEYXRhYmFzZVJlc3BvbnNlElgKDUxpc3REYXRhYmFzZXMSIi5ldXJvc2NhbGUudjEuTGlzdERhdGFiYXNlc1JlcXVlc3QaIy5ldXJvc2NhbGUudjEuTGlzdERhdGFiYXNlc1Jlc3BvbnNlElIKC0dldERhdGFiYXNlEiAuZXVyb3NjYWxlLnYxLkdldERhdGFiYXNlUmVxdWVzdBohLmV1cm9zY2FsZS52MS5HZXREYXRhYmFzZVJlc3BvbnNlEmQKEVJvdGF0ZUNyZWRlbnRpYWxzEiYuZXVyb3NjYWxlLnYxLlJvdGF0ZUNyZWRlbnRpYWxzUmVxdWVzdBonLmV1cm9zY2FsZS52MS5Sb3RhdGVDcmVkZW50aWFsc1Jlc3BvbnNlElsKDkdldElQV2hpdGVsaXN0EiMuZXVyb3NjYWxlLnYxLkdldElQV2hpdGVsaXN0UmVxdWVzdBokLmV1cm9zY2FsZS52MS5HZXRJUFdoaXRlbGlzdFJlc3BvbnNlEmoKE0FkZElQV2hpdGVsaXN0RW50cnkSKC5ldXJvc2NhbGUudjEuQWRkSVBXaGl0ZWxpc3RFbnRyeVJlcXVlc3QaKS5ldXJvc2NhbGUudjEuQWRkSVBXaGl0ZWxpc3RFbnRyeVJlc3BvbnNlEnMKFlJlbW92ZUlQV2hpdGVsaXN0RW50cnkSKy5ldXJvc2NhbGUudjEuUmVtb3ZlSVBXaGl0ZWxpc3RFbnRyeVJlcXVlc3QaLC5ldXJvc2NhbGUudjEuUmVtb3ZlSVBXaGl0ZWxpc3RFbnRyeVJlc3BvbnNlEkkKCEdldFVzYWdlEh0uZXVyb3NjYWxlLnYxLkdldFVzYWdlUmVxdWVzdBoeLmV1cm9zY2FsZS52MS5HZXRVc2FnZVJlc3BvbnNlElIKC1NldFVzZXJUaWVyEiAuZXVyb3NjYWxlLnYxLlNldFVzZXJUaWVyUmVxdWVzdBohLmV1cm9zY2FsZS52MS5TZXRVc2VyVGllclJlc3BvbnNlElgKDVJlc2l6ZVN0b3JhZ2USIi5ldXJvc2NhbGUudjEuUmVzaXplU3RvcmFnZVJlcXVlc3QaIy5ldXJvc2NhbGUudjEuUmVzaXplU3RvcmFnZVJlc3BvbnNlQlBaTmdpdGh1Yi5jb20vc3BzY3JlYXRpb25zL2V1cm9zY2FsZS1zdGFydHVwLWtpdC9hcGkvZ2VuL2V1cm9zY2FsZS92MTtldXJvc2NhbGV2MWIGcHJvdG8z");
+  fileDesc("ChtldXJvc2NhbGUvdjEvZGF0YWJhc2UucHJvdG8SDGV1cm9zY2FsZS52MSJWChVDcmVhdGVEYXRhYmFzZVJlcXVlc3QSDAoEbmFtZRgBIAEoCRIOCgZlbmdpbmUYAiABKAkSDgoGcmVnaW9uGAMgASgJEg8KB3VzZXJfaWQYBCABKAki4AEKFkNyZWF0ZURhdGFiYXNlUmVzcG9uc2USEwoLZGF0YWJhc2VfaWQYASABKAkSGQoRY29ubmVjdGlvbl9zdHJpbmcYAiABKAkSDAoEaG9zdBgDIAEoCRIMCgRwb3J0GAQgASgFEhAKCHVzZXJuYW1lGAUgASgJEhAKCHBhc3N3b3JkGAYgASgJEhIKCnNzbF9jYV9wZW0YByABKAkSDgoGZW5naW5lGAggASgJEg4KBnJlZ2lvbhgJIAEoCRIOCgZzdGF0dXMYCiABKAkSEgoKY3JlYXRlZF9hdBgLIAEoCSIsChVEZWxldGVEYXRhYmFzZVJlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkiOgoWRGVsZXRlRGF0YWJhc2VSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB21lc3NhZ2UYAiABKAkiTgoUTGlzdERhdGFiYXNlc1JlcXVlc3QSDwoHdXNlcl9pZBgBIAEoCRIRCglwYWdlX3NpemUYAiABKAUSEgoKcGFnZV90b2tlbhgDIAEoCSJqChVMaXN0RGF0YWJhc2VzUmVzcG9uc2USKQoJZGF0YWJhc2VzGAEgAygLMhYuZXVyb3NjYWxlLnYxLkRhdGFiYXNlEhcKD25leHRfcGFnZV90b2tlbhgCIAEoCRINCgV0b3RhbBgDIAEoBSIpChJHZXREYXRhYmFzZVJlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkiPwoTR2V0RGF0YWJhc2VSZXNwb25zZRIoCghkYXRhYmFzZRgBIAEoCzIWLmV1cm9zY2FsZS52MS5EYXRhYmFzZSIvChhSb3RhdGVDcmVkZW50aWFsc1JlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkinwEKGVJvdGF0ZUNyZWRlbnRpYWxzUmVzcG9uc2USEwoLZGF0YWJhc2VfaWQYASABKAkSGQoRY29ubmVjdGlvbl9zdHJpbmcYAiABKAkSEAoIdXNlcm5hbWUYAyABKAkSEAoIcGFzc3dvcmQYBCABKAkSEgoKc3NsX2NhX3BlbRgFIAEoCRIMCgRob3N0GAYgASgJEgwKBHBvcnQYByABKAUiswEKCERhdGFiYXNlEhMKC2RhdGFiYXNlX2lkGAEgASgJEgwKBG5hbWUYAiABKAkSDgoGZW5naW5lGAMgASgJEg4KBnJlZ2lvbhgEIAEoCRIMCgRob3N0GAUgASgJEgwKBHBvcnQYBiABKAUSEAoIdXNlcm5hbWUYByABKAkSDgoGc3RhdHVzGAggASgJEhIKCmNyZWF0ZWRfYXQYCSABKAkSEgoKc3NsX2NhX3BlbRgKIAEoCSJJChBJUFdoaXRlbGlzdEVudHJ5EgwKBGNpZHIYASABKAkSEwoLZGVzY3JpcHRpb24YAiABKAkSEgoKY3JlYXRlZF9hdBgDIAEoCSIsChVHZXRJUFdoaXRlbGlzdFJlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkiSQoWR2V0SVBXaGl0ZWxpc3RSZXNwb25zZRIvCgdlbnRyaWVzGAEgAygLMh4uZXVyb3NjYWxlLnYxLklQV2hpdGVsaXN0RW50cnkiVAoaQWRkSVBXaGl0ZWxpc3RFbnRyeVJlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkSDAoEY2lkchgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCSJMChtBZGRJUFdoaXRlbGlzdEVudHJ5UmVzcG9uc2USLQoFZW50cnkYASABKAsyHi5ldXJvc2NhbGUudjEuSVBXaGl0ZWxpc3RFbnRyeSJCCh1SZW1vdmVJUFdoaXRlbGlzdEVudHJ5UmVxdWVzdBITCgtkYXRhYmFzZV9pZBgBIAEoCRIMCgRjaWRyGAIgASgJIkIKHlJlbW92ZUlQV2hpdGVsaXN0RW50cnlSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB21lc3NhZ2UYAiABKAkiIgoPR2V0VXNhZ2VSZXF1ZXN0Eg8KB3VzZXJfaWQYASABKAki1gEKClRpZXJMaW1pdHMSFQoNbWF4X2RhdGFiYXNlcxgBIAEoBRIZChFtYXhfc3RvcmFnZV9ieXRlcxgCIAEoAxIcChRyZWFkX3VuaXRzX3Blcl9tb250aBgDIAEoAxIdChV3cml0ZV91bml0c19wZXJfbW9udGgYBCABKAMSIwobYWRkaXRpb25hbF9zdG9yYWdlX2diX3ByaWNlGAUgASgBEhoKEmF1dG9zY2FsZV9jdV9wcmljZRgGIAEoARIYChBhdXRvc2NhbGVfbWF4X2N1GAcgASgFImkKBVVzYWdlEhYKDmRhdGFiYXNlX2NvdW50GAEgASgFEhUKDXN0b3JhZ2VfYnl0ZXMYAiABKAMSFwoPcmVhZF91bml0c191c2VkGAMgASgDEhgKEHdyaXRlX3VuaXRzX3VzZWQYBCABKAMifwoQR2V0VXNhZ2VSZXNwb25zZRIPCgd1c2VyX2lkGAEgASgJEgwKBHRpZXIYAiABKAkSKAoGbGltaXRzGAMgASgLMhguZXVyb3NjYWxlLnYxLlRpZXJMaW1pdHMSIgoFdXNhZ2UYBCABKAsyEy5ldXJvc2NhbGUudjEuVXNhZ2UiMwoSU2V0VXNlclRpZXJSZXF1ZXN0Eg8KB3VzZXJfaWQYASABKAkSDAoEdGllchgCIAEoCSImChNTZXRVc2VyVGllclJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiQgoUUmVzaXplU3RvcmFnZVJlcXVlc3QSEwoLZGF0YWJhc2VfaWQYASABKAkSFQoNYWRkaXRpb25hbF9nYhgCIAEoBSJPChVSZXNpemVTdG9yYWdlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIUCgxuZXdfdG90YWxfZ2IYAiABKAMSDwoHbWVzc2FnZRgDIAEoCSJxChNTZXRBdXRvc2NhbGVSZXF1ZXN0EhMKC2RhdGFiYXNlX2lkGAEgASgJEg8KB2VuYWJsZWQYAiABKAgSGQoRdGhyZXNob2xkX3BlcmNlbnQYAyABKAUSGQoRaW5jcmVtZW50X3BlcmNlbnQYBCABKAUiXQoUU2V0QXV0b3NjYWxlUmVzcG9uc2USDwoHZW5hYmxlZBgBIAEoCBIZChF0aHJlc2hvbGRfcGVyY2VudBgCIAEoBRIZChFpbmNyZW1lbnRfcGVyY2VudBgDIAEoBSIoChFHZXRNZXRyaWNzUmVxdWVzdBITCgtkYXRhYmFzZV9pZBgBIAEoCSI/ChJHZXRNZXRyaWNzUmVzcG9uc2USKQoGcG9pbnRzGAEgAygLMhkuZXVyb3NjYWxlLnYxLk1ldHJpY1BvaW50IkYKC01ldHJpY1BvaW50EhEKCXRpbWVzdGFtcBgBIAEoAxITCgtjcHVfcGVyY2VudBgCIAEoARIPCgdkaXNrX2diGAMgASgBMr4JCg9EYXRhYmFzZVNlcnZpY2USWwoOQ3JlYXRlRGF0YWJhc2USIy5ldXJvc2NhbGUudjEuQ3JlYXRlRGF0YWJhc2VSZXF1ZXN0GiQuZXVyb3NjYWxlLnYxLkNyZWF0ZURhdGFiYXNlUmVzcG9uc2USWwoORGVsZXRlRGF0YWJhc2USIy5ldXJvc2NhbGUudjEuRGVsZXRlRGF0YWJhc2VSZXF1ZXN0GiQuZXVyb3NjYWxlLnYxLkRlbGV0ZURhdGFiYXNlUmVzcG9uc2USWAoNTGlzdERhdGFiYXNlcxIiLmV1cm9zY2FsZS52MS5MaXN0RGF0YWJhc2VzUmVxdWVzdBojLmV1cm9zY2FsZS52MS5MaXN0RGF0YWJhc2VzUmVzcG9uc2USUgoLR2V0RGF0YWJhc2USIC5ldXJvc2NhbGUudjEuR2V0RGF0YWJhc2VSZXF1ZXN0GiEuZXVyb3NjYWxlLnYxLkdldERhdGFiYXNlUmVzcG9uc2USZAoRUm90YXRlQ3JlZGVudGlhbHMSJi5ldXJvc2NhbGUudjEuUm90YXRlQ3JlZGVudGlhbHNSZXF1ZXN0GicuZXVyb3NjYWxlLnYxLlJvdGF0ZUNyZWRlbnRpYWxzUmVzcG9uc2USWwoOR2V0SVBXaGl0ZWxpc3QSIy5ldXJvc2NhbGUudjEuR2V0SVBXaGl0ZWxpc3RSZXF1ZXN0GiQuZXVyb3NjYWxlLnYxLkdldElQV2hpdGVsaXN0UmVzcG9uc2USagoTQWRkSVBXaGl0ZWxpc3RFbnRyeRIoLmV1cm9zY2FsZS52MS5BZGRJUFdoaXRlbGlzdEVudHJ5UmVxdWVzdBopLmV1cm9zY2FsZS52MS5BZGRJUFdoaXRlbGlzdEVudHJ5UmVzcG9uc2UScwoWUmVtb3ZlSVBXaGl0ZWxpc3RFbnRyeRIrLmV1cm9zY2FsZS52MS5SZW1vdmVJUFdoaXRlbGlzdEVudHJ5UmVxdWVzdBosLmV1cm9zY2FsZS52MS5SZW1vdmVJUFdoaXRlbGlzdEVudHJ5UmVzcG9uc2USSQoIR2V0VXNhZ2USHS5ldXJvc2NhbGUudjEuR2V0VXNhZ2VSZXF1ZXN0Gh4uZXVyb3NjYWxlLnYxLkdldFVzYWdlUmVzcG9uc2USUgoLU2V0VXNlclRpZXISIC5ldXJvc2NhbGUudjEuU2V0VXNlclRpZXJSZXF1ZXN0GiEuZXVyb3NjYWxlLnYxLlNldFVzZXJUaWVyUmVzcG9uc2USWAoNUmVzaXplU3RvcmFnZRIiLmV1cm9zY2FsZS52MS5SZXNpemVTdG9yYWdlUmVxdWVzdBojLmV1cm9zY2FsZS52MS5SZXNpemVTdG9yYWdlUmVzcG9uc2USVQoMU2V0QXV0b3NjYWxlEiEuZXVyb3NjYWxlLnYxLlNldEF1dG9zY2FsZVJlcXVlc3QaIi5ldXJvc2NhbGUudjEuU2V0QXV0b3NjYWxlUmVzcG9uc2USTwoKR2V0TWV0cmljcxIfLmV1cm9zY2FsZS52MS5HZXRNZXRyaWNzUmVxdWVzdBogLmV1cm9zY2FsZS52MS5HZXRNZXRyaWNzUmVzcG9uc2VCUFpOZ2l0aHViLmNvbS9zcHNjcmVhdGlvbnMvZXVyb3NjYWxlLXN0YXJ0dXAta2l0L2FwaS9nZW4vZXVyb3NjYWxlL3YxO2V1cm9zY2FsZXYxYgZwcm90bzM");
 
 /**
  * @generated from message euroscale.v1.CreateDatabaseRequest
@@ -899,6 +899,150 @@ export const ResizeStorageResponseSchema: GenMessage<ResizeStorageResponse> = /*
   messageDesc(file_euroscale_v1_database, 25);
 
 /**
+ * @generated from message euroscale.v1.SetAutoscaleRequest
+ */
+export type SetAutoscaleRequest = Message<"euroscale.v1.SetAutoscaleRequest"> & {
+  /**
+   * ID of the database to configure.
+   *
+   * @generated from field: string database_id = 1;
+   */
+  databaseId: string;
+
+  /**
+   * Enable or disable autoscale.
+   *
+   * @generated from field: bool enabled = 2;
+   */
+  enabled: boolean;
+
+  /**
+   * Threshold percentage of PVC usage that triggers a resize (default 80).
+   *
+   * @generated from field: int32 threshold_percent = 3;
+   */
+  thresholdPercent: number;
+
+  /**
+   * Percentage increment to add when threshold is hit (default 20).
+   *
+   * @generated from field: int32 increment_percent = 4;
+   */
+  incrementPercent: number;
+};
+
+/**
+ * Describes the message euroscale.v1.SetAutoscaleRequest.
+ * Use `create(SetAutoscaleRequestSchema)` to create a new message.
+ */
+export const SetAutoscaleRequestSchema: GenMessage<SetAutoscaleRequest> = /*@__PURE__*/
+  messageDesc(file_euroscale_v1_database, 26);
+
+/**
+ * @generated from message euroscale.v1.SetAutoscaleResponse
+ */
+export type SetAutoscaleResponse = Message<"euroscale.v1.SetAutoscaleResponse"> & {
+  /**
+   * Whether autoscale is currently enabled.
+   *
+   * @generated from field: bool enabled = 1;
+   */
+  enabled: boolean;
+
+  /**
+   * Current threshold percentage.
+   *
+   * @generated from field: int32 threshold_percent = 2;
+   */
+  thresholdPercent: number;
+
+  /**
+   * Current increment percentage.
+   *
+   * @generated from field: int32 increment_percent = 3;
+   */
+  incrementPercent: number;
+};
+
+/**
+ * Describes the message euroscale.v1.SetAutoscaleResponse.
+ * Use `create(SetAutoscaleResponseSchema)` to create a new message.
+ */
+export const SetAutoscaleResponseSchema: GenMessage<SetAutoscaleResponse> = /*@__PURE__*/
+  messageDesc(file_euroscale_v1_database, 27);
+
+/**
+ * @generated from message euroscale.v1.GetMetricsRequest
+ */
+export type GetMetricsRequest = Message<"euroscale.v1.GetMetricsRequest"> & {
+  /**
+   * ID of the database to query metrics for.
+   *
+   * @generated from field: string database_id = 1;
+   */
+  databaseId: string;
+};
+
+/**
+ * Describes the message euroscale.v1.GetMetricsRequest.
+ * Use `create(GetMetricsRequestSchema)` to create a new message.
+ */
+export const GetMetricsRequestSchema: GenMessage<GetMetricsRequest> = /*@__PURE__*/
+  messageDesc(file_euroscale_v1_database, 28);
+
+/**
+ * @generated from message euroscale.v1.GetMetricsResponse
+ */
+export type GetMetricsResponse = Message<"euroscale.v1.GetMetricsResponse"> & {
+  /**
+   * List of data points collected over the last 24 hours.
+   *
+   * @generated from field: repeated euroscale.v1.MetricPoint points = 1;
+   */
+  points: MetricPoint[];
+};
+
+/**
+ * Describes the message euroscale.v1.GetMetricsResponse.
+ * Use `create(GetMetricsResponseSchema)` to create a new message.
+ */
+export const GetMetricsResponseSchema: GenMessage<GetMetricsResponse> = /*@__PURE__*/
+  messageDesc(file_euroscale_v1_database, 29);
+
+/**
+ * @generated from message euroscale.v1.MetricPoint
+ */
+export type MetricPoint = Message<"euroscale.v1.MetricPoint"> & {
+  /**
+   * Unix timestamp of the measurement.
+   *
+   * @generated from field: int64 timestamp = 1;
+   */
+  timestamp: bigint;
+
+  /**
+   * CPU usage as a percentage (0-100). 0 if unavailable.
+   *
+   * @generated from field: double cpu_percent = 2;
+   */
+  cpuPercent: number;
+
+  /**
+   * Disk usage in GB.
+   *
+   * @generated from field: double disk_gb = 3;
+   */
+  diskGb: number;
+};
+
+/**
+ * Describes the message euroscale.v1.MetricPoint.
+ * Use `create(MetricPointSchema)` to create a new message.
+ */
+export const MetricPointSchema: GenMessage<MetricPoint> = /*@__PURE__*/
+  messageDesc(file_euroscale_v1_database, 30);
+
+/**
  * DatabaseService provisions and manages Vitess databases on demand.
  *
  * @generated from service euroscale.v1.DatabaseService
@@ -1015,6 +1159,26 @@ export const DatabaseService: GenService<{
     methodKind: "unary";
     input: typeof ResizeStorageRequestSchema;
     output: typeof ResizeStorageResponseSchema;
+  },
+  /**
+   * SetAutoscale enables/disables automatic storage scaling for a database.
+   *
+   * @generated from rpc euroscale.v1.DatabaseService.SetAutoscale
+   */
+  setAutoscale: {
+    methodKind: "unary";
+    input: typeof SetAutoscaleRequestSchema;
+    output: typeof SetAutoscaleResponseSchema;
+  },
+  /**
+   * GetMetrics returns CPU and disk metrics for a database (last 24h).
+   *
+   * @generated from rpc euroscale.v1.DatabaseService.GetMetrics
+   */
+  getMetrics: {
+    methodKind: "unary";
+    input: typeof GetMetricsRequestSchema;
+    output: typeof GetMetricsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_euroscale_v1_database, 0);

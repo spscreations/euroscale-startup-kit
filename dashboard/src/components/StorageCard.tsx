@@ -91,9 +91,7 @@ export default function StorageCard({
     if (additionalStorageGB > 0) {
       onApplyStorage(additionalStorageGB);
     }
-    if (autoscaleEnabled) {
-      onApplyAutoscale(autoscaleEnabled, autoscaleThreshold, autoscaleIncrement);
-    }
+    onApplyAutoscale(autoscaleEnabled, autoscaleThreshold, autoscaleIncrement);
     // Reset state after apply
     setAdditionalStorageGB(0);
     setAdditionalCU(0);
@@ -167,7 +165,11 @@ export default function StorageCard({
           <div className="flex items-center gap-2">
             <Switch
               checked={autoscaleEnabled}
-              onCheckedChange={setAutoscaleEnabled}
+              disabled={!canAutoscale}
+              onCheckedChange={(v) => {
+                setAutoscaleEnabled(v);
+                onApplyAutoscale(v, autoscaleThreshold, autoscaleIncrement);
+              }}
             />
             <span
               className={cn(
