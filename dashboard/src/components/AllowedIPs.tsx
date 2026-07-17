@@ -287,6 +287,7 @@ export default function AllowedIPs() {
                 disabled={removing === ip}
                 className="text-text-muted hover:text-error-text hover:bg-error-subtle min-w-[44px] min-h-[44px]"
                 title={`Remove ${ip}`}
+                aria-label={`Remove ${ip}`}
               >
                 {removing === ip ? (
                   <Loader2 size={14} className="animate-spin" />

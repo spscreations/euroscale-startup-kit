@@ -1,12 +1,14 @@
 "use client";
 
-import { Zap } from "lucide-react";
+import { Zap, Loader2, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 import { useUsage } from "@/hooks/useUsage";
 import { useResizeStorage } from "@/hooks/useResizeStorage";
 import { useSetAutoscale } from "@/hooks/useSetAutoscale";
 import StorageCard from "@/components/StorageCard";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 function bigintToNumber(n: number | bigint | undefined | null): number {
   if (n === undefined || n === null) return 0;
@@ -26,12 +28,58 @@ export default function DatabaseAddons({
   databaseId,
   databaseName,
 }: DatabaseAddonsProps) {
-  const { data: usageData, refetch } = useUsage();
+  const { data: usageData, isLoading, error, refetch } = useUsage();
   const resizeMutation = useResizeStorage();
   const autoscaleMutation = useSetAutoscale();
 
   const limits = usageData?.limits;
   const usage = usageData?.usage;
+
+  // ── Loading skeleton ──────────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b border-border-subtle px-5 py-3.5">
+          <Skeleton className="h-4 w-40" />
+        </CardHeader>
+        <CardContent className="p-5">
+          <div className="space-y-4">
+            <Skeleton className="h-24 w-full rounded-md" />
+            <Skeleton className="h-24 w-full rounded-md" />
+            <Skeleton className="h-9 w-full rounded-md" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // ── Error state ───────────────────────────────────────────────────────────
+  if (error) {
+    return (
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b border-border-subtle px-5 py-3.5">
+          <div className="flex items-center gap-2">
+            <Zap size={16} className="text-text-muted" />
+            <span className="text-sm font-semibold">Storage &amp; Compute Add-ons</span>
+          </div>
+        </CardHeader>
+        <CardContent className="p-5 text-center">
+          <WifiOff size={24} className="mx-auto text-text-muted mb-2" />
+          <p className="text-xs text-text-muted">
+            Could not load add-on data.
+          </p>
+          <Button
+            variant="link"
+            size="sm"
+            onClick={() => refetch()}
+            className="mt-2 h-auto p-0"
+          >
+            Retry
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const storageUsedBytes = bigintToNumber(usage?.storageBytes);
   const storageLimitBytes = bigintToNumber(limits?.maxStorageBytes);

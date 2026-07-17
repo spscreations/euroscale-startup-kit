@@ -186,6 +186,7 @@ function CredentialCard({
                 size="icon-xs"
                 onClick={() => setShowFullString((v) => !v)}
                 title={showFullString ? "Hide credentials" : "Show credentials"}
+                aria-label={showFullString ? "Hide credentials" : "Show credentials"}
               >
                 {showFullString ? <EyeOff size={14} /> : <Eye size={14} />}
               </Button>
@@ -198,6 +199,7 @@ function CredentialCard({
                   copied && "text-success bg-success-subtle",
                 )}
                 title="Copy connection string"
+                aria-label="Copy connection string"
               >
                 {copied ? <Check size={14} /> : <Copy size={14} />}
               </Button>
@@ -316,6 +318,7 @@ function CredField({
                 size="icon-xs"
                 onClick={() => setRevealed((v) => !v)}
                 title={revealed ? "Hide" : "Show"}
+                aria-label={revealed ? "Hide" : "Show"}
               >
                 {revealed ? <EyeOff size={14} /> : <Eye size={14} />}
               </Button>
@@ -328,6 +331,7 @@ function CredField({
                 onClick={handleCopy}
                 className={cn(copied && "text-success")}
                 title="Copy"
+                aria-label="Copy"
               >
                 {copied ? <Check size={14} /> : <Copy size={14} />}
               </Button>

@@ -202,7 +202,7 @@ export default function SettingsPage() {
   const plan = deriveBPlan(tier, limits, usage);
 
   const initials = (session?.name?.charAt(0)?.toUpperCase() ?? name.charAt(0).toUpperCase() ?? "?");
-  const userEmail = session?.email ?? "user@example.com";
+  const userEmail = session?.email ?? "";
 
   return (
     <div className="flex-1 overflow-auto">
@@ -246,6 +246,7 @@ export default function SettingsPage() {
                         variant="ghost"
                         onClick={handleSave}
                         disabled={saving || !name.trim()}
+                        aria-label="Save name"
                       >
                         {saving ? (
                           <span className="block h-4 w-4 animate-spin rounded-full border-2 border-success/30 border-t-success" />
@@ -260,6 +261,7 @@ export default function SettingsPage() {
                           setEditing(false);
                           setName(session?.name ?? "User");
                         }}
+                        aria-label="Cancel editing"
                       >
                         <X size={15} />
                       </Button>
@@ -275,6 +277,7 @@ export default function SettingsPage() {
                         variant="ghost"
                         className="min-w-[44px] min-h-[44px]"
                         title="Edit name"
+                        aria-label="Edit name"
                       >
                         <Pencil size={13} />
                       </Button>
@@ -308,7 +311,7 @@ export default function SettingsPage() {
                 <p className="mt-0.5 font-mono text-[11px] text-text-disabled">
                   {session?.id
                     ? "usr_" + session.id.slice(0, 8)
-                    : "usr_abc12345"}
+                    : ""}
                 </p>
               </div>
             </div>
@@ -381,7 +384,28 @@ export default function SettingsPage() {
         </Card>
 
         {/* Billing */}
-        <Card>
+        {usageLoading ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Billing</CardTitle>
+              <CardDescription>Loading your plan details...</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="flex items-start justify-between">
+                <div>
+                  <Skeleton className="h-5 w-24 mb-1" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+                <Skeleton className="h-8 w-28 rounded-md" />
+              </div>
+              <Skeleton className="h-1.5 w-full rounded-full" />
+              <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-3 w-full" />)}
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
           <CardHeader>
             <CardTitle>Billing</CardTitle>
             <CardDescription>Your current plan and usage</CardDescription>
@@ -448,6 +472,7 @@ export default function SettingsPage() {
             </Button>
           </CardFooter>
         </Card>
+        )}
 
         <p className="text-center text-xs text-text-disabled pb-4">
           EuroScale — European Database Platform · Version 0.1.0

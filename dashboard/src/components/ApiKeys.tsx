@@ -238,6 +238,7 @@ function CreateKeyDialog({ open, onClose, onCreated }: CreateKeyDialogProps) {
                     onClick={() => setShowKey(!showKey)}
                     className="rounded-none border-x-0"
                     title={showKey ? "Hide key" : "Show key"}
+                    aria-label={showKey ? "Hide key" : "Show key"}
                   >
                     {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
                   </Button>
@@ -247,6 +248,7 @@ function CreateKeyDialog({ open, onClose, onCreated }: CreateKeyDialogProps) {
                     onClick={handleCopy}
                     className="rounded-l-none"
                     title="Copy to clipboard"
+                    aria-label="Copy to clipboard"
                   >
                     {copied ? (
                       <Check size={14} className="text-success" />
@@ -535,6 +537,7 @@ function ApiKeyRow({
           size="icon-xs"
           onClick={handleCopy}
           title="Copy key prefix"
+          aria-label="Copy key prefix"
         >
           {copied ? (
             <Check size={13} className="text-success" />
@@ -549,6 +552,7 @@ function ApiKeyRow({
             onClick={onRevoke}
             className="text-text-muted hover:text-error-text hover:bg-error-subtle"
             title="Revoke key"
+            aria-label="Revoke key"
           >
             <Trash2 size={13} />
           </Button>

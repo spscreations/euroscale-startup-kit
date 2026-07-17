@@ -228,6 +228,7 @@ export default function DatabaseDetailPage() {
   const { data: usageData } = useUsage();
   const deleteMutation = useDeleteDatabase();
   const rotateMutation = useRotateCredentials();
+  const { data: sslData, isLoading: sslLoading } = useSSLCertificates(id);
 
   const { copied, copy } = useCopyToClipboard();
 
@@ -327,8 +328,6 @@ export default function DatabaseDetailPage() {
       ? Math.round((storageUsedNum / storageLimitNum) * 100)
       : 0;
 
-  // ── SSL Certificates ─────────────────────────────────────────────────────────
-  const { data: sslData, isLoading: sslLoading } = useSSLCertificates(id);
 
   // ── Actions ─────────────────────────────────────────────────────────────────
   async function handleDelete() {
@@ -536,11 +535,11 @@ export default function DatabaseDetailPage() {
         {/* How to Connect */}
         {db && (
           <ConnectionSamples
-            host={db.host ?? "62e9.db.euroscale.app"}
+            host={db.host ?? "localhost"}
             port={db.port ?? 3306}
             user={db.username ?? "unknown"}
             password={rotatedCreds?.password ?? "********"}
-            dbName={db.name ?? "testdb"}
+            dbName={db.name ?? "unknown"}
           />
         )}
 

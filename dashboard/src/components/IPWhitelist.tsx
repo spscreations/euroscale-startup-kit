@@ -386,6 +386,7 @@ function WhitelistEntryRow({
           size="icon-xs"
           onClick={handleCopy}
           title="Copy CIDR"
+          aria-label="Copy CIDR"
         >
           {copied ? (
             <Check size={13} className="text-success" />
@@ -399,6 +400,7 @@ function WhitelistEntryRow({
           onClick={onRemove}
           className="text-text-muted hover:text-error-text hover:bg-error-subtle"
           title="Remove entry"
+          aria-label="Remove entry"
         >
           <Trash2 size={13} />
         </Button>
