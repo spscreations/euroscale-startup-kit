@@ -96,33 +96,5 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # Mirror GHCR amd64 images into in-cluster registry (public NodePort) so Talos can pull without GHCR PAT.
-  mirror-to-cluster-registry:
-    name: Mirror images to cluster registry
-    needs: [build-and-push-api, build-and-push-dashboard, build-and-push-mysql-proxy]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Pull from GHCR and push to cluster registry
-        env:
-          CLUSTER_REG: 116.202.105.201:30500
-          SHA: ${{ github.sha }}
-        run: |
-          set -e
-          # insecure registry
-          echo "{\"insecure-registries\":[\"${CLUSTER_REG}\"]}" | sudo tee /etc/docker/daemon.json
-          sudo systemctl restart docker
-          sleep 3
-          for pair in euroscale-api:latest euroscale-dashboard:latest euroscale-mysql-proxy:latest; do
-            name=${pair%%:*}
-            tag=${pair##*:}
-            docker pull ghcr.io/spscreations/${name}:${SHA}
-            docker tag ghcr.io/spscreations/${name}:${SHA} ${CLUSTER_REG}/${name}:${tag}
-            docker tag ghcr.io/spscreations/${name}:${SHA} ${CLUSTER_REG}/${name}:${SHA}
-            docker push ${CLUSTER_REG}/${name}:${tag}
-            docker push ${CLUSTER_REG}/${name}:${SHA}
-          done
+  # Mirror removed 2026-07-17: cluster pulls directly from GHCR via ghcr-pull-secret.
+  # 30500 stays admin-only on FW.
