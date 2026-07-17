@@ -686,13 +686,12 @@ func (s *server) GetUsage(ctx context.Context, req *pb.GetUsageRequest) (*pb.Get
 		AutoscaleMaxCu:            tier.AutoscaleMaxCU,
 	}
 
-	// Source of truth for storage: actual vttablet PVC sizes from the
-	// Vitess operator (not the stale usage-tracking secret).
-	if realStorageBytes, err := s.resizer.GetTotalStorageBytes(ctx); err != nil {
-		log.Printf("WARN: failed to read real storage from vttablet PVCs: %v", err)
-	} else {
-		usage.StorageBytes = realStorageBytes
-	}
+	// StorageBytes comes from the per-user usage-tracking secret
+	// (tierStore.GetCurrentUsage). Do NOT override with
+	// resizer.GetTotalStorageBytes: that returns the shared multi-tenant
+	// vttablet PVC size (cluster infrastructure), not per-user billed
+	// storage. Tracked storage_bytes / future metrics are the source of truth.
+	// GetTotalStorageBytes remains available for resize/admin paths.
 
 	return &pb.GetUsageResponse{
 		UserId: userID,
