@@ -29,6 +29,7 @@ import { useRotateCredentials } from "@/hooks/useRotateCredentials";
 import { useUsage } from "@/hooks/useUsage";
 import IPWhitelist from "@/components/IPWhitelist";
 import UsageCharts from "@/components/UsageCharts";
+import ConnectionSamples from "@/components/ConnectionSamples";
 import DatabaseAddons from "@/components/DatabaseAddons";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -526,6 +527,17 @@ export default function DatabaseDetailPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* How to Connect */}
+        {db && (
+          <ConnectionSamples
+            host={db.host ?? "62e9.db.euroscale.app"}
+            port={db.port ?? 3306}
+            user={db.username ?? "unknown"}
+            password={rotatedCreds?.password ?? "********"}
+            dbName={db.name ?? "testdb"}
+          />
+        )}
 
         {/* Usage Stats */}
         <Card className="overflow-hidden">
