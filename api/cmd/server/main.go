@@ -208,9 +208,10 @@ func (s *server) CreateDatabase(ctx context.Context, req *pb.CreateDatabaseReque
 		return nil, status.Error(codes.Internal, "failed to generate credentials")
 	}
 
-	// Build connection string.
+	// Build connection string with per-DB unique hostname.
+	dbHost := dbID + "." + s.host
 	connStr := fmt.Sprintf("mysql://%s:***@%s:3306/%s?ssl-mode=%s",
-		username, s.host, dbName, sslMode)
+		username, dbHost, dbName, sslMode)
 
 	// Build the database model.
 	db := &models.Database{
@@ -218,7 +219,7 @@ func (s *server) CreateDatabase(ctx context.Context, req *pb.CreateDatabaseReque
 		Name:      dbName,
 		Engine:    engine,
 		Region:    region,
-		Host:      s.host,
+		Host:      dbHost,
 		Port:      3306,
 		Username:  username,
 		Status:    models.StatusReady,
@@ -256,7 +257,7 @@ func (s *server) CreateDatabase(ctx context.Context, req *pb.CreateDatabaseReque
 	return &pb.CreateDatabaseResponse{
 		DatabaseId:       dbID,
 		ConnectionString: connStr,
-		Host:             s.host,
+		Host:             dbHost,
 		Port:             3306,
 		Username:         username,
 		Password:         password,
@@ -410,7 +411,7 @@ func (s *server) GetDatabase(ctx context.Context, req *pb.GetDatabaseRequest) (*
 		DatabaseId: creds.DatabaseID,
 		Name:       extractDBName(creds.ConnectionString),
 		Engine:     models.EngineMySQL,
-		Host:       s.host,
+		Host:       creds.DatabaseID + "." + s.host,
 		Port:       3306,
 		Username:   creds.Username,
 		Status:     models.StatusReady,
@@ -457,9 +458,10 @@ func (s *server) RotateCredentials(ctx context.Context, req *pb.RotateCredential
 		return nil, status.Error(codes.Internal, "failed to generate credentials")
 	}
 
-	// Build new connection string.
+	// Build new connection string with per-DB unique hostname.
+	dbHost := req.DatabaseId + "." + s.host
 	connStr := fmt.Sprintf("mysql://%s:***@%s:3306/%s?ssl-mode=%s",
-		username, s.host, dbName, sslMode)
+		username, dbHost, dbName, sslMode)
 
 	// Preserve ownership from the existing secret so UpdateCredentials does
 	// not wipe the user_id label (empty UserID would clear ownership).
@@ -471,7 +473,7 @@ func (s *server) RotateCredentials(ctx context.Context, req *pb.RotateCredential
 		Name:      dbName,
 		Engine:    models.EngineMySQL,
 		Region:    models.RegionNuremberg, // preserved from original; ideally read from existing secret
-		Host:      s.host,
+		Host:      dbHost,
 		Port:      3306,
 		Username:  username,
 		Status:    models.StatusReady,
@@ -500,7 +502,7 @@ func (s *server) RotateCredentials(ctx context.Context, req *pb.RotateCredential
 		Username:         username,
 		Password:         password,
 		SslCaPem:         s.sslCAPem,
-		Host:             s.host,
+		Host:             dbHost,
 		Port:             3306,
 	}, nil
 }
