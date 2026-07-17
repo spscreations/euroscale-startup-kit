@@ -402,3 +402,4 @@ kubectl get deployment euroscale-api -n euroscale -o jsonpath='{.spec.template.s
 <!-- trigger 2026-07-17T02:13:12+03:00 -->
 <!-- retrigger mirror 2026-07-17 -->
 <!-- force mirror 2026-07-17 -->
+<!-- retrigger after SSL certs 2026-07-17T18:00:10+03:00 -->
