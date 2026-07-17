@@ -29,6 +29,7 @@ import { useRotateCredentials } from "@/hooks/useRotateCredentials";
 import { useUsage } from "@/hooks/useUsage";
 import IPWhitelist from "@/components/IPWhitelist";
 import UsageCharts from "@/components/UsageCharts";
+import DatabaseAddons from "@/components/DatabaseAddons";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -595,6 +596,12 @@ export default function DatabaseDetailPage() {
 
         {/* Usage Charts (line charts) */}
         <UsageCharts databaseId={db.databaseId} />
+
+        {/* Storage & Compute Add-ons for THIS database */}
+        <DatabaseAddons
+          databaseId={db.databaseId}
+          databaseName={db.name}
+        />
 
         {/* Backups */}
         <Card className="overflow-hidden">

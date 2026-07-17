@@ -6,17 +6,12 @@ import {
   Crown,
   ArrowUpRight,
   Building2,
-  Zap,
 } from "lucide-react";
 import { useUsage } from "@/hooks/useUsage";
-import { useResizeStorage } from "@/hooks/useResizeStorage";
 import UsageBar from "./UsageBar";
-import StorageCard from "./StorageCard";
-import { useDatabases } from "@/hooks/useDatabases";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -36,8 +31,6 @@ function bigintToNumber(n: number | bigint | undefined | null): number {
 export default function TierCard() {
   // ── ALL hooks must stay above early returns ──
   const { data, isLoading, isError, refetch } = useUsage();
-  const { data: dbs } = useDatabases();
-  const resizeMutation = useResizeStorage();
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -100,12 +93,6 @@ export default function TierCard() {
   // Free/Scale/Team/Business can upgrade; Enterprise shows Contact sales
   const showUpgrade = ["free", "scale", "team", "business"].includes(tier);
 
-  // Pricing from limits
-  const storagePricePerGB = limits?.additionalStorageGbPrice ?? 0.2;
-  const cuPricePerHour = limits?.autoscaleCuPrice ?? 0.04;
-  const maxAutoscaleCU = limits?.autoscaleMaxCu ?? 0;
-  const canAutoscale = maxAutoscaleCU > 0;
-
   return (
     <Card className="p-4 space-y-4">
       {/* Header */}
@@ -163,64 +150,6 @@ export default function TierCard() {
           unit="writes"
         />
       </CardContent>
-
-      {/* ── Storage & Compute Add-ons ── */}
-      <Separator />
-      <div className="space-y-4">
-        <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-1.5">
-          <Zap size={12} />
-          Add-ons
-        </h4>
-
-        <StorageCard
-          storageUsedBytes={storageUsed}
-          storageLimitBytes={maxStorage}
-          storagePricePerGB={storagePricePerGB}
-          currentCpuUsed={0}
-          currentCpuLimit={maxAutoscaleCU > 0 ? maxAutoscaleCU : 2}
-          cuPricePerHour={cuPricePerHour}
-          maxAutoscaleCU={maxAutoscaleCU}
-          canAutoscale={canAutoscale}
-          databaseId={dbs?.databases?.[0]?.databaseId ?? ""}
-          onApplyStorage={(additionalGb: number) => {
-            const targetDb = dbs?.databases?.[0];
-            if (!targetDb?.databaseId) {
-              toast.error("No database to resize. Create a database first.");
-              return;
-            }
-            resizeMutation.mutate(
-              { databaseId: targetDb.databaseId, additionalGb },
-              {
-                onSuccess: (res) => {
-                  if (res.success !== true) {
-                    toast.error(res.message || "Storage resize failed unexpectedly.");
-                    return;
-                  }
-                  const newGb = bigintToNumber(res.newTotalGb);
-                  if (!newGb || newGb <= 0) {
-                    toast.error(
-                      res.message ||
-                        "Storage resize returned 0 GB — operation may have failed.",
-                    );
-                    return;
-                  }
-                  toast.success(`Storage resized to ${newGb} GB`);
-                  refetch();
-                },
-                onError: (err) => {
-                  toast.error(`Failed: ${err.message}`);
-                },
-              },
-            );
-          }}
-          onApplyAutoscale={(_enabled: boolean, threshold: number, increment: number) => {
-            toast.success(
-              `Storage autoscale configured: ${threshold}% threshold, ${increment}% increment (billing integration pending)`,
-            );
-          }}
-          isApplying={resizeMutation.isPending}
-        />
-      </div>
     </Card>
   );
 }
