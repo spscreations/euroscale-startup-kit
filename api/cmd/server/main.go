@@ -1146,10 +1146,10 @@ func (s *server) readMetrics(ctx context.Context, databaseID string) ([]metricPo
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 
-// generateShortID generates an 11-character alphanumeric ID using crypto/rand.
-// YouTube-style: uses [a-zA-Z0-9] characters.
+// generateShortID generates an 11-character lowercase alphanumeric ID using crypto/rand.
+// YouTube-style but lowercase-only for K8s RFC 1123 compatibility.
 func generateShortID() (string, error) {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
 	const idLength = 11
 
 	var b strings.Builder
