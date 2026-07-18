@@ -1,10 +1,21 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Copy, Check, Code, Monitor } from "lucide-react";
 import { cn, copyToClipboard } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import hljs from "highlight.js/lib/core";
+import typescript from "highlight.js/lib/languages/typescript";
+import java from "highlight.js/lib/languages/java";
+import go from "highlight.js/lib/languages/go";
+import python from "highlight.js/lib/languages/python";
+import ruby from "highlight.js/lib/languages/ruby";
+import php from "highlight.js/lib/languages/php";
+import rust from "highlight.js/lib/languages/rust";
+import csharp from "highlight.js/lib/languages/csharp";
+import javascript from "highlight.js/lib/languages/javascript";
+import yaml from "highlight.js/lib/languages/yaml";
 
 type Props = {
   host: string;
@@ -295,6 +306,35 @@ let pool = sqlx::MySqlPool::connect_with(opts).await?;`,
 // Flatten groups into single array for tab display
 const ALL_SAMPLES: Sample[] = LANGUAGE_GROUPS.flatMap((g) => g.items);
 
+// Register highlight.js languages
+hljs.registerLanguage("typescript", typescript);
+hljs.registerLanguage("java", java);
+hljs.registerLanguage("go", go);
+hljs.registerLanguage("python", python);
+hljs.registerLanguage("ruby", ruby);
+hljs.registerLanguage("php", php);
+hljs.registerLanguage("rust", rust);
+hljs.registerLanguage("csharp", csharp);
+hljs.registerLanguage("javascript", javascript);
+hljs.registerLanguage("yaml", yaml);
+
+// Map our language labels to highlight.js language identifiers
+const LANG_MAP: Record<string, string> = {
+  csharp: "csharp",
+  java: "java",
+  typescript: "typescript",
+  nodejs: "javascript",
+  "php-laravel": "php",
+  "php-pdo": "php",
+  "spring-boot": "java",
+  go: "go",
+  "python-connector": "python",
+  "python-sqlalchemy": "python",
+  "ruby-rails": "ruby",
+  rust: "rust",
+  dbeaver: "plaintext",
+};
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ConnectionSamples({
@@ -319,17 +359,28 @@ export default function ConnectionSamples({
   );
 
   const sample = ALL_SAMPLES.find((s) => s.language === selected);
-  const code = sample ? interpolate(sample.code) : "";
+  const rawCode = sample ? interpolate(sample.code) : "";
+  const hlLang = sample ? (LANG_MAP[sample.language] || "plaintext") : "plaintext";
+
+  const highlightedCode = useMemo(() => {
+    if (!rawCode) return "";
+    if (hlLang === "plaintext") return rawCode;
+    try {
+      return hljs.highlight(rawCode, { language: hlLang }).value;
+    } catch {
+      return rawCode;
+    }
+  }, [rawCode, hlLang]);
 
   const handleCopy = useCallback(async () => {
     try {
-      await copyToClipboard(code);
+      await copyToClipboard(rawCode);
       setCopiedLang(selected);
       setTimeout(() => setCopiedLang(null), 2000);
     } catch {
       // silent fail
     }
-  }, [code, selected]);
+  }, [rawCode, selected]);
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
@@ -384,7 +435,9 @@ export default function ConnectionSamples({
             )}
           </Button>
           <pre className="p-4 pt-8 text-xs leading-relaxed overflow-x-auto bg-surface-2 font-mono whitespace-pre">
-            <code>{code}</code>
+            <code
+              dangerouslySetInnerHTML={{ __html: highlightedCode }}
+            />
           </pre>
         </div>
       </CardContent>
