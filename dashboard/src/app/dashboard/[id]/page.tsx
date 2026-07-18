@@ -474,42 +474,6 @@ export default function DatabaseDetailPage() {
               </div>
             </div>
 
-            {/* SSL CA */}
-            <div className="flex items-center justify-between py-2 border-b border-border-subtle last:border-b-0">
-              <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider min-w-[80px]">
-                SSL CA
-              </span>
-              <div className="flex items-center ml-2 overflow-hidden">
-                {db.sslCaPem ? (
-                  <>
-                    <span className="text-xs text-text-primary truncate max-w-[180px] sm:max-w-sm font-mono">
-                      {db.sslCaPem.slice(0, 30)}…
-                    </span>
-                    <CopyButton
-                      value={db.sslCaPem}
-                      label="SSL CA"
-                      copied={copied}
-                      onCopy={copy}
-                    />
-                  </>
-                ) : rotatedCreds?.sslCaPem ? (
-                  <>
-                    <span className="text-xs text-text-primary truncate max-w-[180px] sm:max-w-sm font-mono">
-                      {rotatedCreds.sslCaPem.slice(0, 30)}…
-                    </span>
-                    <CopyButton
-                      value={rotatedCreds.sslCaPem}
-                      label="SSL CA"
-                      copied={copied}
-                      onCopy={copy}
-                    />
-                  </>
-                ) : (
-                  <span className="text-xs text-text-disabled italic">—</span>
-                )}
-              </div>
-            </div>
-
             <ConnectionStringRow
               host={db.host ?? "localhost"}
               port={db.port ?? 3306}
@@ -532,6 +496,60 @@ export default function DatabaseDetailPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* SSL Certificates (mTLS) */}
+        {sslData && !sslLoading && (
+          <Card className="overflow-hidden">
+            <CardHeader className="border-b border-border-subtle px-5 py-3.5">
+              <div className="flex items-center gap-2">
+                <Shield size={16} className="text-accent-text" />
+                <CardTitle className="text-sm font-semibold">
+                  SSL Certificates (mTLS)
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2 p-5">
+              {[
+                { label: "CA Certificate", data: sslData.caCert, filename: "ca-cert.pem" },
+                { label: "Client Certificate", data: sslData.clientCert, filename: "client-cert.pem" },
+                { label: "Client Key", data: sslData.clientKey, filename: "client-key.pem" },
+              ].map(({ label, data, filename }) => (
+                <div
+                  key={label}
+                  className="flex items-center justify-between py-1.5"
+                >
+                  <span className="text-xs font-medium text-text-muted">
+                    {label}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-accent-text hover:text-accent-text"
+                    onClick={() => {
+                      const blob = new Blob([data ?? ""], {
+                        type: "application/x-pem-file",
+                      });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = filename;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                  >
+                    <Download size={12} className="mr-1.5" />
+                    Download
+                  </Button>
+                </div>
+              ))}
+              <p className="text-[10px] text-text-disabled pt-1.5">
+                For DBeaver: set SSL → Require + Verify CA, then attach all
+                three files. See{" "}
+                <strong>How to Connect</strong> section below for code samples.
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* How to Connect */}
         {db && (
@@ -622,60 +640,6 @@ export default function DatabaseDetailPage() {
           databaseId={db.databaseId}
           databaseName={db.name}
         />
-
-        {/* SSL Certificates */}
-        {sslData && !sslLoading && (
-          <Card className="overflow-hidden">
-            <CardHeader className="border-b border-border-subtle px-5 py-3.5">
-              <div className="flex items-center gap-2">
-                <Shield size={16} className="text-accent-text" />
-                <CardTitle className="text-sm font-semibold">
-                  SSL Certificates (mTLS)
-                </CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2 p-5">
-              {[
-                { label: "CA Certificate", data: sslData.caCert, filename: "ca-cert.pem" },
-                { label: "Client Certificate", data: sslData.clientCert, filename: "client-cert.pem" },
-                { label: "Client Key", data: sslData.clientKey, filename: "client-key.pem" },
-              ].map(({ label, data, filename }) => (
-                <div
-                  key={label}
-                  className="flex items-center justify-between py-1.5"
-                >
-                  <span className="text-xs font-medium text-text-muted">
-                    {label}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-accent-text hover:text-accent-text"
-                    onClick={() => {
-                      const blob = new Blob([data ?? ""], {
-                        type: "application/x-pem-file",
-                      });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = filename;
-                      a.click();
-                      URL.revokeObjectURL(url);
-                    }}
-                  >
-                    <Download size={12} className="mr-1.5" />
-                    Download
-                  </Button>
-                </div>
-              ))}
-              <p className="text-[10px] text-text-disabled pt-1.5">
-                For DBeaver: set SSL → Require + Verify CA, then attach all
-                three files. See{" "}
-                <strong>How to Connect</strong> section above for code samples.
-              </p>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Backups */}
         <Card className="overflow-hidden">
