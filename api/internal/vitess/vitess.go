@@ -243,6 +243,29 @@ func defaultKeyspaceTemplate() map[string]interface{} {
 									"resources":        map[string]interface{}{"requests": map[string]interface{}{"storage": "10Gi"}},
 								},
 							},
+							map[string]interface{}{
+								"cell":     "helsinki",
+								"type":     "replica",
+								"replicas": int64(1),
+								"vttablet": map[string]interface{}{
+									"extraFlags": map[string]interface{}{},
+									"resources": map[string]interface{}{
+										"limits":   map[string]interface{}{"cpu": "256m", "memory": "256Mi"},
+										"requests": map[string]interface{}{"cpu": "100m", "memory": "128Mi"},
+									},
+								},
+								"mysqld": map[string]interface{}{
+									"resources": map[string]interface{}{
+										"limits":   map[string]interface{}{"cpu": "500m", "memory": "1Gi"},
+										"requests": map[string]interface{}{"cpu": "250m", "memory": "512Mi"},
+									},
+								},
+								"dataVolumeClaimTemplate": map[string]interface{}{
+									"accessModes":      []interface{}{"ReadWriteOnce"},
+									"storageClassName": "hcloud-volumes",
+									"resources":        map[string]interface{}{"requests": map[string]interface{}{"storage": "10Gi"}},
+								},
+							},
 						},
 					},
 				},
