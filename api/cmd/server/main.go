@@ -328,11 +328,11 @@ func (s *server) DeleteDatabase(ctx context.Context, req *pb.DeleteDatabaseReque
 	}
 
 	// Decrement the database count for tier tracking.
-	// Get user ID from context for the usage update.
-	userID, _ := authenticatedUserID(ctx)
-	if userID != "" {
-		if err := s.tierStore.DecrementDatabaseCount(ctx, userID); err != nil {
-			log.Printf("ERROR: failed to decrement database count for user %q: %v", userID, err)
+	// Get user ID from the K8s secret — more reliable than context header.
+	ownerID := s.secrets.GetUserID(ctx, req.DatabaseId)
+	if ownerID != "" {
+		if err := s.tierStore.DecrementDatabaseCount(ctx, ownerID); err != nil {
+			log.Printf("ERROR: failed to decrement database count for user %q: %v", ownerID, err)
 		}
 	}
 
