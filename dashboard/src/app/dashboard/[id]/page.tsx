@@ -31,6 +31,7 @@ import { useUsage } from "@/hooks/useUsage";
 import { useSSLCertificates } from "@/hooks/useSSLCertificates";
 import IPWhitelist from "@/components/IPWhitelist";
 import UsageCharts from "@/components/UsageCharts";
+import BranchManager from "@/components/BranchManager";
 import ConnectionSamples from "@/components/ConnectionSamples";
 import DatabaseAddons from "@/components/DatabaseAddons";
 import { Button } from "@/components/ui/button";
@@ -612,6 +613,9 @@ export default function DatabaseDetailPage() {
 
         {/* Usage Charts (line charts) */}
         <UsageCharts databaseId={db.databaseId} />
+
+        {/* Branches */}
+        <BranchManager databaseId={db.databaseId} region={db.region} />
 
         {/* Storage & Compute Add-ons for THIS database */}
         <DatabaseAddons

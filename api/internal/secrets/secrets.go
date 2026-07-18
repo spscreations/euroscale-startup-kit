@@ -56,9 +56,10 @@ func (s *Store) SaveCredentials(ctx context.Context, db *models.Database, creds 
 				"user_id":  db.UserID,
 			},
 			Annotations: map[string]string{
-				"euroscale.app/database-name": db.Name,
-				"euroscale.app/region":        db.Region,
-				"euroscale.app/created-at":    db.CreatedAt.Format(time.RFC3339),
+				"euroscale.app/database-name":      db.Name,
+				"euroscale.app/region":             db.Region,
+				"euroscale.app/created-at":         db.CreatedAt.Format(time.RFC3339),
+				"euroscale.app/parent-database-id": db.ParentDatabaseID,
 			},
 		},
 		Type: corev1.SecretTypeOpaque,
@@ -115,9 +116,10 @@ func (s *Store) UpdateCredentials(ctx context.Context, db *models.Database, cred
 				"user_id":  db.UserID,
 			},
 			Annotations: map[string]string{
-				"euroscale.app/database-name": db.Name,
-				"euroscale.app/region":        db.Region,
-				"euroscale.app/created-at":    db.CreatedAt.Format(time.RFC3339),
+				"euroscale.app/database-name":      db.Name,
+				"euroscale.app/region":             db.Region,
+				"euroscale.app/created-at":         db.CreatedAt.Format(time.RFC3339),
+				"euroscale.app/parent-database-id": db.ParentDatabaseID,
 			},
 		},
 		Type: corev1.SecretTypeOpaque,
@@ -156,15 +158,16 @@ func (s *Store) ListAll(ctx context.Context) ([]models.Database, error) {
 		}
 
 		db := models.Database{
-			ID:       secret.Labels["database"],
-			Name:     secret.Annotations["euroscale.app/database-name"],
-			Engine:   models.EngineMySQL,
-			Region:   secret.Annotations["euroscale.app/region"],
-			Host:     "",
-			Port:     3306,
-			Username: string(secret.Data["username"]),
-			Status:   models.StatusReady,
-			UserID:   secret.Labels["user_id"],
+			ID:               secret.Labels["database"],
+			Name:             secret.Annotations["euroscale.app/database-name"],
+			Engine:           models.EngineMySQL,
+			Region:           secret.Annotations["euroscale.app/region"],
+			Host:             "",
+			Port:             3306,
+			Username:         string(secret.Data["username"]),
+			Status:           models.StatusReady,
+			UserID:           secret.Labels["user_id"],
+			ParentDatabaseID: secret.Annotations["euroscale.app/parent-database-id"],
 		}
 
 		if createdAt, err := time.Parse(time.RFC3339, secret.Annotations["euroscale.app/created-at"]); err == nil {

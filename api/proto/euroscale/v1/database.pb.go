@@ -2100,12 +2100,13 @@ var File_proto_euroscale_v1_database_proto protoreflect.FileDescriptor
 
 const file_proto_euroscale_v1_database_proto_rawDesc = "" +
 	"\n" +
-	"!proto/euroscale/v1/database.proto\x12\feuroscale.v1\"t\n" +
+	"!proto/euroscale/v1/database.proto\x12\feuroscale.v1\"\xa2\x01\n" +
 	"\x15CreateDatabaseRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
 	"\x06engine\x18\x02 \x01(\tR\x06engine\x12\x16\n" +
 	"\x06region\x18\x03 \x01(\tR\x06region\x12\x17\n" +
-	"\auser_id\x18\x04 \x01(\tR\x06userId\"\xcb\x02\n" +
+	"\auser_id\x18\x04 \x01(\tR\x06userId\x12,\n" +
+	"\x12parent_database_id\x18\x05 \x01(\tR\x10parentDatabaseId\"\xcb\x02\n" +
 	"\x16CreateDatabaseResponse\x12\x1f\n" +
 	"\vdatabase_id\x18\x01 \x01(\tR\n" +
 	"databaseId\x12+\n" +

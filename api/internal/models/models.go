@@ -7,16 +7,17 @@ import "time"
 // This is the internal representation — it is never serialized directly
 // to gRPC responses (the proto-generated types are used for that).
 type Database struct {
-	ID        string    `json:"database_id"`
-	Name      string    `json:"name"`
-	Engine    string    `json:"engine"`
-	Region    string    `json:"region"`
-	Host      string    `json:"host"`
-	Port      int32     `json:"port"`
-	Username  string    `json:"username"`
-	Status    string    `json:"status"`
-	UserID    string    `json:"user_id"`
-	CreatedAt time.Time `json:"created_at"`
+	ID               string    `json:"database_id"`
+	Name             string    `json:"name"`
+	Engine           string    `json:"engine"`
+	Region           string    `json:"region"`
+	Host             string    `json:"host"`
+	Port             int32     `json:"port"`
+	Username         string    `json:"username"`
+	Status           string    `json:"status"`
+	UserID           string    `json:"user_id"`
+	ParentDatabaseID string    `json:"parent_database_id,omitempty"`
+	CreatedAt        time.Time `json:"created_at"`
 }
 
 // DatabaseCredentials holds the sensitive connection details for a database.

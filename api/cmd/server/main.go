@@ -19,7 +19,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/google/uuid"
+	"crypto/rand"
+	"math/big"
+
 	"golang.org/x/time/rate"
 	"connectrpc.com/connect"
 	"google.golang.org/grpc"
@@ -189,42 +191,50 @@ func (s *server) CreateDatabase(ctx context.Context, req *pb.CreateDatabaseReque
 		region = models.RegionNuremberg
 	}
 
-	dbID := uuid.New().String()
+	dbID, err := generateShortID()
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to generate database ID")
+	}
 	dbName := req.Name
 	now := time.Now().UTC()
 
-	// Create the database in Vitess.
-	if err := s.vtgate.CreateDatabase(ctx, dbName); err != nil {
+	// Create the database in Vitess using the short ID as the keyspace name.
+	if err := s.vtgate.CreateDatabase(ctx, dbID); err != nil {
 		log.Printf("ERROR: failed to create vitess database %q: %v", dbName, err)
 		return nil, status.Error(codes.Internal, "failed to create database")
 	}
+
+	// If this is a branch, store the parent ID in the K8s secret annotation.
+	parentID := req.ParentDatabaseId
 
 	// Generate credentials.
 	username, password, err := vitess.GenerateCredentials()
 	if err != nil {
 		log.Printf("ERROR: failed to generate credentials for %q: %v", dbID, err)
 		// Best-effort cleanup of the created database.
-		_ = s.vtgate.DeleteDatabase(context.Background(), dbName)
+		_ = s.vtgate.DeleteDatabase(context.Background(), dbID)
 		return nil, status.Error(codes.Internal, "failed to generate credentials")
 	}
 
 	// Build connection string with per-DB unique hostname.
+	// The database name in the connection string is the short ID (keyspace name).
 	dbHost := dbID + "." + s.host
 	connStr := fmt.Sprintf("mysql://%s:***@%s:3306/%s?ssl-mode=%s",
-		username, dbHost, dbName, sslMode)
+		username, dbHost, dbID, sslMode)
 
 	// Build the database model.
 	db := &models.Database{
-		ID:        dbID,
-		Name:      dbName,
-		Engine:    engine,
-		Region:    region,
-		Host:      dbHost,
-		Port:      3306,
-		Username:  username,
-		Status:    models.StatusReady,
-		UserID:    userID,
-		CreatedAt: now,
+		ID:               dbID,
+		Name:             dbName,
+		Engine:           engine,
+		Region:           region,
+		Host:             dbHost,
+		Port:             3306,
+		Username:         username,
+		Status:           models.StatusReady,
+		UserID:           userID,
+		ParentDatabaseID: parentID,
+		CreatedAt:        now,
 	}
 
 	creds := &models.DatabaseCredentials{
@@ -239,7 +249,7 @@ func (s *server) CreateDatabase(ctx context.Context, req *pb.CreateDatabaseReque
 	if err := s.secrets.SaveCredentials(ctx, db, creds); err != nil {
 		log.Printf("ERROR: failed to store credentials for %q: %v", dbID, err)
 		// Best-effort cleanup.
-		_ = s.vtgate.DeleteDatabase(context.Background(), dbName)
+		_ = s.vtgate.DeleteDatabase(context.Background(), dbID)
 		return nil, status.Error(codes.Internal, "failed to store credentials")
 	}
 
@@ -409,7 +419,7 @@ func (s *server) GetDatabase(ctx context.Context, req *pb.GetDatabaseRequest) (*
 
 	dbEntry := &pb.Database{
 		DatabaseId: creds.DatabaseID,
-		Name:       extractDBName(creds.ConnectionString),
+		Name:       "", // populated from annotation below
 		Engine:     models.EngineMySQL,
 		Host:       creds.DatabaseID + "." + s.host,
 		Port:       3306,
@@ -418,8 +428,11 @@ func (s *server) GetDatabase(ctx context.Context, req *pb.GetDatabaseRequest) (*
 		SslCaPem:   s.sslCAPem,
 	}
 
-	// Populate createdAt from the secret annotation.
+	// Populate metadata from the secret annotation.
 	if ann := s.secrets.GetAnnotations(ctx, req.DatabaseId); ann != nil {
+		if dbName, ok := ann["euroscale.app/database-name"]; ok {
+			dbEntry.Name = dbName
+		}
 		if ts, ok := ann["euroscale.app/created-at"]; ok {
 			if t, err := time.Parse(time.RFC3339, ts); err == nil {
 				dbEntry.CreatedAt = t.Format(time.RFC3339)
@@ -449,7 +462,15 @@ func (s *server) RotateCredentials(ctx context.Context, req *pb.RotateCredential
 		return nil, status.Error(codes.NotFound, "database not found")
 	}
 
-	dbName := extractDBName(existing.ConnectionString)
+	dbName := extractDBName(existing.ConnectionString) // keyspace name (short ID)
+
+	// Retrieve the user-friendly database name from the existing secret annotation.
+	userFacingName := dbName // fallback
+	if ann := s.secrets.GetAnnotations(ctx, req.DatabaseId); ann != nil {
+		if n, ok := ann["euroscale.app/database-name"]; ok && n != "" {
+			userFacingName = n
+		}
+	}
 
 	// Generate new credentials.
 	username, password, err := vitess.GenerateCredentials()
@@ -459,9 +480,10 @@ func (s *server) RotateCredentials(ctx context.Context, req *pb.RotateCredential
 	}
 
 	// Build new connection string with per-DB unique hostname.
+	// The database portion is the short ID (keyspace name).
 	dbHost := req.DatabaseId + "." + s.host
 	connStr := fmt.Sprintf("mysql://%s:***@%s:3306/%s?ssl-mode=%s",
-		username, dbHost, dbName, sslMode)
+		username, dbHost, req.DatabaseId, sslMode)
 
 	// Preserve ownership from the existing secret so UpdateCredentials does
 	// not wipe the user_id label (empty UserID would clear ownership).
@@ -470,7 +492,7 @@ func (s *server) RotateCredentials(ctx context.Context, req *pb.RotateCredential
 	// Build database model with preserved metadata.
 	db := &models.Database{
 		ID:        req.DatabaseId,
-		Name:      dbName,
+		Name:      userFacingName,
 		Engine:    models.EngineMySQL,
 		Region:    models.RegionNuremberg, // preserved from original; ideally read from existing secret
 		Host:      dbHost,
@@ -1123,6 +1145,25 @@ func (s *server) readMetrics(ctx context.Context, databaseID string) ([]metricPo
 }
 
 // ── helpers ─────────────────────────────────────────────────────────────────
+
+// generateShortID generates an 11-character alphanumeric ID using crypto/rand.
+// YouTube-style: uses [a-zA-Z0-9] characters.
+func generateShortID() (string, error) {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	const idLength = 11
+
+	var b strings.Builder
+	b.Grow(idLength)
+	charsetLen := big.NewInt(int64(len(charset)))
+	for i := 0; i < idLength; i++ {
+		idx, err := rand.Int(rand.Reader, charsetLen)
+		if err != nil {
+			return "", fmt.Errorf("crypto/rand error: %w", err)
+		}
+		b.WriteByte(charset[idx.Int64()])
+	}
+	return b.String(), nil
+}
 
 // extractDBName pulls the database name from a connection string like:
 // mysql://user:***@host:3306/dbname?ssl-mode=VERIFY_IDENTITY

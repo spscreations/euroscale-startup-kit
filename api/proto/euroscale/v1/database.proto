@@ -65,6 +65,9 @@ message CreateDatabaseRequest {
 
   // ID of the user who will own this database.
   string user_id = 4;
+
+  // Optional. If set, this database is a branch of the parent database.
+  string parent_database_id = 5;
 }
 
 message CreateDatabaseResponse {
