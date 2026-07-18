@@ -9,6 +9,7 @@ import { useCreateDatabase } from "@/hooks/useCreateDatabase";
 import { useDeleteDatabase } from "@/hooks/useDeleteDatabase";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
+import { connectErrorMessage } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -74,9 +75,7 @@ export default function BranchManager({ databaseId, region }: BranchManagerProps
         setBranchName("");
         refetch();
       } catch (err: unknown) {
-        toast.error(
-          err instanceof Error ? err.message : "Failed to create branch"
-        );
+        toast.error(connectErrorMessage(err) || "Failed to create branch")
       }
     },
     [branchName, region, session?.id, databaseId, createMutation, refetch]
@@ -90,9 +89,7 @@ export default function BranchManager({ databaseId, region }: BranchManagerProps
         toast.success(`Branch "${branchName}" deleted`);
         refetch();
       } catch (err: unknown) {
-        toast.error(
-          err instanceof Error ? err.message : "Failed to delete branch"
-        );
+        toast.error(connectErrorMessage(err) || "Failed to delete branch")
       }
       setDeletingId(null);
     },

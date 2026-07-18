@@ -29,6 +29,7 @@ import { useDeleteDatabase } from "@/hooks/useDeleteDatabase";
 import { useRotateCredentials } from "@/hooks/useRotateCredentials";
 import { useUsage } from "@/hooks/useUsage";
 import { useSSLCertificates } from "@/hooks/useSSLCertificates";
+import { connectErrorMessage } from "@/lib/api";
 import IPWhitelist from "@/components/IPWhitelist";
 import UsageCharts from "@/components/UsageCharts";
 import BranchManager from "@/components/BranchManager";
@@ -337,9 +338,7 @@ export default function DatabaseDetailPage() {
       toast.success("Database deleted successfully");
       router.push("/dashboard");
     } catch (e: unknown) {
-      toast.error(
-        e instanceof Error ? e.message : "Failed to delete database",
-      );
+      toast.error(connectErrorMessage(e) || "Failed to delete database");
     }
     setShowDeleteConfirm(false);
   }
@@ -354,9 +353,7 @@ export default function DatabaseDetailPage() {
       });
       toast.success("Credentials rotated successfully");
     } catch (e: unknown) {
-      toast.error(
-        e instanceof Error ? e.message : "Failed to rotate credentials",
-      );
+      toast.error(connectErrorMessage(e) || "Failed to rotate credentials");
     }
     setShowRotateConfirm(false);
   }

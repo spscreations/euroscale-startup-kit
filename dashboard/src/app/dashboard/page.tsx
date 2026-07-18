@@ -21,6 +21,7 @@ import { useDeleteDatabase } from "@/hooks/useDeleteDatabase";
 import { useCreateDatabase } from "@/hooks/useCreateDatabase";
 import { useUsage } from "@/hooks/useUsage";
 import { useAuth } from "@/lib/auth";
+import { connectErrorMessage } from "@/lib/api";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -107,7 +108,7 @@ function DashboardContent() {
           setDeleteConfirm(null);
         },
         onError: (err: Error) => {
-          toast.error(err.message || "Failed to delete database");
+          toast.error(connectErrorMessage(err) || "Failed to delete database");
           setDeletingId(null);
           setDeleteConfirm(null);
         },
@@ -147,7 +148,7 @@ function DashboardContent() {
             setNewDbRegion("nuremberg");
           },
           onError: (err: Error) => {
-            toast.error(err.message || "Failed to create database");
+            toast.error(connectErrorMessage(err) || "Failed to create database");
           },
         },
       );

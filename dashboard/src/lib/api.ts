@@ -15,6 +15,27 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Extracts a user-friendly error message from a Connect error.
+ * Connect errors surface the gRPC code name as the message by default
+ * (e.g. "unknown", "resource_exhausted"). This extracts the actual
+ * server-provided message when available.
+ */
+export function connectErrorMessage(err: unknown): string {
+  if (err instanceof Error) {
+    // ConnectError from @connectrpc/connect stores the server message
+    // in a 'rawMessage' or 'details' property.
+    const ce = err as Error & { rawMessage?: string; details?: Array<{ debug?: { detail?: string } }> };
+    if (ce.rawMessage) return ce.rawMessage;
+    if (ce.details?.[0]?.debug?.detail) return ce.details[0].debug.detail;
+    // Strip "[unknown]" prefix if present (code name wrapping)
+    const msg = ce.message.replace(/^\[.*?\]\s*/, "");
+    if (msg && msg !== "unknown") return msg;
+    return ce.message;
+  }
+  return String(err);
+}
+
 // ── Transport ───────────────────────────────────────────────────────────────
 
 /**
