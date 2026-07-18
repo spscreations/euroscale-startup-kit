@@ -4,8 +4,14 @@ package secrets
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/spscreations/euroscale-startup-kit/api/internal/models"
@@ -257,6 +263,138 @@ func (s *Store) GetIPWhitelist(ctx context.Context, databaseID string) ([]models
 	}
 
 	return entries, nil
+}
+
+// ── SSL Client Certificates ─────────────────────────────────────────────────
+
+// sslSecretName returns the secret name for SSL client certificates.
+func sslSecretName(databaseID string) string {
+	return fmt.Sprintf("db-%s-ssl-client", databaseID)
+}
+
+// SSLCertificates holds PEM-encoded client certificates for mTLS.
+type SSLCertificates struct {
+	CACert     string
+	ClientCert string
+	ClientKey  string
+}
+
+// GenerateSSLCertificates creates a client certificate signed by the given CA.
+func GenerateSSLCertificates(caCertPEM, caKeyPEM string) (*SSLCertificates, error) {
+	// Parse CA cert and key
+	caCertBlock, _ := pem.Decode([]byte(caCertPEM))
+	if caCertBlock == nil {
+		return nil, fmt.Errorf("failed to parse CA certificate")
+	}
+	caCert, err := x509.ParseCertificate(caCertBlock.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse CA certificate: %w", err)
+	}
+	caKeyBlock, _ := pem.Decode([]byte(caKeyPEM))
+	if caKeyBlock == nil {
+		return nil, fmt.Errorf("failed to parse CA key")
+	}
+	caKey, err := x509.ParsePKCS8PrivateKey(caKeyBlock.Bytes)
+	if err != nil {
+		// Try PKCS1
+		caKey, err = x509.ParsePKCS1PrivateKey(caKeyBlock.Bytes)
+		if err != nil {
+			// Try EC
+			caKey, err = x509.ParseECPrivateKey(caKeyBlock.Bytes)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse CA key: %w", err)
+			}
+		}
+	}
+
+	// Generate client key
+	clientKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate client key: %w", err)
+	}
+
+	// Create client certificate template
+	serial, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate serial: %w", err)
+	}
+	clientTmpl := &x509.Certificate{
+		SerialNumber: serial,
+		Subject: pkix.Name{
+			CommonName: "euroscale-client",
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().Add(365 * 24 * time.Hour),
+		KeyUsage:              x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+		BasicConstraintsValid: true,
+	}
+
+	// Sign client cert with CA
+	clientCertDER, err := x509.CreateCertificate(rand.Reader, clientTmpl, caCert, &clientKey.PublicKey, caKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create client certificate: %w", err)
+	}
+
+	// Encode to PEM
+	clientCertPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: clientCertDER})
+	clientKeyDER, _ := x509.MarshalPKCS8PrivateKey(clientKey)
+	clientKeyPEM := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: clientKeyDER})
+
+	return &SSLCertificates{
+		CACert:     caCertPEM,
+		ClientCert: string(clientCertPEM),
+		ClientKey:  string(clientKeyPEM),
+	}, nil
+}
+
+// SaveSSLCertificates stores SSL client certificates as a K8s Secret.
+func (s *Store) SaveSSLCertificates(ctx context.Context, databaseID, userID string, certs *SSLCertificates) error {
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      sslSecretName(databaseID),
+			Namespace: s.namespace,
+			Labels: map[string]string{
+				"app":      "euroscale",
+				"database": databaseID,
+				"managed":  "true",
+				"user_id":  userID,
+			},
+		},
+		Type: corev1.SecretTypeOpaque,
+		StringData: map[string]string{
+			"ca-cert.pem":     certs.CACert,
+			"client-cert.pem": certs.ClientCert,
+			"client-key.pem":  certs.ClientKey,
+		},
+	}
+	_, err := s.clientset.CoreV1().Secrets(s.namespace).Create(ctx, secret, metav1.CreateOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to create ssl cert secret %q: %w", sslSecretName(databaseID), err)
+	}
+	return nil
+}
+
+// GetSSLCertificates retrieves SSL client certificates from the K8s Secret.
+func (s *Store) GetSSLCertificates(ctx context.Context, databaseID string) (*SSLCertificates, error) {
+	secret, err := s.clientset.CoreV1().Secrets(s.namespace).Get(ctx, sslSecretName(databaseID), metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("ssl cert secret not found for %q: %w", databaseID, err)
+	}
+	return &SSLCertificates{
+		CACert:     string(secret.Data["ca-cert.pem"]),
+		ClientCert: string(secret.Data["client-cert.pem"]),
+		ClientKey:  string(secret.Data["client-key.pem"]),
+	}, nil
+}
+
+// DeleteSSLCertificates removes the SSL cert secret for a database.
+func (s *Store) DeleteSSLCertificates(ctx context.Context, databaseID string) error {
+	err := s.clientset.CoreV1().Secrets(s.namespace).Delete(ctx, sslSecretName(databaseID), metav1.DeleteOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to delete ssl cert secret %q: %w", sslSecretName(databaseID), err)
+	}
+	return nil
 }
 
 // ── Autoscale configuration ──────────────────────────────────────────────────

@@ -99,6 +99,7 @@ type server struct {
 
 	host     string
 	sslCAPem string
+	sslCAKey string
 
 	// jwtSecret is the signing key for JWT tokens.
 	jwtSecret string
@@ -253,6 +254,18 @@ func (s *server) CreateDatabase(ctx context.Context, req *pb.CreateDatabaseReque
 		return nil, status.Error(codes.Internal, "failed to store credentials")
 	}
 
+	// Generate and store SSL client certificates for mTLS connections.
+	if s.sslCAPem != "" && s.sslCAKey != "" {
+		certs, err := secrets.GenerateSSLCertificates(s.sslCAPem, s.sslCAKey)
+		if err != nil {
+			log.Printf("WARNING: failed to generate SSL certs for %q: %v", dbID, err)
+		} else {
+			if err := s.secrets.SaveSSLCertificates(ctx, dbID, userID, certs); err != nil {
+				log.Printf("WARNING: failed to store SSL certs for %q: %v", dbID, err)
+			}
+		}
+	}
+
 	// New databases get storage managed by the Vitess operator via VitessShard CRD.
 	// No tracking PVC is created — actual storage is the vttablet PVCs.
 
@@ -307,6 +320,11 @@ func (s *server) DeleteDatabase(ctx context.Context, req *pb.DeleteDatabaseReque
 	if err := s.secrets.DeleteCredentials(ctx, req.DatabaseId); err != nil {
 		log.Printf("ERROR: failed to delete credentials for %q: %v", req.DatabaseId, err)
 		// Database is already dropped — still return success.
+	}
+
+	// Best-effort SSL cert cleanup.
+	if err := s.secrets.DeleteSSLCertificates(ctx, req.DatabaseId); err != nil {
+		log.Printf("WARNING: failed to delete SSL certs for %q: %v", req.DatabaseId, err)
 	}
 
 	// Decrement the database count for tier tracking.
@@ -1701,7 +1719,7 @@ func main() {
 	}
 
 	// ── Load SSL CA certificate ───────────────────────────────────────────
-	sslCAPem := loadSSLCert()
+	sslCAPem, sslCAKey := loadSSLCert()
 
 	// ── Initialize user store ──────────────────────────────────────────────
 	userStore := auth.NewUserStore()
@@ -1732,6 +1750,7 @@ func main() {
 		resizer:   resizer,
 		host:      host,
 		sslCAPem:  sslCAPem,
+		sslCAKey:  sslCAKey,
 		jwtSecret:        jwtSecret,
 		userStore:        userStore,
 		mollieHTTPHandler: mollieHTTPHandler,
@@ -1989,27 +2008,36 @@ func rateLimitMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// loadSSLCert reads the CA certificate from the filesystem.
+// loadSSLCert reads the CA certificate and key from the filesystem.
 // In production this comes from cert-manager via a mounted Secret volume.
-func loadSSLCert() string {
+func loadSSLCert() (string, string) {
 	certPath := os.Getenv("SSL_CA_CERT_PATH")
 	if certPath == "" {
 		certPath = "/etc/euroscale/tls/ca.crt"
 	}
+	keyPath := os.Getenv("SSL_CA_KEY_PATH")
+	if keyPath == "" {
+		keyPath = "/etc/euroscale/tls/ca.key"
+	}
 
-	data, err := os.ReadFile(certPath)
+	certData, err := os.ReadFile(certPath)
 	if err != nil {
 		log.Printf("WARNING: failed to load SSL CA cert from %s: %v", certPath, err)
-		return ""
+		return "", ""
+	}
+	keyData, err := os.ReadFile(keyPath)
+	if err != nil {
+		log.Printf("WARNING: failed to load SSL CA key from %s: %v", keyPath, err)
+		keyData = nil // key is optional — cert-based creation still works
 	}
 
 	// Validate it's a proper PEM certificate.
 	pool := x509.NewCertPool()
-	if !pool.AppendCertsFromPEM(data) {
+	if !pool.AppendCertsFromPEM(certData) {
 		log.Printf("WARNING: failed to parse SSL CA cert from %s", certPath)
-		return ""
+		return "", ""
 	}
 
-	log.Printf("Loaded SSL CA certificate from %s (%d bytes)", certPath, len(data))
-	return string(data)
+	log.Printf("Loaded SSL CA certificate from %s (%d bytes)", certPath, len(certData))
+	return string(certData), string(keyData)
 }
