@@ -201,7 +201,7 @@ func (s *server) CreateDatabase(ctx context.Context, req *pb.CreateDatabaseReque
 	// Create the database in Vitess using the short ID as the keyspace name.
 	if err := s.vtgate.CreateDatabase(ctx, dbID); err != nil {
 		log.Printf("ERROR: failed to create vitess database %q: %v", dbName, err)
-		return nil, status.Error(codes.Internal, "failed to create database")
+		return nil, status.Errorf(codes.Internal, "failed to create database: %v", err)
 	}
 
 	// If this is a branch, store the parent ID in the K8s secret annotation.

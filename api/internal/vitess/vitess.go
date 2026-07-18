@@ -69,7 +69,8 @@ func (m *Manager) CreateDatabase(ctx context.Context, name string) error {
 	// Get existing keyspaces to use first one as a template.
 	keyspaces, found, err := unstructured.NestedSlice(cluster.Object, "spec", "keyspaces")
 	if err != nil || !found || len(keyspaces) == 0 {
-		return fmt.Errorf("no existing keyspaces found in VitessCluster — cluster may not be initialized")
+		// No existing keyspaces — use a built-in minimal default template.
+		keyspaces = []interface{}{defaultKeyspaceTemplate()}
 	}
 
 	// Clone the first keyspace as a template.
@@ -186,6 +187,55 @@ func GenerateCredentials() (username string, password string, err error) {
 		return "", "", fmt.Errorf("failed to generate password: %w", err)
 	}
 	return username, password, nil
+}
+
+// defaultKeyspaceTemplate returns a minimal built-in keyspace template
+// used as a fallback when the VitessCluster has no existing keyspaces.
+func defaultKeyspaceTemplate() map[string]interface{} {
+	return map[string]interface{}{
+		"name":             "",
+		"durabilityPolicy": "cross_cell",
+		"turndownPolicy":   "Immediate",
+		"partitionings": []interface{}{
+			map[string]interface{}{
+				"equal": map[string]interface{}{
+					"hexWidth": int64(0),
+					"parts":    int64(1),
+					"shardTemplate": map[string]interface{}{
+						"databaseInitScriptSecret": map[string]interface{}{
+							"key":  "init.sql",
+							"name": "vitess-init-sql",
+						},
+						"tabletPools": []interface{}{
+							map[string]interface{}{
+								"cell":     "nuremberg",
+								"type":     "replica",
+								"replicas": int64(1),
+								"vttablet": map[string]interface{}{
+									"extraFlags": map[string]interface{}{},
+									"resources": map[string]interface{}{
+										"limits":   map[string]interface{}{"cpu": "256m", "memory": "256Mi"},
+										"requests": map[string]interface{}{"cpu": "100m", "memory": "128Mi"},
+									},
+								},
+								"mysqld": map[string]interface{}{
+									"resources": map[string]interface{}{
+										"limits":   map[string]interface{}{"cpu": "500m", "memory": "1Gi"},
+										"requests": map[string]interface{}{"cpu": "250m", "memory": "512Mi"},
+									},
+								},
+								"dataVolumeClaimTemplate": map[string]interface{}{
+									"accessModes":      []interface{}{"ReadWriteOnce"},
+									"storageClassName": "hcloud-volumes",
+									"resources":        map[string]interface{}{"requests": map[string]interface{}{"storage": "10Gi"}},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
 }
 
 // deepCopyMap does a shallow copy of a map[string]interface{} — sufficient
