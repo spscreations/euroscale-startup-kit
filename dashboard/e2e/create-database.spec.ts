@@ -46,6 +46,13 @@ test.describe('Database Creation E2E', () => {
   test.setTimeout(90_000);
 
   test('create database via UI and verify it appears in list', async ({ page }) => {
+    // Log all API responses for debugging
+    page.on('response', async (response) => {
+      if (response.url().includes('CreateDatabase') || response.url().includes('create')) {
+        const body = await response.text().catch(() => '');
+        console.log(`[API] ${response.status()} ${response.url().slice(-40)}: ${body.slice(0, 200)}`);
+      }
+    });
     const jsErrors = await login(page);
 
     // Check for API errors
@@ -128,6 +135,9 @@ test.describe('Database Creation E2E', () => {
     if (hasError) {
       const errorText = await errorToast.textContent();
       console.log(`⚠️  Error toast: "${errorText?.trim()}"`);
+      // Also dump the full toast HTML for debugging
+      const toastHTML = await errorToast.innerHTML();
+      console.log(`   Toast HTML: ${toastHTML.slice(0, 200)}`);
       await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'create-db-error-toast.png') });
       
       if (errorText?.includes('limit') || errorText?.includes('tier')) {
