@@ -12,6 +12,7 @@ export function useDeleteDatabase() {
   return useMutation(deleteDatabase, {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [listDatabases] });
+      queryClient.refetchQueries({ queryKey: [listDatabases] });
     },
   });
 }
