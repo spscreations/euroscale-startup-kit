@@ -70,7 +70,17 @@ func (m *Manager) CreateDatabase(ctx context.Context, name string) error {
 	keyspaces, found, err := unstructured.NestedSlice(cluster.Object, "spec", "keyspaces")
 	if err != nil || !found || len(keyspaces) == 0 {
 		// No existing keyspaces — use a built-in minimal default template.
-		keyspaces = []interface{}{defaultKeyspaceTemplate()}
+		// Clone the template, set the name, and use it as the only keyspace.
+		tmpl := defaultKeyspaceTemplate()
+		newKS := deepCopyMap(tmpl)
+		newKS["name"] = name
+		reduceReplicas(newKS)
+		cluster.Object["spec"].(map[string]interface{})["keyspaces"] = []interface{}{newKS}
+		_, err = m.dynamicClient.Resource(clusterGVR).Namespace(m.namespace).Update(ctx, cluster, metav1.UpdateOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to create VitessCluster keyspace %q: %w", name, err)
+		}
+		return nil
 	}
 
 	// Clone the first keyspace as a template.
@@ -79,14 +89,30 @@ func (m *Manager) CreateDatabase(ctx context.Context, name string) error {
 		return fmt.Errorf("failed to parse keyspace template")
 	}
 
-	// Deep copy via JSON round-trip is safest for nested maps.
+	// Deep copy and customize.
 	newKS := deepCopyMap(template)
 	newKS["name"] = name
+	reduceReplicas(newKS)
 
-	// Reduce replicas to 1 per pool.
-	partitionings, ok := newKS["partitionings"].([]interface{})
+	// Append the new keyspace.
+	keyspaces = append(keyspaces, newKS)
+	if err := unstructured.SetNestedSlice(cluster.Object, keyspaces, "spec", "keyspaces"); err != nil {
+		return fmt.Errorf("failed to set keyspaces: %w", err)
+	}
+
+	_, err = m.dynamicClient.Resource(clusterGVR).Namespace(m.namespace).Update(ctx, cluster, metav1.UpdateOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to update VitessCluster with keyspace %q: %w", name, err)
+	}
+
+	return nil
+}
+
+// reduceReplicas sets replicas to 1 for all tablet pools in a keyspace spec.
+func reduceReplicas(ks map[string]interface{}) {
+	partitionings, ok := ks["partitionings"].([]interface{})
 	if !ok {
-		return fmt.Errorf("keyspace template missing partitionings")
+		return
 	}
 	for _, partRaw := range partitionings {
 		part, ok := partRaw.(map[string]interface{})
@@ -113,19 +139,6 @@ func (m *Manager) CreateDatabase(ctx context.Context, name string) error {
 			pool["replicas"] = int64(1)
 		}
 	}
-
-	// Append the new keyspace.
-	keyspaces = append(keyspaces, newKS)
-	if err := unstructured.SetNestedSlice(cluster.Object, keyspaces, "spec", "keyspaces"); err != nil {
-		return fmt.Errorf("failed to set keyspaces: %w", err)
-	}
-
-	_, err = m.dynamicClient.Resource(clusterGVR).Namespace(m.namespace).Update(ctx, cluster, metav1.UpdateOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to update VitessCluster with keyspace %q: %w", name, err)
-	}
-
-	return nil
 }
 
 // DeleteDatabase removes a keyspace from the VitessCluster CRD's spec.keyspaces array.
