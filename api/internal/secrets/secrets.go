@@ -12,6 +12,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"math/big"
+	"strings"
 	"time"
 
 	"github.com/spscreations/euroscale-startup-kit/api/internal/models"
@@ -157,6 +158,11 @@ func (s *Store) ListAll(ctx context.Context) ([]models.Database, error) {
 
 	databases := make([]models.Database, 0, len(secretsList.Items))
 	for _, secret := range secretsList.Items {
+		// Skip secrets that are not credentials (e.g. ssl-client certs, usage tracking)
+		if !strings.HasPrefix(secret.Name, "db-") || strings.Contains(secret.Name, "-ssl-") {
+			continue
+		}
+
 		// Defensive: skip secrets without a "database" label (e.g. usage tracking secrets
 		// that may have gotten the managed=true label).
 		if secret.Labels["database"] == "" {

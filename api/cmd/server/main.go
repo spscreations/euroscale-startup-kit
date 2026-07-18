@@ -380,7 +380,7 @@ func (s *server) ListDatabases(ctx context.Context, req *pb.ListDatabasesRequest
 		return nil, err
 	}
 
-	// List all euroscale-managed databases from K8s Secrets.
+	// List all euroscale-managed databases from K8s Secrets (exclude ssl-client secrets).
 	allDBs, err := s.secrets.ListAll(ctx)
 	if err != nil {
 		log.Printf("ERROR: failed to list databases: %v", err)
@@ -392,18 +392,19 @@ func (s *server) ListDatabases(ctx context.Context, req *pb.ListDatabasesRequest
 		pageSize = 50
 	}
 
-	// Filter by user_id.
+	// Filter by user_id and populate host.
 	databases := make([]*pb.Database, 0)
 	for _, db := range allDBs {
 		if db.UserID != userID {
 			continue
 		}
+		dbHost := db.ID + "." + s.host
 		pbDB := &pb.Database{
 			DatabaseId: db.ID,
 			Name:       db.Name,
 			Engine:     db.Engine,
 			Region:     db.Region,
-			Host:       db.Host,
+			Host:       dbHost,
 			Port:       db.Port,
 			Username:   db.Username,
 			Status:     db.Status,
