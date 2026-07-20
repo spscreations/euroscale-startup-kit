@@ -1,30 +1,19 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   Crown,
   ArrowUpRight,
   Building2,
-  HardDrive,
-  Cpu,
-  Lock,
-  Loader2,
-  Info,
 } from "lucide-react";
 import { useUsage } from "@/hooks/useUsage";
-import { useDatabases } from "@/hooks/useDatabases";
-import { useResizeStorage } from "@/hooks/useResizeStorage";
-import { useSetAutoscale } from "@/hooks/useSetAutoscale";
 import UsageBar from "./UsageBar";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
 
 const TIER_LABELS: Record<string, string> = {
   free: "Free",
@@ -32,14 +21,6 @@ const TIER_LABELS: Record<string, string> = {
   team: "Team",
   business: "Business",
   enterprise: "Enterprise",
-};
-
-const TIER_BASE_STORAGE_GB: Record<string, number> = {
-  free: 1,
-  scale: 10,
-  team: 50,
-  business: 250,
-  enterprise: -1,
 };
 
 function bigintToNumber(n: number | bigint | undefined | null): number {
@@ -50,19 +31,8 @@ function bigintToNumber(n: number | bigint | undefined | null): number {
 export default function TierCard() {
   // ── ALL hooks must stay above early returns ──
   const { data, isLoading, isError, refetch } = useUsage();
-  const { data: dbData } = useDatabases();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const resizeMutation = useResizeStorage();
-  const autoscaleMutation = useSetAutoscale();
-
-  // Add-ons state
-  const [storageInputValue, setStorageInputValue] = useState(10);
-  const [autoscaleEnabled, setAutoscaleEnabled] = useState(false);
-
-  // Initialize storage input when data loads
-  const tier = data?.tier || "free";
-  const baseStorageGB = TIER_BASE_STORAGE_GB[tier] ?? 1;
 
   // Mollie redirect detection — show dialog when user returns from payment
   useEffect(() => {
@@ -104,6 +74,7 @@ export default function TierCard() {
     return null;
   }
 
+  const tier = data.tier || "free";
   const tierLabel = TIER_LABELS[tier] || tier;
   const limits = data.limits;
   const usage = data.usage;
@@ -119,106 +90,11 @@ export default function TierCard() {
   const writesUsed = bigintToNumber(usage?.writeUnitsUsed);
 
   const isEnterprise = tier === "enterprise";
-  const isFreeTier = tier === "free";
   // Free/Scale/Team/Business can upgrade; Enterprise shows Contact sales
   const showUpgrade = ["free", "scale", "team", "business"].includes(tier);
 
-  const maxAutoscaleCU = limits?.autoscaleMaxCu ?? 0;
-  const canAutoscale = maxAutoscaleCU > 0;
-
-  // Get first database ID for add-on mutations
-  const databases = dbData?.databases ?? [];
-  const firstDb = databases.length > 0 ? databases[0] : null;
-  const firstDbId = firstDb?.databaseId ?? null;
-  const firstDbName = firstDb?.name ?? null;
-
-  // Initialize storage input from base tier storage
-  useEffect(() => {
-    if (baseStorageGB > 0) {
-      setStorageInputValue(baseStorageGB);
-    }
-  }, [baseStorageGB]);
-
-  const handleApplyChanges = useCallback(() => {
-    if (!firstDbId) {
-      toast.error("No databases. Create a database first.");
-      return;
-    }
-
-    const additionalGb = Math.max(0, storageInputValue - baseStorageGB);
-    if (additionalGb > 0) {
-      resizeMutation.mutate(
-        { databaseId: firstDbId, additionalGb },
-        {
-          onSuccess: (res) => {
-            const newGb = bigintToNumber((res as any)?.newTotalGb);
-            if (newGb && newGb > 0) {
-              toast.success(
-                `Storage for ${firstDbName || firstDbId} resized to ${newGb} GB`,
-              );
-            } else {
-              toast.success(`Storage resize applied`);
-            }
-            void refetch();
-          },
-          onError: (err) => {
-            toast.error(`Failed: ${err.message}`);
-          },
-        },
-      );
-    }
-
-    if (autoscaleEnabled && firstDbId && canAutoscale) {
-      autoscaleMutation.mutate(
-        {
-          databaseId: firstDbId,
-          enabled: true,
-          thresholdPercent: 80,
-          incrementPercent: 20,
-        },
-        {
-          onSuccess: () => {
-            toast.success(`Autoscale enabled for ${firstDbName || firstDbId}`);
-          },
-          onError: (err) => {
-            toast.error(`Autoscale failed: ${err.message}`);
-          },
-        },
-      );
-    }
-
-    if (additionalGb === 0 && !autoscaleEnabled && firstDbId) {
-      toast.success("No changes to apply");
-    }
-  }, [
-    storageInputValue,
-    baseStorageGB,
-    autoscaleEnabled,
-    canAutoscale,
-    firstDbId,
-    firstDbName,
-    resizeMutation,
-    autoscaleMutation,
-    refetch,
-  ]);
-
-  const isApplying = resizeMutation.isPending || autoscaleMutation.isPending;
-
   return (
-    <Card className="p-4 space-y-4 relative">
-      {/* Free tier overlay */}
-      {isFreeTier && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center backdrop-blur-[2px] bg-surface-2/60 rounded-md">
-          <Lock size={18} className="text-muted-foreground mb-1.5" />
-          <p className="text-xs text-muted-foreground text-center px-4 font-medium">
-            Not available on Free tier
-          </p>
-          <p className="text-[10px] text-muted-foreground/70 text-center px-4 mt-0.5">
-            Upgrade to Scale to add compute resources
-          </p>
-        </div>
-      )}
-
+    <Card className="p-4 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -247,20 +123,6 @@ export default function TierCard() {
         )}
       </div>
 
-      {/* Plan includes info */}
-      {baseStorageGB > 0 && (
-        <div className="flex items-center gap-1.5 text-xs">
-          <Info size={12} className="text-text-muted" />
-          <span className="text-text-muted">
-            Plan includes{" "}
-            <span className="text-text-primary font-medium">
-              {baseStorageGB} GB
-            </span>{" "}
-            storage
-          </span>
-        </div>
-      )}
-
       {/* Usage bars */}
       <CardContent className="p-0 space-y-3">
         <UsageBar
@@ -288,109 +150,6 @@ export default function TierCard() {
           unit="writes"
         />
       </CardContent>
-
-      {/* ── Add-ons Section ── */}
-      <Separator />
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <HardDrive size={14} className="text-accent-text" />
-          <span className="text-xs font-semibold text-text-primary">
-            Add-ons
-          </span>
-        </div>
-
-        {/* Storage add-on */}
-        <div className="rounded-md border border-border-subtle bg-surface-2 p-3 space-y-2">
-          <div className="flex items-center gap-2">
-            <HardDrive size={13} className="text-text-muted" />
-            <span className="text-[11px] font-medium text-text-primary">
-              Storage
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-[11px] text-muted-foreground whitespace-nowrap">
-              Additional storage:
-            </label>
-            <input
-              type="number"
-              min={baseStorageGB}
-              max={baseStorageGB + 500}
-              value={storageInputValue}
-              onChange={(e) => {
-                const v = parseInt(e.target.value, 10);
-                if (!isNaN(v) && v >= baseStorageGB) setStorageInputValue(v);
-              }}
-              className="w-16 h-7 px-1.5 text-center text-xs border border-border-subtle rounded bg-surface-1 text-text-primary"
-            />
-            <span className="text-[11px] text-muted-foreground">GB</span>
-            <span className="text-[10px] text-muted-foreground ml-auto">
-              (base: {baseStorageGB} GB)
-            </span>
-          </div>
-        </div>
-
-        {/* Compute / Autoscale section */}
-        <div className="rounded-md border border-border-subtle bg-surface-2 p-3 space-y-2">
-          <div className="flex items-center gap-2">
-            <Cpu size={13} className="text-text-muted" />
-            <span className="text-[11px] font-medium text-text-primary">
-              Autoscale Compute
-            </span>
-            {autoscaleEnabled && canAutoscale && (
-              <Badge variant="secondary" className="ml-auto">
-                Active
-              </Badge>
-            )}
-          </div>
-
-          {isFreeTier ? (
-            <p className="text-[11px] text-muted-foreground italic">
-              Autoscale not available on the Free plan. Upgrade to Scale to
-              enable.
-            </p>
-          ) : canAutoscale ? (
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={autoscaleEnabled}
-                onCheckedChange={(v) => setAutoscaleEnabled(v)}
-              />
-              <span
-                className={cn(
-                  "text-[11px] font-medium",
-                  autoscaleEnabled
-                    ? "text-accent-text"
-                    : "text-muted-foreground",
-                )}
-              >
-                {autoscaleEnabled
-                  ? "Autoscale enabled"
-                  : "Enable autoscale compute"}
-              </span>
-            </div>
-          ) : (
-            <p className="text-[11px] text-muted-foreground italic">
-              Autoscale not available on your current plan. Upgrade to enable.
-            </p>
-          )}
-        </div>
-
-        {/* Apply Changes button */}
-        <Button
-          onClick={handleApplyChanges}
-          disabled={isApplying}
-          className="w-full"
-          size="sm"
-        >
-          {isApplying ? (
-            <>
-              <Loader2 size={14} className="animate-spin" />
-              Applying...
-            </>
-          ) : (
-            "Apply Changes"
-          )}
-        </Button>
-      </div>
     </Card>
   );
 }
