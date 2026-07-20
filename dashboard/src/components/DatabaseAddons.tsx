@@ -87,7 +87,7 @@ export default function DatabaseAddons({
   const cuPricePerHour = limits?.autoscaleCuPrice ?? 0.04;
   const maxAutoscaleCU = limits?.autoscaleMaxCu ?? 0;
   const canAutoscale = maxAutoscaleCU > 0;
-  const isFreeTier = maxAutoscaleCU <= 0;
+  const isFreeTier = limits !== undefined && maxAutoscaleCU <= 0;
 
   return (
     <Card className="relative overflow-hidden">
