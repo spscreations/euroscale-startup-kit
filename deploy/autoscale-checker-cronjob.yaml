@@ -1,0 +1,42 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: euroscale-autoscale-checker
+  namespace: euroscale
+  labels:
+    app: euroscale
+    component: autoscale-checker
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: euroscale
+            component: autoscale-checker
+        spec:
+          serviceAccountName: euroscale-api
+          imagePullSecrets:
+            - name: ghcr-pull
+          restartPolicy: OnFailure
+          containers:
+            - name: checker
+              image: ghcr.io/spscreations/euroscale-autoscale-checker:latest
+              imagePullPolicy: Always
+              env:
+                - name: NAMESPACE
+                  value: "euroscale"
+                - name: LOG_LEVEL
+                  value: "info"
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
