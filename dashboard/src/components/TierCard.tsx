@@ -15,6 +15,7 @@ import {
 import { useUsage } from "@/hooks/useUsage";
 import { useDatabases } from "@/hooks/useDatabases";
 import { useResizeStorage } from "@/hooks/useResizeStorage";
+import { useResizeCompute } from "@/hooks/useResizeCompute";
 import { useSetAutoscale } from "@/hooks/useSetAutoscale";
 import UsageBar from "./UsageBar";
 import { toast } from "sonner";
@@ -56,12 +57,14 @@ export default function TierCard() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const resizeMutation = useResizeStorage();
+  const resizeComputeMutation = useResizeCompute();
   const autoscaleMutation = useSetAutoscale();
 
   // Add-ons state
   const [storageInputValue, setStorageInputValue] = useState(10);
   const [autoscaleEnabled, setAutoscaleEnabled] = useState(false);
   const [storageInitialized, setStorageInitialized] = useState(false);
+  const [additionalCU, setAdditionalCU] = useState(0);
 
   // Derived values needed by hooks (computed above early returns)
   // All use ?./?? to safely handle loading / missing data
@@ -70,6 +73,8 @@ export default function TierCard() {
   const limits = data?.limits;
   const maxAutoscaleCU = limits?.autoscaleMaxCu ?? 0;
   const canAutoscale = maxAutoscaleCU > 0;
+  const baseCU = limits?.baseCu ?? 0;
+  const maxTotalCU = limits?.maxTotalCu ?? 0;
 
   const databases = dbData?.databases ?? [];
   const firstDb = databases.length > 0 ? databases[0] : null;
@@ -129,6 +134,28 @@ export default function TierCard() {
       );
     }
 
+    if (additionalCU > 0) {
+      resizeComputeMutation.mutate(
+        { databaseId: firstDbId, additionalCu: additionalCU },
+        {
+          onSuccess: (res) => {
+            const newCu = (res as any)?.newTotalCu;
+            if (newCu && newCu > 0) {
+              toast.success(
+                `Compute for ${firstDbName || firstDbId} resized to ${newCu} CU`,
+              );
+            } else {
+              toast.success("Compute resize applied");
+            }
+            void refetch();
+          },
+          onError: (err) => {
+            toast.error(`Failed: ${err.message}`);
+          },
+        },
+      );
+    }
+
     if (autoscaleEnabled && canAutoscale) {
       autoscaleMutation.mutate(
         {
@@ -148,22 +175,24 @@ export default function TierCard() {
       );
     }
 
-    if (additionalGb === 0 && !autoscaleEnabled) {
+    if (additionalGb === 0 && additionalCU === 0 && !autoscaleEnabled) {
       toast.success("No changes to apply");
     }
   }, [
     storageInputValue,
     baseStorageGB,
+    additionalCU,
     autoscaleEnabled,
     canAutoscale,
     firstDbId,
     firstDbName,
     resizeMutation,
+    resizeComputeMutation,
     autoscaleMutation,
     refetch,
   ]);
 
-  const isApplying = resizeMutation.isPending || autoscaleMutation.isPending;
+  const isApplying = resizeMutation.isPending || resizeComputeMutation.isPending || autoscaleMutation.isPending;
 
   // ═══════════════════════════════════════════════════════════════
   // Early returns — only AFTER all hooks
@@ -349,7 +378,7 @@ export default function TierCard() {
           <div className="flex items-center gap-2">
             <Cpu size={13} className="text-text-muted" />
             <span className="text-[11px] font-medium text-text-primary">
-              Autoscale Compute
+              Compute
             </span>
             {autoscaleEnabled && canAutoscale && (
               <Badge variant="secondary" className="ml-auto">
@@ -360,10 +389,54 @@ export default function TierCard() {
 
           {isFreeTier ? (
             <p className="text-[11px] text-muted-foreground italic">
-              Autoscale not available on the Free plan. Upgrade to Scale to
+              Compute add-ons not available on the Free plan. Upgrade to Scale to
               enable.
             </p>
-          ) : canAutoscale ? (
+          ) : baseCU > 0 ? (
+            <div className="space-y-2">
+              {/* Plan baseline */}
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-muted-foreground">
+                  Plan includes <span className="text-text-primary font-medium">{baseCU} CU</span>
+                </span>
+                <span className="text-[11px] text-muted-foreground">
+                  Max total: <span className="text-text-primary font-medium">{maxTotalCU} CU</span>
+                </span>
+              </div>
+
+              {/* Additional CU */}
+              <div className="flex items-center gap-2">
+                <label className="text-[11px] text-muted-foreground whitespace-nowrap">
+                  Additional CU:
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={Math.max(0, maxTotalCU - baseCU)}
+                  value={additionalCU}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value, 10);
+                    if (!isNaN(v) && v >= 0 && v <= Math.max(0, maxTotalCU - baseCU))
+                      setAdditionalCU(v);
+                  }}
+                  className="w-16 h-7 px-1.5 text-center text-xs border border-border-subtle rounded bg-surface-1 text-text-primary"
+                />
+                <span className="text-[11px] text-muted-foreground">CU</span>
+                <span className="text-[10px] text-muted-foreground ml-auto">
+                  (base: {baseCU} CU)
+                </span>
+              </div>
+            </div>
+          ) : (
+            <p className="text-[11px] text-muted-foreground italic">
+              Compute add-ons not available on your current plan. Upgrade to enable.
+            </p>
+          )}
+
+          <Separator className="my-1" />
+
+          {/* Autoscale toggle */}
+          {isFreeTier ? null : canAutoscale ? (
             <div className="flex items-center gap-2">
               <Switch
                 checked={autoscaleEnabled}
