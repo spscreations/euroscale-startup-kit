@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   Crown,
@@ -9,6 +9,7 @@ import {
   Info,
 } from "lucide-react";
 import { useUsage } from "@/hooks/useUsage";
+import { useDatabases } from "@/hooks/useDatabases";
 import UsageBar from "./UsageBar";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -38,20 +39,18 @@ function bigintToNumber(n: number | bigint | undefined | null): number {
 }
 
 export default function TierCard() {
-  // ═══════════════════════════════════════════════════════════════
-  // ALL hooks — must be called in the same order on every render
-  // ═══════════════════════════════════════════════════════════════
   const { data, isLoading, isError, refetch } = useUsage();
+  const { data: dbData } = useDatabases();
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Derived values (computed above early returns)
   const tier = data?.tier || "free";
   const baseStorageGB = TIER_BASE_STORAGE_GB[tier] ?? 1;
+  const limits = data?.limits;
 
-  // ── Effects ──
+  const databases = dbData?.databases ?? [];
 
-  // Mollie redirect detection — show toast when user returns from payment
+  // Mollie redirect detection
   useEffect(() => {
     const paymentStatus = searchParams.get("payment");
     if (paymentStatus === "success") {
@@ -61,10 +60,6 @@ export default function TierCard() {
       toast.error("Payment was cancelled. Your plan has not been changed.");
     }
   }, [searchParams, refetch]);
-
-  // ═══════════════════════════════════════════════════════════════
-  // Early returns — only AFTER all hooks
-  // ═══════════════════════════════════════════════════════════════
 
   if (isLoading) {
     return (
@@ -92,13 +87,8 @@ export default function TierCard() {
     return null;
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // Post-early-return computations (data is guaranteed non-null here)
-  // ═══════════════════════════════════════════════════════════════
-
   const tierLabel = TIER_LABELS[tier] || tier;
   const usage = data.usage;
-  const limits = data.limits;
 
   const maxDbs = bigintToNumber(limits?.maxDatabases);
   const maxStorage = bigintToNumber(limits?.maxStorageBytes);
@@ -113,9 +103,6 @@ export default function TierCard() {
   const isEnterprise = tier === "enterprise";
   const showUpgrade = ["free", "scale", "team", "business"].includes(tier);
 
-  // ═══════════════════════════════════════════════════════════════
-  // Render
-  // ═══════════════════════════════════════════════════════════════
   return (
     <Card className="p-4 space-y-4">
       {/* Header */}
