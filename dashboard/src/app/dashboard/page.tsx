@@ -187,6 +187,7 @@ function DashboardContent() {
               size="sm"
               onClick={() => setShowCreate(true)}
               className="text-white"
+              data-magnetic
             >
               <Plus size={14} />
               New database
@@ -198,7 +199,9 @@ function DashboardContent() {
       {/* Content */}
       <main className="flex-1 overflow-auto px-6 py-6 space-y-6">
         {/* Tier & Usage */}
-        <TierCard />
+        <div className="animate-choreographed-enter">
+          <TierCard />
+        </div>
 
         {/* Stats */}
         <StatsCards
@@ -211,7 +214,7 @@ function DashboardContent() {
         {/* Error state */}
         {isError && (
           <div className="rounded-lg border border-error-subtle bg-surface-1 p-8 text-center space-y-3 animate-fade-in">
-            <WifiOff size={28} className="mx-auto text-error-text" />
+            <WifiOff size={28} className="mx-auto text-error-text animate-gentle-shake" />
             <div>
               <p className="text-sm font-medium text-text-primary">
                 Could not load databases
@@ -226,7 +229,7 @@ function DashboardContent() {
               variant="link"
               size="sm"
               onClick={() => refetch()}
-              className="text-accent-text hover:text-accent-hover"
+              className="text-accent-text hover:text-accent-hover animate-pulse-glow-once"
             >
               <RefreshCw size={13} />
               Retry
@@ -240,6 +243,10 @@ function DashboardContent() {
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
+                className="animate-choreographed-enter"
+                style={{ animationDelay: `${(i - 1) * 100}ms` }}
+              >
+              <div
                 className="rounded-lg border border-border-subtle bg-surface-1 p-4 space-y-3"
               >
                 <div className="flex items-center gap-3">
@@ -255,6 +262,7 @@ function DashboardContent() {
                   <Skeleton className="h-2.5 w-20" />
                 </div>
               </div>
+              </div>
             ))}
           </div>
         )}
@@ -262,7 +270,7 @@ function DashboardContent() {
         {/* Empty state */}
         {!isLoading && !isError && databases.length === 0 && (
           <div className="rounded-lg border border-border-subtle bg-surface-1 py-12 px-6 text-center space-y-3 animate-fade-in">
-            <Database size={36} className="mx-auto text-text-disabled" />
+            <Database size={36} className="mx-auto text-text-disabled animate-float" />
             <div>
               <h2 className="text-sm font-semibold text-text-primary">
                 No databases yet
@@ -286,7 +294,7 @@ function DashboardContent() {
         {/* Database list */}
         {!isLoading && !isError && databases.length > 0 && (
           <section className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between animate-choreographed-enter" style={{ animationDelay: "200ms" }}>
               <h2 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
                 All databases
               </h2>
@@ -295,14 +303,19 @@ function DashboardContent() {
               </Badge>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {databases.map((db) => (
-                <DatabaseCard
+              {databases.map((db, idx) => (
+                <div
                   key={db.databaseId}
-                  database={db}
-                  onDelete={handleDeleteRequest}
-                  onView={handleView}
-                  isDeleting={deletingId === db.databaseId}
-                />
+                  className="animate-choreographed-enter"
+                  style={{ animationDelay: `${300 + idx * 75}ms` }}
+                >
+                  <DatabaseCard
+                    database={db}
+                    onDelete={handleDeleteRequest}
+                    onView={handleView}
+                    isDeleting={deletingId === db.databaseId}
+                  />
+                </div>
               ))}
             </div>
           </section>

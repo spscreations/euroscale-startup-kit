@@ -1,7 +1,7 @@
 /* ============================================
    EuroScale Design System — shadcn/ui + BaseUI
-   Linear/Vercel dev-tool aesthetic with full
-   accessibility via @base-ui/react primitives
+   "Sovereign" dark dev-tool aesthetic
+   Linear/Vercel-inspired, warm-tinted palette
    ============================================ */
 
 /* Tailwind base styles */
@@ -48,22 +48,28 @@
   --radius-md: 0.375rem;
   --radius-sm: 0.25rem;
 
-  /* ── EuroScale Custom Tokens (override/add) ── */
+  /* ── EuroScale Custom Tokens ──────────────────
+     Warmed-up dark palette — "Sovereign" brand.
+     Surface & border hex values shifted toward
+     warm undertones for a richer feel.
+  */
   --color-bg-primary: hsl(var(--background));
-  --color-bg-secondary: #0d0d0d;
+  --color-bg-secondary: #121215;
   --color-surface-1: hsl(var(--card));
   --color-surface-2: hsl(var(--muted));
-  --color-surface-3: #222222;
+  --color-surface-3: #232328;
+  --color-surface-warm: #1a1917;
 
   --color-border-subtle: hsl(var(--border));
-  --color-border-default: #333333;
-  --color-border-strong: #404040;
-  --color-border-hover: #525252;
+  --color-border-default: #2e2e33;
+  --color-border-strong: #3a3a40;
+  --color-border-hover: #4a4a52;
 
   --color-text-primary: hsl(var(--foreground));
   --color-text-secondary: hsl(var(--muted-foreground));
-  --color-text-muted: #737373;
-  --color-text-disabled: #525252;
+  --color-text-muted: #7a766e;
+  --color-text-disabled: #4a4740;
+  --color-text-warm: #d4cec0;
 
   --color-accent-hover: #4f46e5;
   --color-accent-pressed: #4338ca;
@@ -81,87 +87,48 @@
   --color-warning-subtle: rgba(245, 158, 11, 0.12);
   --color-warning-text: #fbbf24;
 
+  /* ── Typography ───────────────────────────── */
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
 
+  /* ── Easing ───────────────────────────────── */
+  --ease-expo-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ── Animations ───────────────────────────── */
   --animate-fade-in: fade-in 0.3s ease-out;
   --animate-slide-up: slide-up 0.2s ease-out;
-  --animate-skeleton-pulse: skeleton-pulse 1.5s ease-in-out infinite;
+  --animate-skeleton-pulse: skeleton-pulse 1.5s var(--ease-expo-out) infinite;
+  --animate-choreographed-enter: choreographed-enter 0.8s var(--ease-expo-out) both;
+  --animate-scale-in: scale-in 0.3s var(--ease-expo-out) both;
 }
 
 /* ── CSS Variable Definitions ─────────────────
-   Dark theme only — matches EuroScale's dark
-   dev-tool aesthetic.
+   Dark theme ONLY — "Sovereign" warm dark palette.
+   No light mode. No prefers-color-scheme override.
+   This is the single source of truth for theming.
 */
 
-:root {
-  --background: 0 0% 4%;      /* #0a0a0a */
-  --foreground: 0 0% 98%;     /* #fafafa */
-  --card: 0 0% 8%;            /* #141414 */
-  --card-foreground: 0 0% 98%;
-  --popover: 0 0% 8%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 239 84% 67%;     /* #6366f1 → accent */
-  --primary-foreground: 0 0% 100%;
-  --secondary: 0 0% 11%;      /* #1a1a1a */
-  --secondary-foreground: 0 0% 98%;
-  --muted: 0 0% 10%;          /* #1a1a1a */
-  --muted-foreground: 0 0% 64%; /* #a3a3a3 */
-  --accent: 239 84% 67%;      /* matches primary */
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 15%;         /* #262626 */
-  --input: 0 0% 15%;
-  --ring: 239 84% 67%;
-  --radius: 0.5rem;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 239 84% 67%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 239 84% 67%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 239 84% 67%;
-  }
-}
-
-/* Force dark theme always for dev-tool aesthetic */
 .dark,
 :root {
-  --background: 0 0% 4%;
-  --foreground: 0 0% 98%;
-  --card: 0 0% 8%;
-  --card-foreground: 0 0% 98%;
-  --popover: 0 0% 8%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 239 84% 67%;
+  --background: 240 6% 5%;       /* #0c0c0e — warm dark */
+  --foreground: 40 10% 92%;      /* #ebe8e0 — warm off-white */
+  --card: 240 4% 8%;             /* #141417 */
+  --card-foreground: 40 10% 92%;
+  --popover: 240 4% 8%;
+  --popover-foreground: 40 10% 92%;
+  --primary: 239 84% 67%;        /* #6366f1 — indigo accent */
   --primary-foreground: 0 0% 100%;
-  --secondary: 0 0% 11%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 0 0% 10%;
-  --muted-foreground: 0 0% 64%;
+  --secondary: 240 3% 10%;       /* #19191c */
+  --secondary-foreground: 40 10% 92%;
+  --muted: 240 3% 9%;            /* #161619 */
+  --muted-foreground: 40 5% 55%; /* #939086 — warm muted */
   --accent: 239 84% 67%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 15%;
-  --input: 0 0% 15%;
+  --destructive-foreground: 40 10% 92%;
+  --border: 240 3% 14%;          /* #232328 */
+  --input: 240 3% 14%;
   --ring: 239 84% 67%;
 }
 
@@ -184,10 +151,28 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── Branded Selection ────────────────────────── */
+::selection {
+  background: rgba(99, 102, 241, 0.3);
+  color: inherit;
+}
+
+/* ── Display Typography ───────────────────────── */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
 /* ── Scrollbar ────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -195,22 +180,22 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #222222;
-  border-radius: 3px;
+  background: rgba(99, 102, 241, 0.3);
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #404040;
+  background: #6366f1;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #222222 transparent;
+  scrollbar-color: rgba(99, 102, 241, 0.3) transparent;
 }
 
 /* ── Focus ring ───────────────────────────────── */
 *:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid #6366f1;
   outline-offset: 1px;
   border-radius: 2px;
 }
@@ -239,14 +224,119 @@ body {
 }
 
 @keyframes skeleton-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
+@keyframes choreographed-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+  }
+  50% {
+    box-shadow: 0 0 20px 2px rgba(99, 102, 241, 0.15);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes gentle-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(3px);
+  }
+}
+
+@keyframes pulse-glow-once {
+  0% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+  }
+  30% {
+    box-shadow: 0 0 12px 2px rgba(99, 102, 241, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+  }
+}
+
+/* ── Utility Classes ──────────────────────────── */
 .skeleton {
   background: var(--color-surface-3);
   border-radius: 4px;
-  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  animation: skeleton-pulse 1.5s var(--ease-expo-out) infinite;
+}
+
+.animate-choreographed-enter {
+  animation: choreographed-enter 0.8s var(--ease-expo-out) both;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s var(--ease-expo-out) both;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s var(--ease-expo-out) infinite;
+}
+
+.animate-float {
+  animation: float 3s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+.animate-gentle-shake {
+  animation: gentle-shake 0.4s cubic-bezier(0.16, 1, 0.3, 1) 2;
+}
+
+.animate-pulse-glow-once {
+  animation: pulse-glow-once 2s var(--ease-expo-out) 1 both;
+}
+
+.glow-avatar {
+  transition: box-shadow 0.3s var(--ease-expo-out);
+}
+
+.glow-avatar:hover {
+  box-shadow: 0 0 12px 2px rgba(99, 102, 241, 0.25);
 }
 
 /* ── Shadow-as-border (Vercel technique) ─────── */
@@ -260,4 +350,22 @@ body {
 
 .shadow-border-accent {
   box-shadow: 0px 0px 0px 1px var(--color-accent-border);
+}
+
+/* ── Dialog Animations ──────────────────────────
+   Base UI Dialog uses data-open / data-closed attributes.
+   Overlay & content get these attributes during open/close.
+   Custom easing for smooth, polished transitions.
+*/
+[data-slot="dialog-overlay"][data-open] {
+  animation: fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+[data-slot="dialog-overlay"][data-closed] {
+  animation: fade-in 0.15s cubic-bezier(0.16, 1, 0.3, 1) reverse both;
+}
+[data-slot="dialog-content"][data-open] {
+  animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+[data-slot="dialog-content"][data-closed] {
+  animation: scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) reverse both;
 }

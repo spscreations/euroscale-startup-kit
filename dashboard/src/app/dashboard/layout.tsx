@@ -64,7 +64,7 @@ export default function DashboardLayout({
         {/* Main content */}
         <main className="flex-1 flex flex-col min-w-0 bg-bg-primary pb-14 md:pb-0">
           {/* Mobile top bar */}
-          <div className="md:hidden flex items-center justify-between h-12 px-4 shadow-border bg-bg-primary/95 backdrop-blur-sm sticky top-0 z-30">
+          <div className="md:hidden flex items-center justify-between h-10 px-4 shadow-border bg-bg-primary/95 backdrop-blur-sm sticky top-0 z-30">
             <Button
               variant="ghost"
               size="icon"
@@ -74,7 +74,7 @@ export default function DashboardLayout({
             >
               <Menu size={20} />
             </Button>
-            <span className="text-sm font-semibold text-text-primary">
+            <span className="text-sm font-semibold text-text-primary font-display">
               EuroScale
             </span>
             {/* Spacer for centering */}
@@ -83,12 +83,14 @@ export default function DashboardLayout({
 
           <Separator className="md:hidden" />
 
-          {children}
+          <div className="max-w-7xl mx-auto w-full">
+            {children}
+          </div>
         </main>
 
         {/* Mobile bottom nav bar */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface-1 shadow-border-strong flex items-center justify-around px-2 py-1.5 safe-area-bottom">
-          {mobileNavItems.map((item) => {
+          {mobileNavItems.map((item, idx) => {
             const isActive =
               item.href === "/dashboard"
                 ? pathname === item.href
@@ -98,12 +100,17 @@ export default function DashboardLayout({
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 py-1 px-3 min-w-[44px] min-h-[44px] rounded-lg transition-colors",
+                  "flex flex-col items-center justify-center gap-0.5 py-1 px-3 min-w-[44px] min-h-[44px] rounded-lg transition-colors relative animate-choreographed-enter",
                   isActive
                     ? "text-accent-text"
                     : "text-text-muted hover:text-text-secondary"
                 )}
+                style={{ animationDelay: `${idx * 50}ms` }}
               >
+                {/* Active dot indicator */}
+                {isActive && (
+                  <div className="absolute top-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent-text" />
+                )}
                 <item.icon size={20} />
                 <span className="text-[10px] font-medium leading-none">
                   {item.label}

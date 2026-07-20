@@ -97,7 +97,7 @@ export default function DatabaseCard({
   }, [database.databaseId, onView]);
 
   return (
-    <Card className="group hover:border-border-default transition-colors">
+    <Card className="group hover:border-accent-border hover:shadow-[0_0_0_1px_rgba(99,102,241,0.25)] transition-all duration-300">
       {/* Top row: icon + name + status + menu */}
       <CardHeader className="flex-row items-start justify-between gap-2 pb-1">
         <div className="flex items-center gap-3 min-w-0">
@@ -117,7 +117,7 @@ export default function DatabaseCard({
               <CardTitle className="text-sm font-semibold text-text-primary truncate">
                 {database.name}
               </CardTitle>
-              <Badge variant={status.variant} className="text-[10px] uppercase tracking-wider">
+              <Badge variant={status.variant} className={cn("text-[10px] uppercase tracking-wider", database.status === "creating" && "animate-pulse")}>
                 {status.label}
               </Badge>
             </div>

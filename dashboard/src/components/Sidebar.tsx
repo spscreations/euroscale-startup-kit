@@ -48,7 +48,7 @@ export default function Sidebar({ onNavClick }: SidebarProps) {
           priority
         />
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-text-primary leading-tight truncate">
+          <p className="text-sm font-semibold text-text-primary leading-tight truncate font-display">
             EuroScale
           </p>
         </div>
@@ -56,7 +56,7 @@ export default function Sidebar({ onNavClick }: SidebarProps) {
 
       {/* Nav */}
       <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-        {navItems.map((item) => {
+        {navItems.map((item, index) => {
           const isActive =
             item.href === "/dashboard"
               ? pathname === item.href
@@ -71,10 +71,12 @@ export default function Sidebar({ onNavClick }: SidebarProps) {
               className={cn(
                 "w-full justify-start gap-2.5 px-2.5 py-2 h-auto rounded-md text-sm font-medium",
                 "focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1",
+                "animate-choreographed-enter transition duration-200 ease-[var(--ease-expo-out)] hover:scale-[1.02] hover:brightness-110",
                 isActive
-                  ? "bg-accent-subtle text-accent-text hover:bg-accent-subtle/80"
+                  ? "bg-accent-subtle text-accent-text hover:bg-accent-subtle/80 border-l-2 border-l-[#6366f1]"
                   : "text-text-secondary hover:text-text-primary hover:bg-muted"
               )}
+              style={{ animationDelay: `${index * 50}ms` }}
             >
               <item.icon size={18} />
               {item.label}
@@ -86,7 +88,7 @@ export default function Sidebar({ onNavClick }: SidebarProps) {
       {/* User footer */}
       <div className="px-2 py-3 shadow-border-strong">
         <div className="flex items-center gap-2.5 px-2.5 py-1.5 mb-1.5">
-          <Avatar size="sm">
+          <Avatar size="sm" className="glow-avatar">
             <AvatarFallback className="bg-accent-subtle text-accent-text text-xs font-semibold">
               {session?.name?.charAt(0)?.toUpperCase() ?? "?"}
             </AvatarFallback>

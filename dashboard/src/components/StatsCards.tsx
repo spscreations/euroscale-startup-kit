@@ -47,10 +47,14 @@ export default function StatsCards(props: StatsCardsProps) {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-      {statConfigs.map((cfg) => {
+      {statConfigs.map((cfg, idx) => {
         const Icon = cfg.icon;
         return (
-          <Card key={cfg.label} className="p-4">
+          <Card
+            key={cfg.label}
+            className="p-4 animate-choreographed-enter"
+            style={{ animationDelay: `${idx * 100}ms` }}
+          >
             <CardContent className="p-0">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-text-muted uppercase tracking-wider">
