@@ -712,6 +712,20 @@ export type TierLimits = Message<"euroscale.v1.TierLimits"> & {
    * @generated from field: int32 autoscale_max_cu = 7;
    */
   autoscaleMaxCu: number;
+
+  /**
+   * Base CU included in the tier plan at no extra cost.
+   *
+   * @generated from field: double base_cu = 8;
+   */
+  baseCu: number;
+
+  /**
+   * Maximum total CU this tier allows (base + add-ons).
+   *
+   * @generated from field: double max_total_cu = 9;
+   */
+  maxTotalCu: number;
 };
 
 /**
@@ -979,6 +993,65 @@ export const SetAutoscaleResponseSchema: GenMessage<SetAutoscaleResponse> = /*@_
   messageDesc(file_euroscale_v1_database, 27);
 
 /**
+ * @generated from message euroscale.v1.ResizeComputeRequest
+ */
+export type ResizeComputeRequest = Message<"euroscale.v1.ResizeComputeRequest"> & {
+  /**
+   * ID of the database whose CPU allocation to resize.
+   *
+   * @generated from field: string database_id = 1;
+   */
+  databaseId: string;
+
+  /**
+   * Additional CU to add to the current allocation (not total new CU).
+   *
+   * @generated from field: double additional_cu = 2;
+   */
+  additionalCu: number;
+};
+
+/**
+ * Describes the message euroscale.v1.ResizeComputeRequest.
+ * Use `create(ResizeComputeRequestSchema)` to create a new message.
+ */
+export const ResizeComputeRequestSchema: GenMessage<ResizeComputeRequest> = /*@__PURE__*/
+  messageDesc(file_euroscale_v1_database, 28);
+
+/**
+ * @generated from message euroscale.v1.ResizeComputeResponse
+ */
+export type ResizeComputeResponse = Message<"euroscale.v1.ResizeComputeResponse"> & {
+  /**
+   * Whether the resize was accepted by the compute provider.
+   *
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+
+  /**
+   * New total CU allocation after the resize.
+   *
+   * @generated from field: double new_total_cu = 2;
+   */
+  newTotalCu: number;
+
+  /**
+   * Human-readable message (e.g. reason for failure).
+   *
+   * @generated from field: string message = 3;
+   */
+  message: string;
+};
+
+/**
+ * Describes the message euroscale.v1.ResizeComputeResponse.
+ * Use `create(ResizeComputeResponseSchema)` to create a new message.
+ */
+export const ResizeComputeResponseSchema: GenMessage<ResizeComputeResponse> = /*@__PURE__*/
+  messageDesc(file_euroscale_v1_database, 29);
+
+/**
  * @generated from message euroscale.v1.GetMetricsRequest
  */
 export type GetMetricsRequest = Message<"euroscale.v1.GetMetricsRequest"> & {
@@ -995,7 +1068,7 @@ export type GetMetricsRequest = Message<"euroscale.v1.GetMetricsRequest"> & {
  * Use `create(GetMetricsRequestSchema)` to create a new message.
  */
 export const GetMetricsRequestSchema: GenMessage<GetMetricsRequest> = /*@__PURE__*/
-  messageDesc(file_euroscale_v1_database, 28);
+  messageDesc(file_euroscale_v1_database, 30);
 
 /**
  * @generated from message euroscale.v1.GetMetricsResponse
@@ -1014,7 +1087,7 @@ export type GetMetricsResponse = Message<"euroscale.v1.GetMetricsResponse"> & {
  * Use `create(GetMetricsResponseSchema)` to create a new message.
  */
 export const GetMetricsResponseSchema: GenMessage<GetMetricsResponse> = /*@__PURE__*/
-  messageDesc(file_euroscale_v1_database, 29);
+  messageDesc(file_euroscale_v1_database, 31);
 
 /**
  * @generated from message euroscale.v1.MetricPoint
@@ -1047,7 +1120,7 @@ export type MetricPoint = Message<"euroscale.v1.MetricPoint"> & {
  * Use `create(MetricPointSchema)` to create a new message.
  */
 export const MetricPointSchema: GenMessage<MetricPoint> = /*@__PURE__*/
-  messageDesc(file_euroscale_v1_database, 30);
+  messageDesc(file_euroscale_v1_database, 32);
 
 /**
  * @generated from message euroscale.v1.GetSSLCertificatesRequest
@@ -1066,7 +1139,7 @@ export type GetSSLCertificatesRequest = Message<"euroscale.v1.GetSSLCertificates
  * Use `create(GetSSLCertificatesRequestSchema)` to create a new message.
  */
 export const GetSSLCertificatesRequestSchema: GenMessage<GetSSLCertificatesRequest> = /*@__PURE__*/
-  messageDesc(file_euroscale_v1_database, 31);
+  messageDesc(file_euroscale_v1_database, 33);
 
 /**
  * @generated from message euroscale.v1.GetSSLCertificatesResponse
@@ -1099,7 +1172,7 @@ export type GetSSLCertificatesResponse = Message<"euroscale.v1.GetSSLCertificate
  * Use `create(GetSSLCertificatesResponseSchema)` to create a new message.
  */
 export const GetSSLCertificatesResponseSchema: GenMessage<GetSSLCertificatesResponse> = /*@__PURE__*/
-  messageDesc(file_euroscale_v1_database, 32);
+  messageDesc(file_euroscale_v1_database, 34);
 
 /**
  * DatabaseService provisions and manages Vitess databases on demand.
@@ -1228,6 +1301,16 @@ export const DatabaseService: GenService<{
     methodKind: "unary";
     input: typeof SetAutoscaleRequestSchema;
     output: typeof SetAutoscaleResponseSchema;
+  },
+  /**
+   * ResizeCompute adjusts a database's CPU allocation by the specified CU.
+   *
+   * @generated from rpc euroscale.v1.DatabaseService.ResizeCompute
+   */
+  resizeCompute: {
+    methodKind: "unary";
+    input: typeof ResizeComputeRequestSchema;
+    output: typeof ResizeComputeResponseSchema;
   },
   /**
    * GetMetrics returns CPU and disk metrics for a database (last 24h).

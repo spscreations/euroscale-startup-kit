@@ -4,6 +4,7 @@ import { Zap, Loader2, WifiOff, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useUsage } from "@/hooks/useUsage";
 import { useResizeStorage } from "@/hooks/useResizeStorage";
+import { useResizeCompute } from "@/hooks/useResizeCompute";
 import { useSetAutoscale } from "@/hooks/useSetAutoscale";
 import StorageCard from "@/components/StorageCard";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -30,6 +31,7 @@ export default function DatabaseAddons({
 }: DatabaseAddonsProps) {
   const { data: usageData, isLoading, error, refetch } = useUsage();
   const resizeMutation = useResizeStorage();
+  const resizeComputeMutation = useResizeCompute();
   const autoscaleMutation = useSetAutoscale();
 
   const limits = usageData?.limits;
@@ -97,6 +99,17 @@ export default function DatabaseAddons({
   const baseStorageGB = tierBaseStorageGB[usageData?.tier ?? "free"] ?? 1;
   const isFreeTier = limits !== undefined && maxAutoscaleCU <= 0;
 
+  // ── Compute CU baseline ──
+  const tierBaseCU: Record<string, number> = {
+    free: 0,
+    scale: 2,
+    team: 8,
+    business: 32,
+    enterprise: -1,
+  };
+  const baseCU = tierBaseCU[usageData?.tier ?? "free"] ?? 0;
+  const maxTotalCU = limits?.maxTotalCu ?? 0;
+
   return (
     <Card className="relative overflow-hidden">
       <CardHeader className="border-b border-border-subtle px-5 py-3.5">
@@ -119,6 +132,8 @@ export default function DatabaseAddons({
           maxAutoscaleCU={maxAutoscaleCU}
           canAutoscale={canAutoscale}
           databaseId={databaseId}
+          baseCU={baseCU}
+          maxTotalCU={maxTotalCU}
           onApplyStorage={(additionalGb: number) => {
             if (!databaseId) {
               toast.error("No database to resize.");
@@ -153,6 +168,40 @@ export default function DatabaseAddons({
               },
             );
           }}
+          onApplyCompute={(additionalCu: number) => {
+            if (!databaseId) {
+              toast.error("No database to resize.");
+              return;
+            }
+            resizeComputeMutation.mutate(
+              { databaseId, additionalCu },
+              {
+                onSuccess: (res) => {
+                  if (res.success !== true) {
+                    toast.error(
+                      res.message || "Compute resize failed unexpectedly.",
+                    );
+                    return;
+                  }
+                  const newCu = res.newTotalCu;
+                  if (!newCu || newCu <= 0) {
+                    toast.error(
+                      res.message ||
+                        "Compute resize returned 0 CU — operation may have failed.",
+                    );
+                    return;
+                  }
+                  toast.success(
+                    `Compute for ${databaseName} resized to ${newCu} CU`,
+                  );
+                  void refetch();
+                },
+                onError: (err) => {
+                  toast.error(`Failed: ${err.message}`);
+                },
+              },
+            );
+          }}
           onApplyAutoscale={(
             enabled: boolean,
             threshold: number,
@@ -175,7 +224,7 @@ export default function DatabaseAddons({
               },
             );
           }}
-          isApplying={resizeMutation.isPending || autoscaleMutation.isPending}
+          isApplying={resizeMutation.isPending || resizeComputeMutation.isPending || autoscaleMutation.isPending}
         />
       </CardContent>
       {isFreeTier && (

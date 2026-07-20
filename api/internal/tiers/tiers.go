@@ -51,6 +51,8 @@ type Tier struct {
 	AdditionalStorageGBPrice float64 // €0.20 per GB-month
 	AutoscaleCUPrice         float64  // €0.04 per CU-hour
 	AutoscaleMaxCU           int32    // max CU this tier can autoscale to (-1 = unlimited, 0 = disabled)
+	BaseCU                   float64  // base compute units provisioned at creation
+	MaxTotalCU               float64  // max total compute units (-1 = unlimited)
 }
 
 // tierDefs holds the canonical tier definitions.
@@ -65,6 +67,8 @@ var tierDefs = map[string]*Tier{
 		AdditionalStorageGBPrice: 0.20,
 		AutoscaleCUPrice:        0.04,
 		AutoscaleMaxCU:          0,
+		BaseCU:                  0.25,
+		MaxTotalCU:              0.25,
 	},
 	TierScale: {
 		Name:                    TierScale,
@@ -76,6 +80,8 @@ var tierDefs = map[string]*Tier{
 		AdditionalStorageGBPrice: 0.20,
 		AutoscaleCUPrice:        0.04,
 		AutoscaleMaxCU:          2,
+		BaseCU:                  1,
+		MaxTotalCU:              5,
 	},
 	TierTeam: {
 		Name:                    TierTeam,
@@ -87,6 +93,8 @@ var tierDefs = map[string]*Tier{
 		AdditionalStorageGBPrice: 0.20,
 		AutoscaleCUPrice:        0.04,
 		AutoscaleMaxCU:          4,
+		BaseCU:                  2,
+		MaxTotalCU:              10,
 	},
 	TierBusiness: {
 		Name:                    TierBusiness,
@@ -98,6 +106,8 @@ var tierDefs = map[string]*Tier{
 		AdditionalStorageGBPrice: 0.20,
 		AutoscaleCUPrice:        0.04,
 		AutoscaleMaxCU:          8,
+		BaseCU:                  4,
+		MaxTotalCU:              20,
 	},
 	TierEnterprise: {
 		Name:                    TierEnterprise,
@@ -109,6 +119,8 @@ var tierDefs = map[string]*Tier{
 		AdditionalStorageGBPrice: 0.20,
 		AutoscaleCUPrice:        0.04,
 		AutoscaleMaxCU:          UnlimitedDBs,
+		BaseCU:                  -1, // unlimited
+		MaxTotalCU:              -1, // unlimited
 	},
 }
 

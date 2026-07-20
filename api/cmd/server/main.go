@@ -41,6 +41,7 @@ import (
 
 	"github.com/spscreations/euroscale-startup-kit/api/internal/auth"
 	connectpkg "github.com/spscreations/euroscale-startup-kit/api/internal/connect"
+	"github.com/spscreations/euroscale-startup-kit/api/internal/compute"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/ipwhitelist"
 	metasvc "github.com/spscreations/euroscale-startup-kit/api/internal/metadata"
 	"github.com/spscreations/euroscale-startup-kit/api/internal/models"
@@ -95,6 +96,7 @@ type server struct {
 	ipwl      *ipwhitelist.Store
 	tierStore *tiers.Store
 	resizer       *storage.Resizer
+	computeResizer *compute.Resizer
 	dynamicClient dynamic.Interface
 
 	host     string
@@ -727,6 +729,8 @@ func (s *server) GetUsage(ctx context.Context, req *pb.GetUsageRequest) (*pb.Get
 		AdditionalStorageGbPrice:  tier.AdditionalStorageGBPrice,
 		AutoscaleCuPrice:          tier.AutoscaleCUPrice,
 		AutoscaleMaxCu:            tier.AutoscaleMaxCU,
+		BaseCu:                    tier.BaseCU,
+		MaxTotalCu:                tier.MaxTotalCU,
 	}
 
 	// StorageBytes comes from the per-user usage-tracking secret
@@ -824,6 +828,57 @@ func (s *server) ResizeStorage(ctx context.Context, req *pb.ResizeStorageRequest
 		Success:     true,
 		NewTotalGb:  newTotalGB,
 		Message:     fmt.Sprintf("PVC resized from %d GB to %d GB", newTotalGB-int64(req.AdditionalGb), newTotalGB),
+	}, nil
+}
+
+// ResizeCompute adjusts the compute units for a database instance by patching
+// the VitessShard CRD's vttablet and mysqld CPU resource limits.
+func (s *server) ResizeCompute(ctx context.Context, req *pb.ResizeComputeRequest) (*pb.ResizeComputeResponse, error) {
+	if req.DatabaseId == "" {
+		return nil, status.Error(codes.InvalidArgument, "database_id is required")
+	}
+	if req.AdditionalCu <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "additional_cu must be positive")
+	}
+
+	// Verify the authenticated user owns this database.
+	if err := s.verifyDatabaseOwnership(ctx, req.DatabaseId); err != nil {
+		return nil, err
+	}
+
+	// ── Tier limit enforcement ────────────────────────────────────
+	userID := auth.GetUserID(ctx)
+	if userID != "" {
+		tier := s.tierStore.GetTierForUser(ctx, userID)
+		currentCU, _ := s.computeResizer.GetCurrentCU(ctx, req.DatabaseId)
+		requestedTotal := currentCU + req.AdditionalCu
+		if tier.MaxTotalCU > 0 && requestedTotal > tier.MaxTotalCU {
+			return &pb.ResizeComputeResponse{
+				Success: false,
+				Message: fmt.Sprintf(
+					"compute limit reached: your %s plan allows %.2f CU total (current: %.2f CU, requested: %.2f CU). Upgrade at euroscale.app/billing",
+					tier.Name, tier.MaxTotalCU, currentCU, requestedTotal,
+				),
+			}, nil
+		}
+	}
+
+	newTotalCU, err := s.computeResizer.ResizeCompute(ctx, req.DatabaseId, req.AdditionalCu)
+	if err != nil {
+		log.Printf("ERROR: failed to resize compute for database %q: %v", req.DatabaseId, err)
+		return &pb.ResizeComputeResponse{
+			Success: false,
+			Message: fmt.Sprintf("resize failed: %v", err),
+		}, nil
+	}
+
+	log.Printf("INFO: resized compute for database %q by %.2f CU (new total: %.2f CU)",
+		req.DatabaseId, req.AdditionalCu, newTotalCU)
+
+	return &pb.ResizeComputeResponse{
+		Success:     true,
+		NewTotalCu:  newTotalCU,
+		Message:     fmt.Sprintf("compute resized to %.2f CU", newTotalCU),
 	}, nil
 }
 
@@ -1075,6 +1130,78 @@ func (s *server) handleAutoscale(w http.ResponseWriter, r *http.Request) {
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
+}
+
+// handleResizeCompute handles POST /api/v1/resize-compute — adjusts compute units
+// for a database instance by patching the VitessShard CRD.
+func (s *server) handleResizeCompute(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, 4<<10) // 4KB limit
+
+	var req struct {
+		DatabaseID   string  `json:"database_id"`
+		AdditionalCU float64 `json:"additional_cu"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"message": "invalid request body"})
+		return
+	}
+
+	if req.DatabaseID == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"message": "database_id is required"})
+		return
+	}
+	if req.AdditionalCU <= 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"message": "additional_cu must be positive"})
+		return
+	}
+
+	// Authenticate and extract user ID from JWT.
+	userID, err := s.authenticateHTTPRequest(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"message": err.Error()})
+		return
+	}
+
+	// Verify ownership.
+	if !s.userOwnsDatabase(r.Context(), userID, req.DatabaseID) {
+		writeJSON(w, http.StatusForbidden, map[string]string{"message": "access denied"})
+		return
+	}
+
+	// Tier validation.
+	tier := s.tierStore.GetTierForUser(r.Context(), userID)
+	currentCU, _ := s.computeResizer.GetCurrentCU(r.Context(), req.DatabaseID)
+	requestedTotal := currentCU + req.AdditionalCU
+	if tier.MaxTotalCU > 0 && requestedTotal > tier.MaxTotalCU {
+		writeJSON(w, http.StatusPaymentRequired, map[string]string{
+			"message": fmt.Sprintf(
+				"compute limit reached: your %s plan allows %.2f CU total (current: %.2f CU, requested: %.2f CU). Upgrade at euroscale.app/billing",
+				tier.Name, tier.MaxTotalCU, currentCU, requestedTotal,
+			),
+		})
+		return
+	}
+
+	newTotalCU, err := s.computeResizer.ResizeCompute(r.Context(), req.DatabaseID, req.AdditionalCU)
+	if err != nil {
+		log.Printf("ERROR: failed to resize compute for database %q: %v", req.DatabaseID, err)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"message": fmt.Sprintf("resize failed: %v", err)})
+		return
+	}
+
+	log.Printf("INFO: resized compute for database %q by %.2f CU (new total: %.2f CU)",
+		req.DatabaseID, req.AdditionalCU, newTotalCU)
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"success":      true,
+		"new_total_cu": newTotalCU,
+		"message":      fmt.Sprintf("compute resized to %.2f CU", newTotalCU),
+	})
 }
 
 // userOwnsDatabase checks whether a user owns the given database.
@@ -1674,6 +1801,7 @@ func main() {
 	ipwlStore := ipwhitelist.NewStore(clientset, namespace)
 	tierStore := tiers.NewStore(clientset, namespace)
 	resizer := storage.NewResizer(clientset, dynamicClient, namespace)
+	computeResizer := compute.NewResizer(dynamicClient, namespace)
 
 	log.Println("K8s clientset created successfully.")
 
@@ -1749,6 +1877,7 @@ func main() {
 		ipwl:      ipwlStore,
 		tierStore: tierStore,
 		resizer:   resizer,
+		computeResizer: computeResizer,
 		host:      host,
 		sslCAPem:  sslCAPem,
 		sslCAKey:  sslCAKey,
@@ -1831,6 +1960,10 @@ func main() {
 	// POST /api/v1/incremental-backup-trigger — trigger an incremental backup
 	httpMux.HandleFunc("/api/v1/incremental-backup-trigger", withHTTPAuth(jwtSecret, srv.pitrHandler.HandleTriggerIncrementalBackup))
 	log.Println("PITR endpoints registered: /api/v1/backups, /api/v1/backups-trigger, /api/v1/incremental-backup-trigger, /api/v1/restore, /api/v1/restores")
+
+	// Resize compute endpoint (POST /api/v1/resize-compute).
+	httpMux.HandleFunc("/api/v1/resize-compute", withHTTPAuth(jwtSecret, srv.handleResizeCompute))
+	log.Println("Resize compute endpoint registered: POST /api/v1/resize-compute")
 
 	// Autoscale and metrics endpoints (require JWT auth).
 	// POST/GET /api/v1/databases/{id}/autoscale

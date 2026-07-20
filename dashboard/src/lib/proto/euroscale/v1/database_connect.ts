@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { AddIPWhitelistEntryRequest, AddIPWhitelistEntryResponse, CreateDatabaseRequest, CreateDatabaseResponse, DeleteDatabaseRequest, DeleteDatabaseResponse, GetDatabaseRequest, GetDatabaseResponse, GetIPWhitelistRequest, GetIPWhitelistResponse, GetMetricsRequest, GetMetricsResponse, GetSSLCertificatesRequest, GetSSLCertificatesResponse, GetUsageRequest, GetUsageResponse, ListDatabasesRequest, ListDatabasesResponse, RemoveIPWhitelistEntryRequest, RemoveIPWhitelistEntryResponse, ResizeStorageRequest, ResizeStorageResponse, RotateCredentialsRequest, RotateCredentialsResponse, SetAutoscaleRequest, SetAutoscaleResponse, SetUserTierRequest, SetUserTierResponse } from "./database_pb.js";
+import { AddIPWhitelistEntryRequest, AddIPWhitelistEntryResponse, CreateDatabaseRequest, CreateDatabaseResponse, DeleteDatabaseRequest, DeleteDatabaseResponse, GetDatabaseRequest, GetDatabaseResponse, GetIPWhitelistRequest, GetIPWhitelistResponse, GetMetricsRequest, GetMetricsResponse, GetSSLCertificatesRequest, GetSSLCertificatesResponse, ListDatabasesRequest, ListDatabasesResponse, RemoveIPWhitelistEntryRequest, RemoveIPWhitelistEntryResponse, ResizeComputeRequest, ResizeComputeResponse, ResizeStorageRequest, ResizeStorageResponse, RotateCredentialsRequest, RotateCredentialsResponse, SetAutoscaleRequest, SetAutoscaleResponse, SetUserTierRequest, SetUserTierResponse } from "./database_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -146,6 +146,17 @@ export const DatabaseService = {
       name: "SetAutoscale",
       I: SetAutoscaleRequest,
       O: SetAutoscaleResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * ResizeCompute adjusts a database's CPU allocation by the specified CU.
+     *
+     * @generated from rpc euroscale.v1.DatabaseService.ResizeCompute
+     */
+    resizeCompute: {
+      name: "ResizeCompute",
+      I: ResizeComputeRequest,
+      O: ResizeComputeResponse,
       kind: MethodKind.Unary,
     },
     /**

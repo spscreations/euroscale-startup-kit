@@ -30,11 +30,14 @@ type StorageCardProps = {
   // ── Actions ──
   databaseId: string;
   onApplyStorage: (additionalGb: number) => void;
+  onApplyCompute: (additionalCu: number) => void;
   onApplyAutoscale: (enabled: boolean, threshold: number, increment: number) => void;
   isApplying: boolean;
 
-  // ── Plan base storage ──
+  // ── Plan baseline ──
   baseStorageGB: number;
+  baseCU: number;
+  maxTotalCU: number;
 };
 
 const ESTIMATED_MONTHLY_HOURS = 730;
@@ -50,9 +53,12 @@ export default function StorageCard({
   canAutoscale,
   databaseId,
   onApplyStorage,
+  onApplyCompute,
   onApplyAutoscale,
   isApplying,
   baseStorageGB,
+  baseCU,
+  maxTotalCU,
 }: StorageCardProps) {
   // ── Storage state ──
   const [additionalStorageGB, setAdditionalStorageGB] = useState(0);
@@ -96,6 +102,9 @@ export default function StorageCard({
     if (additionalStorageGB > 0) {
       onApplyStorage(additionalStorageGB);
     }
+    if (additionalCU > 0) {
+      onApplyCompute(additionalCU);
+    }
     onApplyAutoscale(autoscaleEnabled, autoscaleThreshold, autoscaleIncrement);
     // Reset state after apply
     setAdditionalStorageGB(0);
@@ -108,6 +117,7 @@ export default function StorageCard({
     autoscaleThreshold,
     autoscaleIncrement,
     onApplyStorage,
+    onApplyCompute,
     onApplyAutoscale,
   ]);
 
@@ -277,9 +287,20 @@ export default function StorageCard({
 
         {/* Additional CU */}
         <div className="space-y-2">
+          {/* Plan baseline */}
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-muted-foreground">
+              Plan includes <span className="text-text-primary font-medium">{baseCU} CU</span>
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              Max total: <span className="text-text-primary font-medium">{maxTotalCU} CU</span>
+            </span>
+          </div>
+
+          {/* Extra CU slider + cost */}
           <div className="flex items-center justify-between">
             <label className="text-[11px] text-muted-foreground">
-              Additional CU:{" "}
+              Add extra:{" "}
               <span className="text-text-primary font-mono font-medium">
                 {additionalCU} CU
               </span>
@@ -292,13 +313,20 @@ export default function StorageCard({
             value={[additionalCU]}
             onValueChange={handleSliderChange(setAdditionalCU)}
             min={0}
-            max={maxAutoscaleCU > 0 ? maxAutoscaleCU : 4}
+            max={Math.max(0, maxTotalCU - baseCU)}
             step={1}
             className="[&_[data-slot=slider-track]]:bg-border [&_[data-slot=slider-track]]:h-2 [&_[data-slot=slider-range]]:bg-accent-text"
           />
           <div className="flex justify-between text-[10px] text-muted-foreground">
             <span>0 CU</span>
-            <span>{maxAutoscaleCU > 0 ? maxAutoscaleCU : 4} CU</span>
+            <span>{Math.max(0, maxTotalCU - baseCU)} CU</span>
+          </div>
+
+          {/* Total compute */}
+          <div className="flex items-center justify-between border-t border-border-subtle pt-1.5 mt-0.5">
+            <span className="text-[11px] font-medium text-text-primary">
+              Total compute: <span className="font-mono">{baseCU + additionalCU} CU</span>
+            </span>
           </div>
         </div>
       </div>

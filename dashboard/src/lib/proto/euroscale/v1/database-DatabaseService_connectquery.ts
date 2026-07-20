@@ -91,6 +91,13 @@ export const resizeStorage = DatabaseService.method.resizeStorage;
 export const setAutoscale = DatabaseService.method.setAutoscale;
 
 /**
+ * ResizeCompute adjusts a database's CPU allocation by the specified CU.
+ *
+ * @generated from rpc euroscale.v1.DatabaseService.ResizeCompute
+ */
+export const resizeCompute = DatabaseService.method.resizeCompute;
+
+/**
  * GetMetrics returns CPU and disk metrics for a database (last 24h).
  *
  * @generated from rpc euroscale.v1.DatabaseService.GetMetrics

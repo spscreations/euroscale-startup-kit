@@ -49,6 +49,9 @@ service DatabaseService {
 
   // GetSSLCertificates returns the SSL client certificates for a database.
   rpc GetSSLCertificates(GetSSLCertificatesRequest) returns (GetSSLCertificatesResponse);
+
+  // ResizeCompute adjusts the compute units for a database instance.
+  rpc ResizeCompute(ResizeComputeRequest) returns (ResizeComputeResponse);
 }
 
 // ── CreateDatabase ──────────────────────────────────────────────────────────
@@ -308,6 +311,12 @@ message TierLimits {
 
   // Max CU this tier can autoscale to (-1 = unlimited, 0 = disabled).
   int32 autoscale_max_cu = 7;
+
+  // Base compute units provisioned at database creation.
+  double base_cu = 8;
+
+  // Max total compute units (-1 = unlimited).
+  double max_total_cu = 9;
 }
 
 message Usage {
@@ -438,4 +447,25 @@ message GetSSLCertificatesResponse {
 
   // PEM-encoded client private key.
   string client_key = 3;
+}
+
+// ── ResizeCompute ───────────────────────────────────────────────────────────
+
+message ResizeComputeRequest {
+  // ID of the database whose compute to resize.
+  string database_id = 1;
+
+  // Additional CU to add (e.g. 0.5 for half a CU).
+  double additional_cu = 2;
+}
+
+message ResizeComputeResponse {
+  // Whether the resize was successful.
+  bool success = 1;
+
+  // New total CU after the resize.
+  double new_total_cu = 2;
+
+  // Human-readable message.
+  string message = 3;
 }

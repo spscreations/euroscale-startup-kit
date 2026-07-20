@@ -33,6 +33,7 @@ const (
 	DatabaseService_SetAutoscale_FullMethodName           = "/euroscale.v1.DatabaseService/SetAutoscale"
 	DatabaseService_GetMetrics_FullMethodName             = "/euroscale.v1.DatabaseService/GetMetrics"
 	DatabaseService_GetSSLCertificates_FullMethodName     = "/euroscale.v1.DatabaseService/GetSSLCertificates"
+	DatabaseService_ResizeCompute_FullMethodName           = "/euroscale.v1.DatabaseService/ResizeCompute"
 )
 
 // DatabaseServiceClient is the client API for DatabaseService service.
@@ -71,6 +72,8 @@ type DatabaseServiceClient interface {
 	GetMetrics(ctx context.Context, in *GetMetricsRequest, opts ...grpc.CallOption) (*GetMetricsResponse, error)
 	// GetSSLCertificates returns the SSL client certificates for a database.
 	GetSSLCertificates(ctx context.Context, in *GetSSLCertificatesRequest, opts ...grpc.CallOption) (*GetSSLCertificatesResponse, error)
+	// ResizeCompute adjusts the compute units for a database instance.
+	ResizeCompute(ctx context.Context, in *ResizeComputeRequest, opts ...grpc.CallOption) (*ResizeComputeResponse, error)
 }
 
 type databaseServiceClient struct {
@@ -221,6 +224,16 @@ func (c *databaseServiceClient) GetSSLCertificates(ctx context.Context, in *GetS
 	return out, nil
 }
 
+func (c *databaseServiceClient) ResizeCompute(ctx context.Context, in *ResizeComputeRequest, opts ...grpc.CallOption) (*ResizeComputeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResizeComputeResponse)
+	err := c.cc.Invoke(ctx, DatabaseService_ResizeCompute_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DatabaseServiceServer is the server API for DatabaseService service.
 // All implementations must embed UnimplementedDatabaseServiceServer
 // for forward compatibility.
@@ -257,6 +270,8 @@ type DatabaseServiceServer interface {
 	GetMetrics(context.Context, *GetMetricsRequest) (*GetMetricsResponse, error)
 	// GetSSLCertificates returns the SSL client certificates for a database.
 	GetSSLCertificates(context.Context, *GetSSLCertificatesRequest) (*GetSSLCertificatesResponse, error)
+	// ResizeCompute adjusts the compute units for a database instance.
+	ResizeCompute(context.Context, *ResizeComputeRequest) (*ResizeComputeResponse, error)
 	mustEmbedUnimplementedDatabaseServiceServer()
 }
 
@@ -308,6 +323,9 @@ func (UnimplementedDatabaseServiceServer) GetMetrics(context.Context, *GetMetric
 }
 func (UnimplementedDatabaseServiceServer) GetSSLCertificates(context.Context, *GetSSLCertificatesRequest) (*GetSSLCertificatesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetSSLCertificates not implemented")
+}
+func (UnimplementedDatabaseServiceServer) ResizeCompute(context.Context, *ResizeComputeRequest) (*ResizeComputeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ResizeCompute not implemented")
 }
 func (UnimplementedDatabaseServiceServer) mustEmbedUnimplementedDatabaseServiceServer() {}
 func (UnimplementedDatabaseServiceServer) testEmbeddedByValue()                         {}
@@ -582,6 +600,24 @@ func _DatabaseService_GetSSLCertificates_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DatabaseService_ResizeCompute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResizeComputeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DatabaseServiceServer).ResizeCompute(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DatabaseService_ResizeCompute_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DatabaseServiceServer).ResizeCompute(ctx, req.(*ResizeComputeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DatabaseService_ServiceDesc is the grpc.ServiceDesc for DatabaseService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -644,6 +680,10 @@ var DatabaseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSSLCertificates",
 			Handler:    _DatabaseService_GetSSLCertificates_Handler,
+		},
+		{
+			MethodName: "ResizeCompute",
+			Handler:    _DatabaseService_ResizeCompute_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

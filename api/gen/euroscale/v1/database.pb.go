@@ -1257,6 +1257,10 @@ type TierLimits struct {
 	AutoscaleCuPrice float64 `protobuf:"fixed64,6,opt,name=autoscale_cu_price,json=autoscaleCuPrice,proto3" json:"autoscale_cu_price,omitempty"`
 	// Max CU this tier can autoscale to (-1 = unlimited, 0 = disabled).
 	AutoscaleMaxCu int32 `protobuf:"varint,7,opt,name=autoscale_max_cu,json=autoscaleMaxCu,proto3" json:"autoscale_max_cu,omitempty"`
+	// Base compute units provisioned at database creation.
+	BaseCu float64 `protobuf:"fixed64,8,opt,name=base_cu,json=baseCu,proto3" json:"base_cu,omitempty"`
+	// Max total compute units (-1 = unlimited).
+	MaxTotalCu     float64 `protobuf:"fixed64,9,opt,name=max_total_cu,json=maxTotalCu,proto3" json:"max_total_cu,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -1336,6 +1340,20 @@ func (x *TierLimits) GetAutoscaleCuPrice() float64 {
 func (x *TierLimits) GetAutoscaleMaxCu() int32 {
 	if x != nil {
 		return x.AutoscaleMaxCu
+	}
+	return 0
+}
+
+func (x *TierLimits) GetBaseCu() float64 {
+	if x != nil {
+		return x.BaseCu
+	}
+	return 0
+}
+
+func (x *TierLimits) GetMaxTotalCu() float64 {
+	if x != nil {
+		return x.MaxTotalCu
 	}
 	return 0
 }
@@ -2096,6 +2114,123 @@ func (x *GetSSLCertificatesResponse) GetClientKey() string {
 	return ""
 }
 
+type ResizeComputeRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID of the database whose compute to resize.
+	DatabaseId string `protobuf:"bytes,1,opt,name=database_id,json=databaseId,proto3" json:"database_id,omitempty"`
+	// Additional CU to add (e.g. 0.5 for half a CU).
+	AdditionalCu  float64 `protobuf:"fixed64,2,opt,name=additional_cu,json=additionalCu,proto3" json:"additional_cu,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResizeComputeRequest) Reset() {
+	*x = ResizeComputeRequest{}
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResizeComputeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResizeComputeRequest) ProtoMessage() {}
+
+func (x *ResizeComputeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResizeComputeRequest.ProtoReflect.Descriptor instead.
+func (*ResizeComputeRequest) Descriptor() ([]byte, []int) {
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *ResizeComputeRequest) GetDatabaseId() string {
+	if x != nil {
+		return x.DatabaseId
+	}
+	return ""
+}
+
+func (x *ResizeComputeRequest) GetAdditionalCu() float64 {
+	if x != nil {
+		return x.AdditionalCu
+	}
+	return 0
+}
+
+type ResizeComputeResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Whether the resize was successful.
+	Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	// New total CU after the resize.
+	NewTotalCu float64 `protobuf:"fixed64,2,opt,name=new_total_cu,json=newTotalCu,proto3" json:"new_total_cu,omitempty"`
+	// Human-readable message.
+	Message       string `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResizeComputeResponse) Reset() {
+	*x = ResizeComputeResponse{}
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResizeComputeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResizeComputeResponse) ProtoMessage() {}
+
+func (x *ResizeComputeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_euroscale_v1_database_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResizeComputeResponse.ProtoReflect.Descriptor instead.
+func (*ResizeComputeResponse) Descriptor() ([]byte, []int) {
+	return file_proto_euroscale_v1_database_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *ResizeComputeResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *ResizeComputeResponse) GetNewTotalCu() float64 {
+	if x != nil {
+		return x.NewTotalCu
+	}
+	return 0
+}
+
+func (x *ResizeComputeResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_proto_euroscale_v1_database_proto protoreflect.FileDescriptor
 
 const file_proto_euroscale_v1_database_proto_rawDesc = "" +
@@ -2288,7 +2423,7 @@ func file_proto_euroscale_v1_database_proto_rawDescGZIP() []byte {
 	return file_proto_euroscale_v1_database_proto_rawDescData
 }
 
-var file_proto_euroscale_v1_database_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
+var file_proto_euroscale_v1_database_proto_msgTypes = make([]protoimpl.MessageInfo, 35)
 var file_proto_euroscale_v1_database_proto_goTypes = []any{
 	(*CreateDatabaseRequest)(nil),          // 0: euroscale.v1.CreateDatabaseRequest
 	(*CreateDatabaseResponse)(nil),         // 1: euroscale.v1.CreateDatabaseResponse
@@ -2323,6 +2458,8 @@ var file_proto_euroscale_v1_database_proto_goTypes = []any{
 	(*MetricPoint)(nil),                    // 30: euroscale.v1.MetricPoint
 	(*GetSSLCertificatesRequest)(nil),      // 31: euroscale.v1.GetSSLCertificatesRequest
 	(*GetSSLCertificatesResponse)(nil),     // 32: euroscale.v1.GetSSLCertificatesResponse
+	(*ResizeComputeRequest)(nil),           // 33: euroscale.v1.ResizeComputeRequest
+	(*ResizeComputeResponse)(nil),          // 34: euroscale.v1.ResizeComputeResponse
 }
 var file_proto_euroscale_v1_database_proto_depIdxs = []int32{
 	10, // 0: euroscale.v1.ListDatabasesResponse.databases:type_name -> euroscale.v1.Database
@@ -2378,7 +2515,7 @@ func file_proto_euroscale_v1_database_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_euroscale_v1_database_proto_rawDesc), len(file_proto_euroscale_v1_database_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   33,
+			NumMessages:   35,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
