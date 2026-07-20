@@ -1,6 +1,6 @@
 "use client";
 
-import { Zap, Loader2, WifiOff } from "lucide-react";
+import { Zap, Loader2, WifiOff, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useUsage } from "@/hooks/useUsage";
 import { useResizeStorage } from "@/hooks/useResizeStorage";
@@ -87,9 +87,10 @@ export default function DatabaseAddons({
   const cuPricePerHour = limits?.autoscaleCuPrice ?? 0.04;
   const maxAutoscaleCU = limits?.autoscaleMaxCu ?? 0;
   const canAutoscale = maxAutoscaleCU > 0;
+  const isFreeTier = maxAutoscaleCU <= 0;
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="relative overflow-hidden">
       <CardHeader className="border-b border-border-subtle px-5 py-3.5">
         <div className="flex items-center gap-2">
           <Zap size={16} className="text-accent-text" />
@@ -168,6 +169,17 @@ export default function DatabaseAddons({
           isApplying={resizeMutation.isPending || autoscaleMutation.isPending}
         />
       </CardContent>
+      {isFreeTier && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center backdrop-blur-[2px] bg-surface-2/60 rounded-md">
+          <Lock size={18} className="text-muted-foreground mb-1.5" />
+          <p className="text-xs text-muted-foreground text-center px-4 font-medium">
+            Not available on Free tier
+          </p>
+          <p className="text-[10px] text-muted-foreground/70 text-center px-4 mt-0.5">
+            Upgrade to Scale to add compute resources
+          </p>
+        </div>
+      )}
     </Card>
   );
 }
