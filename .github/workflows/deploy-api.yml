@@ -67,8 +67,6 @@ jobs:
             ${{ env.REGISTRY }}/spscreations/euroscale-dashboard:latest
             ${{ env.REGISTRY }}/spscreations/euroscale-dashboard:v1.6
             ${{ env.REGISTRY }}/spscreations/euroscale-dashboard:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
   build-and-push-mysql-proxy:
     name: Build & Push MySQL Proxy
