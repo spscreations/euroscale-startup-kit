@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { HardDrive, Cpu, Zap, Info, Loader2 } from "lucide-react";
+import { HardDrive, Cpu, Zap, Info, Loader2, Lock } from "lucide-react";
 import { cn, formatBytes } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -71,6 +71,8 @@ export default function StorageCard({
   const computeCost =
     additionalCU * cuPricePerHour * ESTIMATED_MONTHLY_HOURS;
   const totalAddonCost = storageCost + computeCost;
+
+  const isFreeTier = maxAutoscaleCU <= 0;
 
   // ── Handlers ──
   const handleSliderChange =
@@ -235,7 +237,7 @@ export default function StorageCard({
       </div>
 
       {/* ── Compute Section ── */}
-      <div className="rounded-md border border-border-subtle bg-surface-2 p-3 space-y-3">
+      <div className="relative overflow-hidden rounded-md border border-border-subtle bg-surface-2 p-3 space-y-3">
         <div className="flex items-center gap-2">
           <Cpu size={14} className="text-text-secondary" />
           <span className="text-xs font-medium text-text-primary">Compute</span>
@@ -271,6 +273,7 @@ export default function StorageCard({
             min={0}
             max={maxAutoscaleCU > 0 ? maxAutoscaleCU : 4}
             step={1}
+            disabled={isFreeTier}
             className="[&_[data-slot=slider-track]]:bg-border [&_[data-slot=slider-track]]:h-2 [&_[data-slot=slider-range]]:bg-accent-text"
           />
           <div className="flex justify-between text-[10px] text-muted-foreground">
@@ -278,6 +281,19 @@ export default function StorageCard({
             <span>{maxAutoscaleCU > 0 ? maxAutoscaleCU : 4} CU</span>
           </div>
         </div>
+
+        {/* Free tier overlay */}
+        {isFreeTier && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center backdrop-blur-[2px] bg-surface-2/60 rounded-md">
+            <Lock size={18} className="text-muted-foreground mb-1.5" />
+            <p className="text-xs text-muted-foreground text-center px-4 font-medium">
+              Not available on Free tier
+            </p>
+            <p className="text-[10px] text-muted-foreground/70 text-center px-4 mt-0.5">
+              Upgrade to Scale to add compute resources
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ── Cost Summary & Apply ── */}

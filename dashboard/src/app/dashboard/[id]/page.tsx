@@ -879,10 +879,10 @@ function DeleteConfirmDialog({
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (typed === databaseName) onConfirm();
+    if (typed.toLowerCase() === databaseName.toLowerCase()) onConfirm();
   }
 
-  const match = typed === databaseName;
+  const match = typed.toLowerCase() === databaseName.toLowerCase();
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onCancel()}>
@@ -911,7 +911,7 @@ function DeleteConfirmDialog({
               className="block text-[11px] font-medium text-text-muted mb-1.5 uppercase tracking-wider"
             >
               Type{" "}
-              <code className="text-destructive bg-destructive/10 px-1.5 py-0.5 rounded text-[11px]">
+              <code className="text-destructive bg-destructive/10 px-1.5 py-0.5 rounded text-[11px] normal-case">
                 {databaseName}
               </code>{" "}
               to confirm
