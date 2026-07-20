@@ -32,6 +32,9 @@ type StorageCardProps = {
   onApplyStorage: (additionalGb: number) => void;
   onApplyAutoscale: (enabled: boolean, threshold: number, increment: number) => void;
   isApplying: boolean;
+
+  // ── Plan base storage ──
+  baseStorageGB: number;
 };
 
 const ESTIMATED_MONTHLY_HOURS = 730;
@@ -49,6 +52,7 @@ export default function StorageCard({
   onApplyStorage,
   onApplyAutoscale,
   isApplying,
+  baseStorageGB,
 }: StorageCardProps) {
   // ── Storage state ──
   const [additionalStorageGB, setAdditionalStorageGB] = useState(0);
@@ -71,6 +75,7 @@ export default function StorageCard({
   const computeCost =
     additionalCU * cuPricePerHour * ESTIMATED_MONTHLY_HOURS;
   const totalAddonCost = storageCost + computeCost;
+  const maxExtraGB = Math.max(0, storageLimitGB - baseStorageGB);
 
   // ── Handlers ──
   const handleSliderChange =
@@ -134,9 +139,20 @@ export default function StorageCard({
 
         {/* Additional Storage */}
         <div className="space-y-2">
+          {/* Plan baseline */}
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-muted-foreground">
+              Plan includes <span className="text-text-primary font-medium">{baseStorageGB} GB</span>
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              Max total: <span className="text-text-primary font-medium">{storageLimitGB.toFixed(0)} GB</span>
+            </span>
+          </div>
+
+          {/* Extra storage slider + cost */}
           <div className="flex items-center justify-between">
             <label className="text-[11px] text-muted-foreground">
-              Additional Storage:{" "}
+              Add extra:{" "}
               <span className="text-text-primary font-mono font-medium">
                 {additionalStorageGB} GB
               </span>
@@ -149,13 +165,20 @@ export default function StorageCard({
             value={[additionalStorageGB]}
             onValueChange={handleSliderChange(setAdditionalStorageGB)}
             min={0}
-            max={1000}
+            max={maxExtraGB}
             step={1}
             className="[&_[data-slot=slider-track]]:bg-border [&_[data-slot=slider-track]]:h-2 [&_[data-slot=slider-range]]:bg-accent-text"
           />
           <div className="flex justify-between text-[10px] text-muted-foreground">
             <span>0 GB</span>
-            <span>1000 GB</span>
+            <span>{maxExtraGB} GB</span>
+          </div>
+
+          {/* Total storage */}
+          <div className="flex items-center justify-between border-t border-border-subtle pt-1.5 mt-0.5">
+            <span className="text-[11px] font-medium text-text-primary">
+              Total storage: <span className="font-mono">{baseStorageGB + additionalStorageGB} GB</span>
+            </span>
           </div>
         </div>
 

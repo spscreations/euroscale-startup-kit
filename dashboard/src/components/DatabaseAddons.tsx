@@ -87,6 +87,14 @@ export default function DatabaseAddons({
   const cuPricePerHour = limits?.autoscaleCuPrice ?? 0.04;
   const maxAutoscaleCU = limits?.autoscaleMaxCu ?? 0;
   const canAutoscale = maxAutoscaleCU > 0;
+  const tierBaseStorageGB: Record<string, number> = {
+    free: 1,
+    scale: 10,
+    team: 50,
+    business: 250,
+    enterprise: -1,
+  };
+  const baseStorageGB = tierBaseStorageGB[usageData?.tier ?? "free"] ?? 1;
   const isFreeTier = limits !== undefined && maxAutoscaleCU <= 0;
 
   return (
@@ -104,6 +112,7 @@ export default function DatabaseAddons({
           storageUsedBytes={storageUsedBytes}
           storageLimitBytes={storageLimitBytes}
           storagePricePerGB={storagePricePerGB}
+          baseStorageGB={baseStorageGB}
           currentCpuUsed={0}
           currentCpuLimit={maxAutoscaleCU > 0 ? maxAutoscaleCU : 2}
           cuPricePerHour={cuPricePerHour}

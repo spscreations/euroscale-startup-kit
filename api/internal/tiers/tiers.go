@@ -45,6 +45,7 @@ type Tier struct {
 	Name                    string
 	MaxDatabases            int     // -1 = unlimited
 	MaxStorageGB            int64   // -1 = unlimited
+	MaxTotalStorageGB       int64   // -1 = unlimited (total across all databases)
 	ReadUnitsPerMonth       int64   // -1 = unlimited
 	WriteUnitsPerMonth      int64   // -1 = unlimited
 	AdditionalStorageGBPrice float64 // €0.20 per GB-month
@@ -58,6 +59,7 @@ var tierDefs = map[string]*Tier{
 		Name:                    TierFree,
 		MaxDatabases:            1,
 		MaxStorageGB:            1,
+		MaxTotalStorageGB:       1,
 		ReadUnitsPerMonth:       100_000,
 		WriteUnitsPerMonth:      0,
 		AdditionalStorageGBPrice: 0.20,
@@ -68,6 +70,7 @@ var tierDefs = map[string]*Tier{
 		Name:                    TierScale,
 		MaxDatabases:            3,
 		MaxStorageGB:            10,
+		MaxTotalStorageGB:       100,
 		ReadUnitsPerMonth:       1_000_000,
 		WriteUnitsPerMonth:      500_000,
 		AdditionalStorageGBPrice: 0.20,
@@ -78,6 +81,7 @@ var tierDefs = map[string]*Tier{
 		Name:                    TierTeam,
 		MaxDatabases:            10,
 		MaxStorageGB:            50,
+		MaxTotalStorageGB:       500,
 		ReadUnitsPerMonth:       10_000_000,
 		WriteUnitsPerMonth:      5_000_000,
 		AdditionalStorageGBPrice: 0.20,
@@ -88,6 +92,7 @@ var tierDefs = map[string]*Tier{
 		Name:                    TierBusiness,
 		MaxDatabases:            UnlimitedDBs,
 		MaxStorageGB:            250,
+		MaxTotalStorageGB:       2000,
 		ReadUnitsPerMonth:       UnlimitedDBs, // burstable
 		WriteUnitsPerMonth:      UnlimitedDBs, // burstable
 		AdditionalStorageGBPrice: 0.20,
@@ -98,6 +103,7 @@ var tierDefs = map[string]*Tier{
 		Name:                    TierEnterprise,
 		MaxDatabases:            UnlimitedDBs,
 		MaxStorageGB:            UnlimitedDBs,
+		MaxTotalStorageGB:       UnlimitedDBs,
 		ReadUnitsPerMonth:       UnlimitedDBs,
 		WriteUnitsPerMonth:      UnlimitedDBs,
 		AdditionalStorageGBPrice: 0.20,
