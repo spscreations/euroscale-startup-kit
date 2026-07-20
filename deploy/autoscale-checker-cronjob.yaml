@@ -22,7 +22,7 @@ spec:
         spec:
           serviceAccountName: euroscale-api
           imagePullSecrets:
-            - name: ghcr-pull
+            - name: ghcr-pull-secret
           restartPolicy: OnFailure
           containers:
             - name: checker
