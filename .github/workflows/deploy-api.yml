@@ -65,7 +65,7 @@ jobs:
             NEXT_PUBLIC_RPC_BASE_URL=https://api.euroscale.app
           tags: |
             ${{ env.REGISTRY }}/spscreations/euroscale-dashboard:latest
-            ${{ env.REGISTRY }}/spscreations/euroscale-dashboard:v1.9
+            ${{ env.REGISTRY }}/spscreations/euroscale-dashboard:v1.10
             ${{ env.REGISTRY }}/spscreations/euroscale-dashboard:${{ github.sha }}
 
   build-and-push-mysql-proxy:
