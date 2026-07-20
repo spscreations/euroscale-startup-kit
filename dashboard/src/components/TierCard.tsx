@@ -63,7 +63,6 @@ export default function TierCard() {
   // Initialize storage input when data loads
   const tier = data?.tier || "free";
   const baseStorageGB = TIER_BASE_STORAGE_GB[tier] ?? 1;
-  const [storageInitialized, setStorageInitialized] = useState(false);
 
   // Mollie redirect detection — show dialog when user returns from payment
   useEffect(() => {
@@ -134,10 +133,11 @@ export default function TierCard() {
   const firstDbName = firstDb?.name ?? null;
 
   // Initialize storage input from base tier storage
-  if (!storageInitialized && baseStorageGB > 0) {
-    setStorageInputValue(baseStorageGB);
-    setStorageInitialized(true);
-  }
+  useEffect(() => {
+    if (baseStorageGB > 0) {
+      setStorageInputValue(baseStorageGB);
+    }
+  }, [baseStorageGB]);
 
   const handleApplyChanges = useCallback(() => {
     if (!firstDbId) {
