@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { AddIPWhitelistEntryRequest, AddIPWhitelistEntryResponse, CreateDatabaseRequest, CreateDatabaseResponse, DeleteDatabaseRequest, DeleteDatabaseResponse, GetDatabaseRequest, GetDatabaseResponse, GetIPWhitelistRequest, GetIPWhitelistResponse, GetMetricsRequest, GetMetricsResponse, GetSSLCertificatesRequest, GetSSLCertificatesResponse, ListDatabasesRequest, ListDatabasesResponse, RemoveIPWhitelistEntryRequest, RemoveIPWhitelistEntryResponse, ResizeComputeRequest, ResizeComputeResponse, ResizeStorageRequest, ResizeStorageResponse, RotateCredentialsRequest, RotateCredentialsResponse, SetAutoscaleRequest, SetAutoscaleResponse, SetUserTierRequest, SetUserTierResponse } from "./database_pb.js";
+import { AddIPWhitelistEntryRequest, AddIPWhitelistEntryResponse, CreateDatabaseRequest, CreateDatabaseResponse, DeleteDatabaseRequest, DeleteDatabaseResponse, GetDatabaseRequest, GetDatabaseResponse, GetIPWhitelistRequest, GetIPWhitelistResponse, GetMetricsRequest, GetMetricsResponse, GetSSLCertificatesRequest, GetSSLCertificatesResponse, GetUsageRequest, GetUsageResponse, ListDatabasesRequest, ListDatabasesResponse, RemoveIPWhitelistEntryRequest, RemoveIPWhitelistEntryResponse, ResizeComputeRequest, ResizeComputeResponse, ResizeStorageRequest, ResizeStorageResponse, RotateCredentialsRequest, RotateCredentialsResponse, SetAutoscaleRequest, SetAutoscaleResponse, SetUserTierRequest, SetUserTierResponse } from "./database_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -149,17 +149,6 @@ export const DatabaseService = {
       kind: MethodKind.Unary,
     },
     /**
-     * ResizeCompute adjusts a database's CPU allocation by the specified CU.
-     *
-     * @generated from rpc euroscale.v1.DatabaseService.ResizeCompute
-     */
-    resizeCompute: {
-      name: "ResizeCompute",
-      I: ResizeComputeRequest,
-      O: ResizeComputeResponse,
-      kind: MethodKind.Unary,
-    },
-    /**
      * GetMetrics returns CPU and disk metrics for a database (last 24h).
      *
      * @generated from rpc euroscale.v1.DatabaseService.GetMetrics
@@ -179,6 +168,17 @@ export const DatabaseService = {
       name: "GetSSLCertificates",
       I: GetSSLCertificatesRequest,
       O: GetSSLCertificatesResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * ResizeCompute adjusts the compute units for a database instance.
+     *
+     * @generated from rpc euroscale.v1.DatabaseService.ResizeCompute
+     */
+    resizeCompute: {
+      name: "ResizeCompute",
+      I: ResizeComputeRequest,
+      O: ResizeComputeResponse,
       kind: MethodKind.Unary,
     },
   }
